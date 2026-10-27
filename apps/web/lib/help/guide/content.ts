@@ -11,13 +11,14 @@ export const GUIDE: GuideSection[] = [
     id: "start",
     group: "Begin",
     title: "Your first ten minutes",
-    keywords: "start begin first key provider setup sample project account passphrase vault save",
-    html: `<p>You need about ten minutes and a free AI key. Statistics, charts and citations work without a key, so you can try those first.</p>
+    keywords: "start begin first key provider setup sample study account passphrase vault save dashboard connect shape type field",
+    html: `<p>You need about ten minutes. The AI buttons need a free AI key, which Appuscholar asks for the first time you press one. Statistics, charts and citations work without a key, so you can try those first.</p>
 <ol>
-<li>Press <b>AI: add your key</b> at the top right (on a phone, open <b>Menu</b> first). Pick Gemini or Groq, follow the link, copy the key, paste it in and press <b>Save Key</b>. Then press <b>Test my AI connection</b>. The message under the buttons tells you whether it worked. Under <b>How should this key be stored?</b> you choose where the key is kept: locked with your passphrase in your account, in this browser, or in this tab only. When you press an AI button, the key travels with that one request to your provider and is not kept.</li>
-<li>Press <b>New project</b> on the <b>Your projects</b> page. The <b>Appuscholar</b> name at the top left opens that page. Everything you do afterwards is saved in your account, under the project you make.</li>
-<li>On the page that opens, type one research question and what you really have: how many people you can reach, how many months, which software. Press <b>Check if it is doable</b>. Expect a frank read, and expect to disagree with part of it. Then give the project a name and press <b>Save as my project</b>. With no key yet, you can save first and check later in the Idea stage.</li>
-<li>Open <b>Literature</b> from the project home and search your topic on the <b>Find</b> tab. Tick the papers that look relevant. The abstracts you ticked are all the AI sees when it drafts a review.</li>
+<li>Open Appuscholar. The first page is <b>Your studies</b>, your dashboard. The <b>Appuscholar</b> name at the top left brings you back to it. Press <b>Start a new study</b>.</li>
+<li>Give the study a name, choose its type (undergraduate project or thesis, master's dissertation, PhD thesis, course assignment, journal article or other) and its field, then press <b>Create study</b>. You can change all three later. Everything you do afterwards is saved in your account, under the study you make.</li>
+<li><b>Shape your study</b> opens. It has six short parts: your question, who or what you would study, how you would find out, time, what you have, and ethics. Answer what you can in your own words, and press <b>Skip for now</b> or <b>Not sure yet</b> for the rest. Everything is saved as you type, and you can come back any time. If you are stuck, press <b>Help me think</b>: the AI asks questions and suggests options, and it never grades your plan. Press <b>See my plan</b> to read the summary. On it, <b>Check if it's doable</b> is optional: an outside opinion from the AI on whether the plan is realistic. Expect a frank read, and expect to disagree with part of it. It will not approve your topic. Your supervisor does that. Then press <b>Go to my study</b>.</li>
+<li>The first time you press an AI button, such as <b>Help me think</b> or <b>Check if it's doable</b>, <b>Connect AI</b> opens. Press <b>Yes, I have a key</b>, or <b>No, help me get a free one</b> and follow the steps from <b>Open Google AI Studio</b>. Paste the key and press <b>Connect</b>; Appuscholar checks that it works. Then choose how the key is kept: <b>Remember on this computer</b> keeps it in this browser, and <b>Protect with a passphrase</b> keeps it on the server, locked with a passphrase only you know. Press <b>Not now</b> to do this later. At the top right, the AI pill reads <b>Connect AI</b> until a key is saved and <b>AI: Gemini</b> once one is (on a phone, open <b>Menu</b> first). When you press an AI button, the key travels with that one request to your provider and is not kept.</li>
+<li>Open <b>Literature</b> from the study home and search your topic on the <b>Find</b> tab. Tick the papers that look relevant. The abstracts you ticked are all the AI sees when it drafts a review.</li>
 <li>Open <b>Collection and analysis</b>, then the <b>Statistics</b> tab. Paste this small table and press <b>Parse data</b>:<pre>group,score
 A,12
 A,15
@@ -33,7 +34,7 @@ B,8</pre>Then find <b>Which test fits my data?</b> further down, press <b>Open t
     group: "Begin",
     title: "The six stages",
     keywords: "stages order idea literature design ethics analysis writing publish menu sidebar home tabs",
-    html: `<p>The project home lists the stages in the order most projects take, and most stages have their own tabs. You can open any stage at any time. The stages are a suggestion.</p>
+    html: `<p>The study home lists the stages in the order most studies take, and most stages have their own tabs. You can open any stage at any time. The stages are a suggestion.</p>
 <ul>
 <li><b>Idea.</b> Decide what to study and whether you can finish it.</li>
 <li><b>Literature.</b> Find papers, read them, compare them, and draft the review from what you found. Your citations are kept here too.</li>
@@ -67,8 +68,8 @@ B,8</pre>Then find <b>Which test fits my data?</b> further down, press <b>Open t
     group: "Tools",
     title: "Idea & Feasibility",
     keywords: "idea feasibility topic question resources timeframe assess",
-    html: `<p>Describe the question, what you can reach, how long you have, and any limit that worries you. The advisor gives an outside opinion on whether the plan fits your resources.</p>
-<p><b>Worked example.</b> Question: does sleep quality predict exam marks in college students? Resources: 80 students from your own department, a free survey form, no budget. Timeframe: one semester. The honest answer will probably point at sample size, a reliable sleep measure, and the ethics route for student participants.</p>
+    html: `<p>In <b>Shape your study</b>, describe the question, who you can reach, how you would find out, how long you have and what else you have. On the summary, <b>Check if it's doable</b> gives an outside opinion on whether the plan fits your resources. It is optional.</p>
+<p><b>Worked example.</b> Question: does sleep quality predict exam marks in college students? Who: 80 students from your own department. What you have: a free survey form, no budget. Time: one semester. The honest answer will probably point at sample size, a reliable sleep measure, and the ethics route for student participants.</p>
 <p>It will not approve your topic. Your supervisor does that.</p>`
   },
   {
@@ -85,7 +86,7 @@ B,8</pre>Then find <b>Which test fits my data?</b> further down, press <b>Open t
     group: "Tools",
     title: "Reading shelf",
     keywords: "reading shelf pdf papers highlight notes search matrix synthesis passages summary backup indexeddb account export reading list",
-    html: `<p>Open the <b>Reading list</b> tab of Literature, where the Reading shelf is. Press <b>Add PDFs</b> to put papers you have the right to read on the shelf. Appuscholar reads each PDF in your browser and keeps only the extracted text, saved with your project in your account (locked under your passphrase when the vault is on). The PDF file itself is not stored and is not uploaded. A scanned PDF with no text layer cannot be read, and the shelf says so.</p>
+    html: `<p>Open the <b>Reading list</b> tab of Literature, where the Reading shelf is. Press <b>Add PDFs</b> to put papers you have the right to read on the shelf. Appuscholar reads each PDF in your browser and keeps only the extracted text, saved with your study in your account (locked under your passphrase when the vault is on). The PDF file itself is not stored and is not uploaded. A scanned PDF with no text layer cannot be read, and the shelf says so.</p>
 <ul>
 <li><b>Papers</b> lists what you have added. Rename a paper, read it page by page, or remove it. Removing asks you to press twice.</li>
 <li><b>Search</b> looks for words across every page and shows the page number and the words in context.</li>
@@ -94,17 +95,17 @@ B,8</pre>Then find <b>Which test fits my data?</b> further down, press <b>Open t
 <li>In the reader, select a passage and press <b>Save selected passage as a highlight</b>. It keeps the page number and your note.</li>
 <li><b>Summarise with AI</b> unlocks after you write at least two lines of your own about the paper. Your two lines are saved first. The AI sees the paper text with email addresses removed.</li>
 </ul>
-<p>Extracted text can jumble tables and two-column layouts. Check the original for exact numbers. The shelf is saved in your account with the rest of your project, so clearing your browser data does not erase it, and <b>Export all my work</b> includes it. <b>Back up the shelf</b> also downloads your papers and highlights as one file, which <b>Restore a shelf backup</b> can bring back.</p>`
+<p>Extracted text can jumble tables and two-column layouts. Check the original for exact numbers. The shelf is saved in your account with the rest of your study, so clearing your browser data does not erase it, and <b>Export all my work</b> includes it. <b>Back up the shelf</b> also downloads your papers and highlights as one file, which <b>Restore a shelf backup</b> can bring back.</p>`
   },
   {
     id: "offline",
     group: "Help",
     title: "Using Appuscholar offline and installing it",
     keywords: "offline install phone home screen app connection internet service worker cache bar account",
-    html: `<p>Appuscholar needs a connection to work. Your documents and your project work are saved in your account, not on your device, so saving, the AI buttons, paper search and any new page all go online. After your first visit, Appuscholar keeps a small copy of its own files on your device, so that it can show a short offline page instead of your browser's error page. It does not keep your documents.</p>
+    html: `<p>Appuscholar needs a connection to work. Your documents and everything in your study are saved in your account, not on your device, so saving, the AI buttons, paper search and any new page all go online. After your first visit, Appuscholar keeps a small copy of its own files on your device, so that it can show a short offline page instead of your browser's error page. It does not keep your documents.</p>
 <p>When the connection drops, a bar at the bottom says: <i>You are offline. Your last page is on screen, but saving, AI, paper search and new pages need a connection.</i> The page you had open stays on screen, but nothing new is saved until you are back online. Keep the tab open, and if the page warns that your document is not being saved, download it. Nothing you already saved is lost.</p>
 <p>When you are online, the app always asks the website for the latest page first. The offline page is shown only when that fails. A new version therefore reaches you at the next load.</p>
-<p><strong>To install it.</strong> In Chrome or Edge on a computer or an Android phone, press <b>Install Appuscholar on this device</b> in Help when it appears, or use the browser menu: <b>Install app</b>, or <b>Add to Home Screen</b>. On an iPhone, open the Share menu in Safari and choose Add to Home Screen. Your work is saved in your account, so the installed copy and the browser tab show the same projects once you are signed in. On some devices the installed copy keeps its own sign-in and its own AI key, so you may need to sign in or paste your key again.</p>
+<p><strong>To install it.</strong> In Chrome or Edge on a computer or an Android phone, press <b>Install Appuscholar on this device</b> in Help when it appears, or use the browser menu: <b>Install app</b>, or <b>Add to Home Screen</b>. On an iPhone, open the Share menu in Safari and choose Add to Home Screen. Your work is saved in your account, so the installed copy and the browser tab show the same studies once you are signed in. On some devices the installed copy keeps its own sign-in and its own AI key, so you may need to sign in or paste your key again.</p>
 <p>If something looks stuck on an old version, add <i>?nosw=1</i> to the end of the address and press Enter. That clears the saved copy. The next normal visit saves a fresh one.</p>`
   },
   {
@@ -145,10 +146,10 @@ B,8</pre>Then find <b>Which test fits my data?</b> further down, press <b>Open t
     group: "Tools",
     title: "AI-use statement",
     keywords: "ai use statement disclosure declare log provider model plagiarism misconduct journal thesis coursework author erase account",
-    html: `<p>Universities and journals now ask you to say where AI helped. Appuscholar keeps a private log of this in your account, for each project. It records the date, the AI provider, the model and the kind of help, such as grammar and polish or practice viva questions. It never stores what you typed or what the AI replied.</p>
+    html: `<p>Universities and journals now ask you to say where AI helped. Appuscholar keeps a private log of this in your account, for each study. It records the date, the AI provider, the model and the kind of help, such as grammar and polish or practice viva questions. It never stores what you typed or what the AI replied.</p>
 <p>Open the <b>AI-use statement</b> tab in Design and ethics. Choose the dates for this piece of work, untick any help that belongs to another piece of work, add AI tools you used elsewhere, and tick only what you really did yourself. Press <b>Build the statement</b>. Edit the text until it is true, then copy it, insert it into your document, or download it.</p>
-<p>The log knows only about Appuscholar, and the statement is built from the open project's log, so AI you used with no project open is not in it. If you used AI outside Appuscholar, or with <b>Keep the AI-use log</b> switched off, add that yourself. If the log shows requests and you try to write that no AI was used, Appuscholar stops you. Your institution or the journal decides what you must disclose. AI cannot be an author.</p>
-<p><b>Erase the log</b>, on the same tab, erases the whole AI-use log in your account: all your projects, and AI you used with no project open. It cannot be undone. A statement you have already built stays in its box.</p>`
+<p>The log knows only about Appuscholar, and the statement is built from the open study's log, so AI you used with no study open is not in it. If you used AI outside Appuscholar, or with <b>Keep the AI-use log</b> switched off, add that yourself. If the log shows requests and you try to write that no AI was used, Appuscholar stops you. Your institution or the journal decides what you must disclose. AI cannot be an author.</p>
+<p><b>Erase the log</b>, on the same tab, erases the whole AI-use log in your account: all your studies, and AI you used with no study open. It cannot be undone. A statement you have already built stays in its box.</p>`
   },
   {
     id: "stats",
@@ -217,7 +218,7 @@ B,8</pre>Then find <b>Which test fits my data?</b> further down, press <b>Open t
     group: "Tools",
     title: "Qualitative Coding",
     keywords: "qualitative coding codes themes interview thematic tag passage export markdown",
-    html: `<p>On the <b>Coding</b> tab of Collection and analysis, select a passage in your document, then tap a code to tag it. Codes can sit under other codes, so related ideas group into themes. Coding works across all the documents in the open project. <b>Export all coded passages</b> gives you a Markdown file with each code and the passages under it.</p>
+    html: `<p>On the <b>Coding</b> tab of Collection and analysis, select a passage in your document, then tap a code to tag it. Codes can sit under other codes, so related ideas group into themes. Coding works across all the documents in the open study. <b>Export all coded passages</b> gives you a Markdown file with each code and the passages under it.</p>
 <p><b>Worked example.</b> Paste an interview transcript. Make top-level codes such as <i>stress sources</i> and <i>coping</i>. Select a sentence about exam fear, tap the stress code, then move on. When you finish, export and read each code's passages together.</p>
 <p>Coding is your judgment. The tool only keeps the tags.</p>`
   },
@@ -305,8 +306,8 @@ B,8</pre>Then find <b>Which test fits my data?</b> further down, press <b>Open t
     group: "Help",
     title: "Questions people ask",
     keywords: "faq problem error key stopped lost work backup hindi english slow quota rate limit account vault passphrase export restore",
-    html: `<p><strong>The AI says my key failed.</strong> Press the <b>AI</b> button at the top right (it reads <b>AI: add your key</b> until you save one), press <b>Test my AI connection</b>, and read the message under the buttons. Free keys run out of quota. If you saved a second key for another provider, Appuscholar tries it automatically.</p>
-<p><strong>My work vanished.</strong> Your work is saved in your account, so clearing site data, switching browsers or moving to another computer does not remove it. Sign in again. If a project looks empty, press the <b>Appuscholar</b> name at the top left to see all your projects, and if the page says your vault is locked, type your passphrase. If you lose both your passphrase and your recovery sheet, locked work cannot be recovered. Press <b>Export all my work</b> in Help every week and keep the file somewhere safe. Papers on the Reading shelf are in that file, and the shelf also has its own <b>Back up the shelf</b> button. To put a backup file back, press <b>Restore from backup</b> in Help: it adds the projects in the file as new projects named (restored) and never changes or replaces the ones you already have.</p>
+    html: `<p><strong>The AI says my key failed.</strong> Press the AI pill at the top right (it reads <b>AI: Gemini</b>, or the name of your provider) to open the AI connection window, press <b>Test</b>, and read the message under the buttons. If the key was refused, press <b>Change key</b> and paste a new one. Free keys run out of quota. If you saved a second key for another provider, Appuscholar tries it automatically.</p>
+<p><strong>My work vanished.</strong> Your work is saved in your account, so clearing site data, switching browsers or moving to another computer does not remove it. Sign in again. If a study looks empty, press the <b>Appuscholar</b> name at the top left to see all your studies, and if the page says your vault is locked, type your passphrase. If you lose both your passphrase and your recovery sheet, locked work cannot be recovered. Press <b>Export all my work</b> in Help every week and keep the file somewhere safe. Papers on the Reading shelf are in that file, and the shelf also has its own <b>Back up the shelf</b> button. To put a backup file back, press <b>Restore from backup</b> in Help: it adds the studies in the file as new studies named (restored) and never changes or replaces the ones you already have.</p>
 <p><strong>Which test do I use?</strong> Open the Statistics tab of Collection and analysis and press <b>Open the guide</b> under <b>Which test fits my data?</b></p>
 <p><strong>The p-value looks different from SPSS.</strong> Check whether SPSS ran a Student or a Welch t-test and whether it reports a one- or two-tailed p. Appuscholar reports two-tailed p and uses Welch by default.</p>
 <p><strong>Something stayed in English after I chose Hindi.</strong> Test names and citation styles stay in English on purpose. The guide and the statistics text are still English only.</p>
