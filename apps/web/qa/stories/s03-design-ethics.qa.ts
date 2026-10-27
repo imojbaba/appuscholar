@@ -732,7 +732,7 @@ test("S3-01 I plan my study and get the ethics paperwork ready: pathway, protoco
       expect(log, "the api's log for this project").toHaveLength(1);
       expect(log[0]!.k).toBe(AI_USE_IDEA);
       await expect(page.getByTestId("aiu-count")).toHaveText(T("design_aiu_count", { all: log.length, n: log.length }));
-      await expect(page.getByTestId("aiu-count")).toHaveText("Requests logged for this project: 1. In the dates below: 1.");
+      await expect(page.getByTestId("aiu-count")).toHaveText("Requests logged for this study: 1. In the dates below: 1.");
     }, { source: `${SHEET} row 6; ${E2E} step 6 (there the log is made up; here it is the api's)` });
     await qa.check("data", "the AI provider received exactly the one request the log counts: the idea check, answered", async () => {
       const asked = await providerCalls(s.key!);
@@ -752,7 +752,7 @@ test("S3-01 I plan my study and get the ethics paperwork ready: pathway, protoco
     }, { source: "WCAG 1.4.3 (text contrast); spec section 8, the axe scan (color-contrast); components/tools/design/AiUse.tsx (class text-muted)", known: "Q11" });
     await qa.check("data", "a note says the log covers this project only and that AI used outside Appuscholar goes in the box \"AI tools you used outside Appuscholar (optional)\"", async () => {
       await expect(page.getByTestId("aiu-scope")).toHaveText(T("design_aiu_scope"));
-      await expect(page.getByTestId("aiu-scope")).toContainText("this project's log only");
+      await expect(page.getByTestId("aiu-scope")).toContainText("this study's log only");
       await expect(page.getByTestId("aiu-scope")).toContainText("AI tools you used outside Appuscholar");
       await expect(page.getByText(T("design_aiu_other"), { exact: true })).toBeVisible();
       expect(T("design_aiu_other")).toBe("AI tools you used outside Appuscholar (optional)");

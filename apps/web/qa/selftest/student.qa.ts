@@ -468,7 +468,7 @@ test("student: on a phone in Hindi, a new student moves between places and back 
   const other = await qa.step("open a second phone", () => sameAccountElsewhere(browser, page, qa));
   try {
     await qa.step("the second phone", async () => {
-      await other.page.goto("/");
+      await other.page.goto(`/p/${s.projectId}`);
       await qa.check("data", "the second browser is 375 px wide, has a touch screen, and shows the phone's header", async () => {
         await expect(other.page.getByTestId("project-home")).toBeVisible();
         expect(await other.page.evaluate(() => ({ width: window.innerWidth, touch: navigator.maxTouchPoints > 0 }))).toEqual({ width: 375, touch: true });

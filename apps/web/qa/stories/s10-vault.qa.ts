@@ -116,8 +116,8 @@ test("S10-01 I set up my vault, and my words stay mine in a second tab, a fresh 
   });
 
   await qa.step("open a second tab", async () => {
-    // `/` opens the active project's home; its Writing row opens the document.
-    await stale.goto("/");
+    // `/` opens the dashboard (start-a-study spec); the study's home, opened by its address, has the Writing row that opens the document.
+    await stale.goto(`/p/${s.projectId}`);
     await expect(stale.getByTestId("project-home")).toBeVisible();
     await stale.getByTestId("home-open-writing").click();
     await qa.check("data", "the second tab shows the same two sentences, and its pill reads Vault off", async () => {

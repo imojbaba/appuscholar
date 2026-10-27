@@ -78,6 +78,24 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const pill = (page: Page) => page.getByTestId("vault-pill");
 const part = (page: Page) => page.getByTestId("shape-part");
 /** The next save of the study's plan (Shape your study saves as it is typed, after a short debounce). */
+/**
+ * Setting up the vault seals the open plan in place, which moves its version on; the plan's next save (the coach's reply) is then refused once as a
+ * version-conflict, and the client re-reads the sealed plan and sends the reply again on it (useProjectBlob.ts). The case checks that later save lands.
+ */
+const PLAN_RESEALED = {
+  method: "PUT", path: /^\/projects\/[0-9a-f-]+\/blobs\/idea_intake$/, status: 409,
+  reason: "the vault set-up sealed the open plan (a new version): the coach's reply is refused once as version-conflict, re-read and sent again (useProjectBlob.ts), and the case checks it lands"
+};
+/** The statuses of the plan's saves (PUT idea_intake) from now on, in order. */
+function recordPlanSaves(page: Page): () => number[] {
+  const seen: number[] = [];
+  page.on("response", (r) => { if (r.request().method() === "PUT" && /\/blobs\/idea_intake$/.test(r.url())) seen.push(r.status()); });
+  return () => seen;
+}
+/** The coach's reply is on the screen: a save of the plan made after `from` lands, and it is the last one. */
+async function expectCoachSaved(saves: () => number[], from: number): Promise<void> {
+  await expect.poll(() => saves().slice(from).at(-1), { message: "the last save of the plan, after the coach's reply", timeout: 20_000 }).toBe(200);
+}
 const planSaved = (page: Page) => page.waitForResponse((r) => r.request().method() === "PUT" && /\/blobs\/idea_intake$/.test(r.url()) && r.ok(), { timeout: 30_000 });
 
 /** The terms: both boxes, then Continue. The dashboard is then in front, with nothing over it. */
@@ -89,9 +107,9 @@ async function acceptTerms(page: Page): Promise<void> {
   await expect(page.getByTestId("project-list")).toBeVisible();
 }
 
-/** Start a new study from the dashboard: the name, Master's dissertation, the account's field; then Create study. Shape your study's first part opens. */
+/** Start a new study (from the dashboard, unless its form is already open): the name, Master's dissertation, the account's field. Create study is the caller's. */
 async function startStudy(page: Page): Promise<void> {
-  await page.getByTestId("new-project").click();
+  if (!(await page.getByTestId("new-study").isVisible())) await page.getByTestId("new-project").click();
   await expect(page.getByTestId("new-study")).toBeVisible();
   await page.getByTestId("new-name").fill(PROJECT);
   await page.getByTestId("new-type-masters").check();
@@ -180,10 +198,12 @@ test("S1-01 I start: the terms, my dashboard, a new study, shaping it part by pa
     steps: ["the terms", "my dashboard", "start a new study", "shape my study", "help me think: Connect AI", "my vault", "the coach's suggestions", "my plan", "the optional check", "my study's home", "my dashboard again", "the AI-use log"],
     code: CODE
   });
+  qa.allow({ responses: [PLAN_RESEALED] });
   const s: Student = { ...(await signInAs(context)), key: qaKey("ok") };
   qa.useKey(s.key!);
   let projectId = "";
   let toasts!: () => Promise<string[]>;
+  const planSaves = recordPlanSaves(page);
 
   await qa.step("the terms", async () => {
     await page.goto("/");
@@ -332,6 +352,7 @@ test("S1-01 I start: the terms, my dashboard, a new study, shaping it part by pa
     const coach = page.getByTestId("shape-coach");
     // No second press: once AI is connected, the coach runs on the part I was on.
     await expect(coach).toBeVisible({ timeout: 30_000 });
+    const shown = planSaves().length;
     await qa.check("data", "the toasts: AI connected, and my work locked in the vault, each once", async () => {
       await expect.poll(async () => [...(await toasts())].sort(), { message: "the toasts shown so far" }).toEqual([...KEY_TOASTS].sort());
     }, { source: "first-run build spec (OJ 2026-10-27), step 4e" });
@@ -339,6 +360,7 @@ test("S1-01 I start: the terms, my dashboard, a new study, shaping it part by pa
       await expect(coach.locator(".ai-read-label")).toHaveText(T("shape_help_label"));
       await expect(coach.locator(".shape-coach-text")).toHaveText(COACH_REPLY);
     }, { source: `${SPEC}: Help me think` });
+    await qa.check("data", "the coach's reply is saved with my plan, now sealed in the vault (a save refused while the vault sealed the plan is sent again)", () => expectCoachSaved(planSaves, shown), { source: `${SPEC}: the reply is kept with the part` });
     await qa.check("conceptual", "the coach was told never to grade, and was given the whole plan and the part I was on", async () => {
       const asked = (await providerCalls(s.key!)).filter((e) => e.kind === AI_USE_COACH);
       expect(asked, "coach requests at the provider").toHaveLength(1);
@@ -486,6 +508,8 @@ test("S1-02 on a phone in Hindi, the first day fits the screen and speaks Hindi"
     steps: ["Hindi from the first screen", "the terms", "my dashboard", "start a new study", "shape my study", "Connect AI", "my vault", "my plan and my home"],
     code: CODE
   });
+  qa.allow({ responses: [PLAN_RESEALED] });
+  const planSaves = recordPlanSaves(page);
   const hi: Lang = "hi";
   const s: Student = { ...(await signInAs(page.context())), key: qaKey("ok"), passphrase: fresh() };
   qa.useKey(s.key!);
@@ -570,6 +594,8 @@ test("S1-02 on a phone in Hindi, the first day fits the screen and speaks Hindi"
     }, { source: "first-run build spec (OJ 2026-10-27), step 4e; spec section 8" });
     // The coach then runs with no second press; its words are the AI's (English from the fake provider), so the checkpoint leaves them unread.
     await expect(page.getByTestId("shape-coach")).toBeVisible({ timeout: 30_000 });
+    const shown = planSaves().length;
+    await qa.check("data", "the coach's reply is saved with my plan, now sealed in the vault", () => expectCoachSaved(planSaves, shown), { source: `${SPEC}: the reply is kept with the part` });
     await qa.check("data", "the coach's label speaks Hindi", inHindi("shape-coach", ["shape_help_label"]), { source: `${SPEC}; spec section 6` });
     await quiet();
     await qa.checkpoint("Shape your study with the coach, on a phone, in Hindi", { exempt: ["shape-coach"] });

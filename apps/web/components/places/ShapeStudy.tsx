@@ -189,7 +189,9 @@ function Summary({ intake, update, goTo, headRef, projectId }: PartProps) {
               <dd data-state={a ? "answered" : unsure.includes(s.key) ? "unsure" : "empty"} data-testid="shape-item-answer">
                 {a || (unsure.includes(s.key) ? t("shape_not_sure") : t("shape_unanswered"))}
               </dd>
-              <Button type="button" variant="ghost" size="sm" aria-label={t("shape_edit_label", { part: title })} onClick={() => goTo(i)} data-testid={"shape-edit-" + s.key}>{t("shape_edit")}</Button>
+              <dd className="shape-item-act">
+                <Button type="button" variant="ghost" size="sm" aria-label={t("shape_edit_label", { part: title })} onClick={() => goTo(i)} data-testid={"shape-edit-" + s.key}>{t("shape_edit")}</Button>
+              </dd>
             </div>
           );
         })}

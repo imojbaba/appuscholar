@@ -369,9 +369,10 @@
 .shape h2 { margin: 0; font-size: 24px; line-height: 1.25; }
 .shape h2:focus { outline: none; }
 .shape-q { margin: 0; font-size: 17px; }
-.shape-progress { display: flex; align-items: center; gap: var(--s3); font-size: 13px; color: var(--muted); }
-.shape-dots { margin: 0; padding: 0; list-style: none; display: flex; gap: 2px; }
-.shape-dot { width: 28px; height: 28px; padding: 0; border: 0; background: none; cursor: pointer; display: grid; place-items: center; }
+.shape-progress { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--s3); font-size: 13px; color: var(--muted); }
+.shape-dots { margin: 0; padding: 0; list-style: none; display: flex; gap: 0; }
+/* A 12px dot in a 44px target, so each is a reachable control on a phone. */
+.shape-dot { width: 44px; height: 44px; padding: 0; border: 0; background: none; cursor: pointer; display: grid; place-items: center; }
 .shape-dot::before { content: ""; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line-strong); background: var(--card); }
 .shape-dot[data-done]::before { background: var(--purple-800); border-color: var(--purple-800); }
 .shape-dot[aria-current="step"]::before { box-shadow: 0 0 0 3px var(--soft), 0 0 0 5px var(--purple-800); }
@@ -393,7 +394,8 @@
 .shape-item dt { font-size: 13px; font-weight: 600; color: var(--muted); }
 .shape-item dd { grid-column: 1; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .shape-item dd[data-state="empty"], .shape-item dd[data-state="unsure"] { color: var(--muted); font-style: italic; }
-.shape-item button { grid-column: 2; grid-row: 1 / span 2; align-self: center; min-height: 44px; }
+.shape-item .shape-item-act { grid-column: 2; grid-row: 1 / span 2; align-self: center; margin: 0; }
+.shape-item button { min-height: 44px; min-width: 44px; }
 .plist-next { margin-top: 4px; font-size: 13px; font-weight: 600; color: var(--purple-800); }
 .plist-empty { max-width: 60ch; }
 .home-q-count { margin: 0; font-size: 13px; color: var(--muted); }
