@@ -16,7 +16,7 @@ function decode(s: string): string {
 }
 
 type Frame = { depth: number; h: string | null; text: string };
-type Visit = { text(t: string, inAi: boolean): void; passage(f: Frame): void };
+type Visit = { text(t: string, inAi: boolean): void; passage(f: Frame): void; tag?(name: string): void };
 
 /** Walks the HTML as a token stream. A frame is any element whose class list has `ai-ins`. */
 function walk(html: string, v: Visit): void {
@@ -36,6 +36,7 @@ function walk(html: string, v: Visit): void {
     const closing = m[1] === "/";
     const name = m[2].toLowerCase();
     const attrs = m[3] || "";
+    v.tag?.(name);
     if (!closing) {
       if (VOID.has(name) || /\/\s*$/.test(attrs)) continue;
       stack.push(name);
@@ -80,4 +81,25 @@ export function originShare(html: string): { total: number; ai: number; studentP
     passage() {}
   });
   return { total, ai, studentPct: total ? Math.round(100 * (total - ai) / total) : 100 };
+}
+
+/** v1 WRITING_SAMPLE_MIN_WORDS (3926): a document with fewer typed words than this is not worth a sample. */
+export const MIN_SAMPLE_WORDS = 30;
+
+/** Elements that end a run of words: the text on either side of one is never one word (v1 3944 joined `<p>a</p><p>b</p>` into "ab"). */
+const BREAKS = new Set(["p", "div", "br", "hr", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "li", "blockquote", "pre", "table", "thead", "tbody", "tr", "td", "th", "caption", "figure", "figcaption", "section", "article"]);
+
+/**
+ * What the student typed themselves (v1 extractStudentText 3944-3950, without a DOM): the text outside every `ai-ins` element, blocks and line
+ * breaks separated by a space (v1 ran them together, which undercounted), entities decoded and whitespace squeezed to single spaces.
+ */
+export function typedText(html: string): { text: string; words: number } {
+  let out = "";
+  walk(html, {
+    text(t, inAi) { if (!inAi) out += t; },
+    passage() {},
+    tag(name) { if (BREAKS.has(name)) out += " "; }
+  });
+  const text = out.replace(/\s+/g, " ").trim();
+  return { text, words: text ? text.split(" ").length : 0 };
 }

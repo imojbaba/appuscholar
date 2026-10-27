@@ -18,6 +18,8 @@ const NEW_KINDS = [
 ];
 /** The participant list: names, so it is only ever stored sealed (the api refuses it in plaintext, vault or not). It comes after the others, as in the web client. */
 const SEALED_ONLY = ["participants"];
+/** Wave D's writing samples (a copy of the student's typed words), after the participant list. Sealed when there is a vault, plain JSON otherwise. */
+const WAVE_D = ["writing_samples"];
 
 async function token(sub: string) {
   return new SignJWT({ email: sub + "@x.org" }).setProtectedHeader({ alg: "HS256" }).setSubject(sub).setIssuedAt().setExpirationTime(Math.floor(Date.now() / 1000) + 900).sign(key);
@@ -41,18 +43,18 @@ describe("blob routes", () => {
   const blob = (kind: string, p = pid) => `/projects/${p}/blobs/${kind}`;
 
   it("kinds: the fixed list, and shelf_paper:<id> with a 1-64 character [A-Za-z0-9_-] id", () => {
-    expect(BLOB_KINDS).toEqual(["idea_intake", "citations", "retraction_cache", "refcheck_cache", "shelf_index", "ap_notes", "ap_cols", "rs_prefs", "shelf_cols", ...NEW_KINDS, ...SEALED_ONLY]);
+    expect(BLOB_KINDS).toEqual(["idea_intake", "citations", "retraction_cache", "refcheck_cache", "shelf_index", "ap_notes", "ap_cols", "rs_prefs", "shelf_cols", ...NEW_KINDS, ...SEALED_ONLY, ...WAVE_D]);
     for (const k of [...BLOB_KINDS, "shelf_paper:a", "shelf_paper:" + "x".repeat(64), "shelf_paper:A-b_9"]) expect(isBlobKind(k), k).toBe(true);
     for (const k of ["", "notes", "IDEA_INTAKE", "shelf_paper:", "shelf_paper:" + "x".repeat(65), "shelf_paper:a.b", "shelf_paper:a b", "shelf_paper:a/b", "shelf_paper", "idea_intake:x"]) expect(isBlobKind(k), k).toBe(false);
   });
 
   it("the api accepts each new kind and refuses an unknown one", async () => {
-    for (const k of NEW_KINDS) {
+    for (const k of [...NEW_KINDS, ...WAVE_D]) {
       const r = await req("PUT", blob(k), { body: '{"v1":"shape"}', keyVersion: 0 });
       expect(r.status, k).toBe(200);
       expect(await json(await req("GET", blob(k))), k).toMatchObject({ kind: k, body: '{"v1":"shape"}' });
     }
-    expect((await json(await req("GET", `/projects/${pid}/blobs`))).map((x: { kind: string }) => x.kind).sort()).toEqual([...NEW_KINDS].sort());
+    expect((await json(await req("GET", `/projects/${pid}/blobs`))).map((x: { kind: string }) => x.kind).sort()).toEqual([...NEW_KINDS, ...WAVE_D].sort());
     for (const k of ["design_plan", "stats_data", "viva", "close_prefs:x"]) {
       expect(isBlobKind(k), k).toBe(false);
       const r = await req("PUT", blob(k), { body: "{}", keyVersion: 0 });

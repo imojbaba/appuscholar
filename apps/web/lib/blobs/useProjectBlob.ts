@@ -12,10 +12,10 @@ import { BLOB_KINDS, blobId, parseBlob, type BlobKind, type BlobShape } from "./
 
 /**
  * The kinds whose panel never asks (R16) before it sets over a blob that does not open: the idea intake, and the preferences (the Research
- * panel's rank, and the stage 3 to 6 tools' `*_prefs`, fix round 1 of Task G3), where a toggle should not ask. A value set over an unreadable
+ * panel's rank, and the stage 3 to 6 tools' `*_prefs`, fix round 1 of Task G3), where a toggle should not ask, and wave D's `writing_samples` (a copy of the typed words that is rebuilt from the documents). A value set over an unreadable
  * one stays held and is never saved over it unasked. Every other kind, each tool's work among them, is guarded.
  */
-const UNGUARDED: ReadonlySet<BlobKind> = new Set<BlobKind>(["idea_intake", "rs_prefs", "stats_prefs", "qual_prefs", "words_prefs", "close_prefs"]);
+const UNGUARDED: ReadonlySet<BlobKind> = new Set<BlobKind>(["idea_intake", "rs_prefs", "stats_prefs", "qual_prefs", "words_prefs", "close_prefs", "writing_samples"]);
 
 /**
  * The kinds that hold names and are only ever stored sealed (R17; the api refuses them in plaintext, SEALED_ONLY_KINDS in apps/api/src/routes/blobWrite.ts). With the vault off a save of one

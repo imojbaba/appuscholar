@@ -10,6 +10,8 @@ import { toast } from "@/components/ui/toast";
 import { useProject } from "@/components/frame/ProjectContext";
 import { FieldPicker } from "@/components/frame/FieldPicker";
 import { OpenAlexKeyField } from "@/components/workspace/OpenAlexKeyField";
+import { SettingsPack } from "./SettingsPack";
+import { SettingsWritingSamples } from "./SettingsWritingSamples";
 
 /**
  * Settings (the account menu): what waits until it is needed (first-run build spec, OJ 2026-10-27, step 7). The AI key is not here: it is Connect AI's
@@ -65,6 +67,7 @@ function Form() {
         </select>
         <p className="m-0 text-[13px] text-muted-foreground">{t("settings_contentlang_desc")}</p>
       </div>
+      <SettingsPack />
 
       <div className="field !mb-0 border-t border-line pt-3">
         <label htmlFor="orcidIn">{t("settings_orcid_label")}</label>
@@ -75,6 +78,8 @@ function Form() {
       <div className="border-t border-line pt-3">
         <OpenAlexKeyField />
       </div>
+
+      <SettingsWritingSamples />
 
       <div className="field !mb-0 border-t border-line pt-3">
         <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm">

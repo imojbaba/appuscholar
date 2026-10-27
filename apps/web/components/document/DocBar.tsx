@@ -13,6 +13,7 @@ import { IMPORT_ACCEPT } from "@/lib/import/parse";
 import { newDocumentBody } from "@/lib/useAutosave";
 import { useVault } from "@/lib/vault/useVault";
 import { openTitle, sealTitle, useTitle } from "@/lib/vault/titles";
+import { forgetSample, resumeSample } from "@/lib/writingSamples/useWritingSampleCapture";
 import { useProject, type DocumentSummary, type DocumentWithBody, type Project } from "@/components/frame/ProjectContext";
 
 const UNDO_MS = 10_000;
@@ -93,6 +94,8 @@ export function DocBar() {
       // What was typed last is stored first, so Undo brings back the newest text.
       await flushOpen(); // a failed save still lets the student delete
       await apiFetch<void>(`/documents/${gone.id}`, { method: "DELETE" });
+      // Its writing sample (if the student keeps one) goes with it; an Undo within ten seconds brings the document back and it is captured again.
+      void forgetSample(gone.projectId, gone.id, () => vault).catch(() => undefined);
       registerFlush(null);
       setDialog(null);
       // The open document is gone from the list, so reloading shows the first remaining one.
@@ -110,7 +113,10 @@ export function DocBar() {
   async function undo(id: string, docProjectId: string) {
     try {
       // The workspace restores into whichever project is open by now, so a late Undo never mixes projects.
-      if (await restoreDocument(id, docProjectId)) toast("Restored ✓");
+      const shown = await restoreDocument(id, docProjectId);
+      // The document is back even when the student declined the switch to it, so its writing is captured again (not when the restore failed).
+      resumeSample(docProjectId, id);
+      if (shown) toast("Restored ✓");
     } catch { toast("Could not bring the document back."); }
   }
 
@@ -135,6 +141,9 @@ export function DocBar() {
       // Stored first, so the switch that follows never asks about a document that has already left this project.
       if (!(await flushOpen())) { toast(t("doc_move_unsaved")); return; }
       await apiFetch(`/documents/${moving.id}/move`, { method: "POST", body: JSON.stringify({ projectId: target }) });
+      // The copy of its writing stays with the project it was written for no longer: it goes from the old one, and is captured in the new one.
+      void forgetSample(moving.projectId, moving.id, () => vault).catch(() => undefined);
+      resumeSample(target, moving.id);
       setDialog(null);
       await openProject(target, { docId: moving.id });
     } catch { toast(t("doc_move_fail")); }
@@ -147,6 +156,9 @@ export function DocBar() {
     try {
       const d = await apiFetch<DocumentSummary>(`/documents/${currentDoc.id}`, { method: "PATCH", body: JSON.stringify({ kind }) });
       patchDoc(d.id, { kind: d.kind });
+      // v1 3172: a source paper is not the student's writing, so its sample goes.
+      if (kind === "source") void forgetSample(currentDoc.projectId, currentDoc.id, () => vault).catch(() => undefined);
+      else resumeSample(currentDoc.projectId, currentDoc.id);
       toast(t(kind === "source" ? "org_toast_src" : "org_toast_own"));
     } catch { toast("Could not change the document. Try again."); }
   }

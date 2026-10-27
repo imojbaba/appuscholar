@@ -6,7 +6,7 @@ export { unlockV1Backup, isLockedV1Backup } from "./v1locked";
 export type { V1UnlockResult } from "./v1locked";
 export { scanText, maskText, PD_KINDS } from "./pd";
 export { accCheck, accItems } from "./accuracy";
-export { provHash, originCount, originShare } from "./origin";
+export { provHash, originCount, originShare, typedText, MIN_SAMPLE_WORDS } from "./origin";
 export type { OriginStats } from "./origin";
 export { classifyAiUse } from "./aiuse";
 export type { AiUseGroup } from "./aiuse";

@@ -9,6 +9,12 @@ describe("mergeSettings", () => {
   it("ignores undefined keys in the patch", () => {
     expect(mergeSettings({ lang: "hi", field: "Psychology" }, { lang: undefined, field: "Law" })).toEqual({ lang: "hi", field: "Law" });
   });
+  it("keeps the pack and writing-sample keys, and a patch of one leaves the other", () => {
+    const a = mergeSettings({ pack: "general" }, { writingSampleCapture: true });
+    expect(a).toEqual({ pack: "general", writingSampleCapture: true });
+    expect(mergeSettings(a, { pack: "psychology", writingSampleCapture: undefined })).toEqual({ pack: "psychology", writingSampleCapture: true });
+    expect(patchKeys({ pack: "general", writingSampleCapture: false })).toEqual(["pack", "writingSampleCapture"]);
+  });
   it("replaces arrays instead of merging them, and does not mutate the input", () => {
     const prev = { stageGroupsCollapsed: ["idea", "lit"] };
     expect(mergeSettings(prev, { stageGroupsCollapsed: ["design"] })).toEqual({ stageGroupsCollapsed: ["design"] });

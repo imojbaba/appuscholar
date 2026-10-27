@@ -15,13 +15,13 @@ vi.mock("@/lib/ai/useKeys", () => ({ useKeys: () => ({ hasKey: () => false }) })
 vi.mock("@/lib/ai/suggestion", async (orig) => ({ ...(await orig<typeof import("../lib/ai/suggestion")>()), useSuggestion: () => ({ setEditor: () => {}, tab: () => false }) }));
 vi.mock("@/components/frame/ProjectContext", async (orig) => ({ ...(await orig<typeof import("../components/frame/ProjectContext")>()), useProject: () => h.ws }));
 vi.mock("@/lib/export/download", async (orig) => ({ ...(await orig<typeof import("../lib/export/download")>()), downloadBlob: (name: string) => { h.downloads.push(name); } }));
-// The real editor needs a layout engine: the stub hands the card an editor that only answers its HTML, so the downloads are enabled.
+// The real editor needs a layout engine: the stub hands the card an editor that only answers its HTML (and ignores listeners, as the sample capture adds one), so the downloads are enabled.
 vi.mock("@/components/editor/Editor", async () => {
   const { useEffect } = await import("react");
   return {
     Editor: ({ initialHtml, onEditor }: { initialHtml: string; onEditor: (e: unknown) => void }) => {
       // Once per editor, as the real one reports its instance.
-      useEffect(() => { onEditor({ instanceId: 1, getHTML: () => initialHtml }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+      useEffect(() => { onEditor({ instanceId: 1, getHTML: () => initialHtml, on: () => {}, off: () => {} }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
       return <div data-testid="editor-stub">{initialHtml}</div>;
     }
   };
