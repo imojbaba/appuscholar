@@ -4,6 +4,7 @@ export type Settings = {
   lang?: "en" | "hi"; provider?: string; draftFirst?: boolean; aiFallback?: boolean; field?: string;
   contentLang?: "en" | "hi"; orcid?: string; toolTab?: string; sidebarCollapsed?: boolean;
   stageGroupsCollapsed?: string[]; fmtMore?: boolean; dockW?: number; sheetPct?: number; aiLogOff?: boolean; seenWelcome?: boolean;
+  setupAbout?: boolean; setupChipOff?: boolean;
   docBeside?: boolean; docW?: number;
 };
 export type UserRecord = { id: string; email: string; locale: string; settings: Settings; activeProjectId: string | null; termsAcceptedAt: Date | null; ageConfirmed: boolean };

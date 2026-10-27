@@ -19,6 +19,9 @@ export const SettingsSchema = z.object({
   sheetPct: z.number().int().min(40).max(85),
   aiLogOff: z.boolean(),
   seenWelcome: z.boolean(),
+  // The setup wizard: "About your research" was finished, and the header's "Finish setup" chip was dismissed.
+  setupAbout: z.boolean(),
+  setupChipOff: z.boolean(),
   // Whether the document is open beside the non-writing places, and its width there.
   docBeside: z.boolean(),
   docW: z.number().int().min(360).max(900)
