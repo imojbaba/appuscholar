@@ -233,7 +233,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Expected: in Hindi, no English on the app's own screens, including text written into components rather than the dictionaries, except what the register lists (source: spec section 8, layout rules; the register's exceptions D-S2-1, -2, -3 and -18 do not name the toolbar; the walk's O9 notes it: "the document toolbar stays English in Hindi mode (Paragraph, Image, Table, Find, Dictate)")
 - Happened: `select "My first document" [doc-select]` (the title the app gives a project's first document, an English literal in `lib/frame/firstDocument.ts`) and `select "Paragraph style" [fmt-paragraph]`: "Paragraph B I U ≡• ↶ ↷ 🖼 Image ⊞ Table 🔍 Find 🎤 Dictate English (India)" (the toolbar's labels, written into `components/document/FormatBar.tsx`). The rule reads the toolbar as one run of English; the Hindi wording of the Budget page that O9 also names is for Dr. Sharma and is not what this entry is about.
 - Evidence: the qa-report artifact of the run of 2026-10-24 on 6ca5839: case S3-08, the failed check "the document full screen, on a phone, in Hindi: no English on a Hindi screen". Re-run as Q15.
-- Status: known
+- Status: fixed (2026-10-27): the toolbar and the document bar are in Hindi (the new `fb_*` keys, the first document titled from the dictionary), and the dictation language box now names its languages from the dictionary too (`dict_lang_*`; it had kept "Hindi" in English on a Hindi project, which brought the fault back in S7-06); pinned by `test/formatBarExtras.test.tsx`
 
 ### Q20: While the vault is locked, the Data tab never says so
 
@@ -401,6 +401,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Expected: in Hindi, no English on the app's own screens, including text written into components rather than the dictionaries, except what the register lists (source: spec section 8, layout rules; the register's exceptions D-S2-1, -2, -3 and -18 do not name this window)
 - Happened: with the page in Hindi, Check with AI on a text with an email address opens a window whose title "Personal details in this text", its line "Found: 1 email address.", its explanation "This text goes straight to your AI provider. The check finds email addresses, phone numbers and ID numbers. It cannot find a name written inside a sentence, so read the text once yourself." and its buttons "Mask them and send" and "Send as it is" are English; only Cancel is Hindi (`रद्द करें`, the dictionary's `sap_cancel_btn`). They are literals in `apps/web/lib/ai/pdDialog.tsx` (lines 13, 51, 55, 57 and 58). It is the window a student reads before deciding what leaves the browser. (The English wording is the sheets', `tools-d.md` row 5 and `phase-2.md` row 28; the question is the Hindi page.)
 - Evidence: the qa-report artifact of the run of 2026-10-24 on aa23121: case S7-06, the failed check "the personal-details window, on a phone, in Hindi: no English on a Hindi screen" (the rule's first finding is listed under the share badge, because the badge's English word "yours" stands just before the window's title in the page's text: the run it reports is the window's own words, and it is matched by Q54's `[origin-badge]`; the second finding, `[pd-found]`, is Q53's). Re-run: `pnpm --filter @appuscholar/web qa:local --project=phone -g "S7-06"`.
+- Note (2026-10-27): the window's explanation is Hindi now (`pp_ai_goes`, O14), so the English that is left, the buttons "Mask them and send" and "Send as it is", is a run of its own: the rule reports it as `[pd-mask]`, which Q53's match now names.
 - Status: known
 
 ### Q54: On a Hindi page the share badge under the document reads "NN% yours" in English
@@ -544,7 +545,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Expected: on a phone, every control at least 44 px each way (source: spec section 8, layout rules, O17)
 - Happened: `summary [faq-lost]` 299 x 40 px, `summary [faq-hindi]` 299 x 20 px, `summary [faq-key]` 299 x 20 px: the lines that open Help's answers. They are `<summary className="cursor-pointer font-medium">` (`components/workspace/dialogs/Help.tsx` line 155) with no minimum height. The phone rule does reach a dialog (`[role="dialog"] button { min-height: 44px }`, `app/globals.css` lines 452 to 453), but a `summary` is not a button, so the rule does not cover it.
 - Evidence: the run of 2026-10-24 on 74806ed: case S9-05, the failed check "Help, on a phone, in Hindi: every control at least 44 px each way". Re-run: `pnpm --filter @appuscholar/web qa:local --project=phone -g "S9-05"`.
-- Status: known
+- Status: fixed on the integration branch (2026-10-27): Help's list has the class `help-faq`, and on a phone its summaries are 44 px tall (`app/globals.css`); pinned by `test/phoneTargets.test.ts`, measured again by S9-05
 
 ### Q80: A second project opens with the first project's Research search on show
 
@@ -579,6 +580,17 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Happened: `.cite-used`: color-contrast (serious). The line is `<div class="desc cite-used cite-not-used">` (`components/tools/cite/CiteChecks.tsx` line 44): `.panel .desc` sets the muted grey `#6b6579` (`app/globals.css` line 128, 5.6 to 1 on the white card), and `.cit-item .cite-not-used { opacity: .75 }` (line 149) fades it to about `#908c9a`, which is about 3.3 to 1 on `#ffffff` (calculated from the colours, not measured in the page).
 - Evidence: the run of 2026-10-24 on 74806ed: case S11-01, the failed check "project A's Citations, after B: no serious or critical accessibility finding (axe)". With several sources on the page axe names each line by its card (`div[data-cite-index="0"] > div[data-cite-slot="cite-used"] > .cite-not-used.cite-used.desc`), which the known match also lists (S2-01: 3 of 4 cards, S2-03: 3 of 4); the run of 2026-10-24 on 70e65ef, S2-01, S2-03 and S2-08. Re-run: `pnpm --filter @appuscholar/web qa:local -g "S11-01"`.
 - Status: known
+
+### Q84: On a Hindi page, some sentences of the Reading list and Analyse a paper keep English words
+
+- Case: S2-08 (the Reading list, the reader and Analyse a paper, on a phone, in Hindi), S9-05 (Help's install hint)
+- Date: 2026-10-27
+- Commit: 6134b8af11b279b908882198bd2a5e5aad83377c
+- Kind: UI (Hindi)
+- Expected: in Hindi, no English on the app's own screens, except what the register lists (source: spec section 8, layout rules)
+- Happened: the Hindi dictionary (the v1 text, merged with the newer main line, which translated the `rs2_`, `ap2_` and `sh2_` keys) writes Hindi sentences around English words: `sh2_intro` ("text layer"), `ap2_give_appuscholer_a_research` ("gap, design, sample, statistics"), `ap2_consent` ("peer review"), the chips `ap2_what_was_the_research` ("Research gap") and `ap2_which_statistical_test_was` ("statistical test"), the walk-through's "चरण N of 12: Research gap और उद्देश्य", the topic box's example `rs2_topic_placeholder` (an English phrase), and Help's install hint `wc_install_menu` (the browser menu's "Install app" and "Add to Home Screen"). The register kept these keys whole in English until Dr. Sharma gave Hindi, and the QA layer reads the dictionaries, so a key that now has Hindi stops being an exception; the English words that are left in it are found. Whether those words stay English (as they are in the Hindi a student reads) is Dr. Sharma's to say, so the fault is recorded as awaiting her, with the match of the boxes that hold them.
+- Evidence: the qa-report artifact of the run of 2026-10-27: cases S2-08 and S9-05, the failed checks "no English on a Hindi screen". Re-run: `pnpm --filter @appuscholar/web qa:local --project=phone -g "S2-08"`.
+- Status: awaiting
 
 ### Q96: While the vault is locked, an amount typed into Budget is dropped
 
