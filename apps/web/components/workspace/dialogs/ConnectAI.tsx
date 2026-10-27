@@ -36,8 +36,8 @@ class CheckTimeout extends Error {}
 
 /** What a failed key test says, in plain words, with what to fix: the company's refusal, the connection, or the call's own sentence. */
 function failText(e: unknown, company: string, t: ReturnType<typeof useT>): string {
-  if (e instanceof CheckTimeout) return t("connect_fail_slow", { p: company });
   const err = toCallError(e);
+  if (e instanceof CheckTimeout || err.code === "slow") return t("connect_fail_slow", { p: company });
   if (err.code === "key-rejected" || err.code === "no-key" || (e instanceof ApiError && e.status === 400)) return t("connect_fail_key", { p: company });
   if (err.code === "network") return t("connect_fail_network", { p: company });
   return t("connect_fail_other", { p: company }) + " " + err.message;

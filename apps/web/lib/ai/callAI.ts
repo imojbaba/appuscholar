@@ -6,7 +6,7 @@ import { DICTS, tFormat } from "@/lib/i18n";
 import { maskNames, scanNames, type NamesChecked, type NamesCtx } from "./names";
 
 /** The gateway's error classes (apps/api/src/ai/types.ts). */
-export type AiErrorCode = "personal-data" | "blocked" | "truncated" | "empty" | "no-key" | "key-rejected" | "model-gone" | "rate-limit" | "provider-error" | "network" | "terms" | "quota";
+export type AiErrorCode = "personal-data" | "blocked" | "truncated" | "empty" | "no-key" | "key-rejected" | "model-gone" | "rate-limit" | "provider-error" | "network" | "terms" | "quota" | "slow";
 /**
  * What the personal-data check found. `names` is there when the request was checked for names (the open project's, spec 2026-10-24-participants-design.md §8.3): how many names on the
  * participant list, the words that might be names (suggestions, and listed words the list asks about), and whether the list is locked so names on it were not checked.
@@ -88,6 +88,7 @@ export function apiMsg(code: AiErrorCode | "cancelled" | "bad-pass", detail?: st
     case "model-gone": return "That AI model is no longer available. Try a different provider using the tabs at the top.";
     case "rate-limit": return "Free limit reached for now. Wait a minute, or switch provider using the tabs at the top.";
     case "provider-error": return "The AI service is having problems (already retried a couple of times). Try again in a few minutes, or switch provider using the tabs at the top. Detail: " + (detail ?? "").slice(0, 180);
+    case "slow": return "The AI took too long to answer, so the request was stopped. Try again in a minute, or switch provider using the tabs at the top.";
     case "network": return "Could not reach the AI provider. Check your connection and try again, or switch provider using the tabs at the top.";
     case "truncated": return "The answer was cut off. Select a smaller piece of text and try again.";
     case "empty": return "The AI returned an empty answer. Try again.";
@@ -101,7 +102,7 @@ export class AiCallError extends Error {
   constructor(public code: AiErrorCode | "cancelled" | "bad-pass" | "unknown", message: string) { super(message); }
 }
 
-const AI_CODES: readonly string[] = ["personal-data", "blocked", "truncated", "empty", "no-key", "key-rejected", "model-gone", "rate-limit", "provider-error", "network", "terms", "quota"];
+const AI_CODES: readonly string[] = ["personal-data", "blocked", "truncated", "empty", "no-key", "key-rejected", "model-gone", "rate-limit", "provider-error", "network", "terms", "quota", "slow"];
 /** Errors worth trying another provider for: v1 aiRetriable (429, 5xx, 401/403, 404, network). */
 const RETRIABLE: readonly string[] = ["rate-limit", "provider-error", "key-rejected", "model-gone", "network"];
 

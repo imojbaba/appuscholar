@@ -136,6 +136,40 @@ describe("gateway", () => {
   });
 });
 
+/** A provider that never answers: the request ends only when its signal is aborted (live, 27 Oct: a key test sat for five minutes). */
+const hanging = () => vi.fn((_u: string, init: RequestInit) => new Promise<Response>((_, reject) => {
+  init.signal?.addEventListener("abort", () => reject(new DOMException("The operation was aborted.", "TimeoutError")));
+}));
+
+describe("a provider that never answers", () => {
+  it("gemini: the call is ended at its time limit and answered slow", async () => {
+    const fetch = hanging();
+    const t0 = Date.now();
+    await expect(complete({ provider: "gemini", apiKey: "AIza-test", prompt: "p", timeoutMs: 50 }, { fetch: fetch as never })).rejects.toMatchObject({ code: "slow" });
+    expect(Date.now() - t0).toBeLessThan(2_000);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect((fetch.mock.calls[0]![1] as RequestInit).signal).toBeInstanceOf(AbortSignal);
+  });
+  it("openai-compatible: the same", async () => {
+    const fetch = hanging();
+    await expect(complete({ provider: "groq", apiKey: "gsk_x", prompt: "p", timeoutMs: 50 }, { fetch: fetch as never })).rejects.toMatchObject({ code: "slow" });
+  });
+  it("a body cut off by the time limit is slow, not an empty answer", async () => {
+    const fetch = vi.fn(async (_u: string, init: RequestInit) => new Response(new ReadableStream({
+      start(c) { init.signal?.addEventListener("abort", () => c.error(new DOMException("aborted", "AbortError"))); }
+    }), { status: 200 }));
+    await expect(complete({ provider: "gemini", apiKey: "k", prompt: "p", timeoutMs: 50 }, { fetch: fetch as never })).rejects.toMatchObject({ code: "slow" });
+  });
+  it("a fetch that fails for another reason is still network", async () => {
+    const fetch = vi.fn(async () => { throw new TypeError("fetch failed"); });
+    await expect(complete({ provider: "gemini", apiKey: "k", prompt: "p", timeoutMs: 5_000 }, { fetch: fetch as never })).rejects.toMatchObject({ code: "network" });
+  });
+  it("every call gets a time limit even when the caller sets none", async () => {
+    const fetch = vi.fn(async (_u: string, init: RequestInit) => { expect(init.signal).toBeInstanceOf(AbortSignal); return json(200, { candidates: [{ content: { parts: [{ text: "ok" }] } }] }); });
+    expect((await complete({ provider: "gemini", apiKey: "k", prompt: "p" }, { fetch: fetch as never })).text).toBe("ok");
+  });
+});
+
 describe("default Anthropic client", () => {
   it("ignores ANTHROPIC_BASE_URL and ANTHROPIC_AUTH_TOKEN from the environment and does not retry", () => {
     const saved = { b: process.env.ANTHROPIC_BASE_URL, t: process.env.ANTHROPIC_AUTH_TOKEN };

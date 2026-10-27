@@ -287,6 +287,16 @@ describe("Connect AI: a key check that never answers (live, 27 Oct: stuck on Che
     expect(credPuts()).toHaveLength(0);
   }, 30_000);
 
+  it("the server's own time limit (504 slow) says the same", async () => {
+    h.api.mockImplementation((path: string, init?: RequestInit) => path === "/ai/test" ? Promise.reject(new ApiError(504, "slow")) : fakeApi(path, init));
+    await mount();
+    await click("connect-yes");
+    typeInto("connect-key", "AIza-slow");
+    await click("connect-go");
+    await until(() => !!$("connect-error"));
+    expect($("connect-error")!.textContent).toBe(fill(E.connect_fail_slow!, { p: "Google Gemini" }));
+  }, 30_000);
+
   it("the window can be closed while the key is being checked: the check is stopped and nothing is saved", async () => {
     const seen = { signal: null as AbortSignal | null };
     hangingTest(seen);

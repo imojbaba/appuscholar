@@ -15,6 +15,7 @@ export const gemini: Adapter = async (input, fetchImpl) => {
     const r = await postWithRetry(fetchImpl, `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": input.apiKey },
+      signal: input.signal,
       body: JSON.stringify({ contents: [{ parts: [{ text: input.prompt }] }], generationConfig: { temperature: input.temperature, maxOutputTokens: input.maxTokens } })
     });
     if (r.status === 404 || r.status === 400) { last = r; continue; }
