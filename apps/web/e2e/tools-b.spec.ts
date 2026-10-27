@@ -7,7 +7,7 @@
  *   1. Data: a semicolon file offers "Split on semicolons" (used once); the columns show as chips; a student name column raises the personal-data
  *      box (replace by a code, keep the village), Apply downloads the key file and rewrites the paste box.
  *   2. Run: Welch t (the "Independent-samples t-test"), fields, Run; the sentence and the chart show; Insert into document; reload; the sentence is
- *      still in the document and the Check tab lists it Current.
+ *      still in the document and the Check tab lists it Current. The recorded table brings the offer to lock the work; Not now puts it away for good.
  *   3. Explain: the mask / send / cancel choice appears before any request (no AI request until the student chooses), the reply shows apart from the
  *      sentence under its machine label.
  *   4. Check: one number of the pasted data is edited and parsed again; the result is Out of date; Re-run replaces the sentence (the confirm is shown
@@ -237,6 +237,14 @@ test("Collection and analysis: data, a test inserted and checked, explain, guide
     await expect(page.getByTestId("check-rt-meta")).toContainText(DATA_NAME);
     // "Current" is not offered as a check that the words still fit the number.
     await expect(page.getByTestId("check-rt-note")).toHaveText(T("rt_note"));
+    // A data table is recorded and no passphrase is set: the offer to lock the work sits above the tab. Not now puts it away for good.
+    await expect(page.getByTestId("lock-offer")).toBeVisible();
+    await expect(page.getByTestId("lock-offer").locator("h4")).toHaveText(T("lock_offer_h"));
+    await page.getByTestId("lock-offer-not-now").click();
+    await expect(page.getByTestId("lock-offer")).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByTestId("check-rt-run")).toBeVisible();
+    await expect(page.getByTestId("lock-offer")).toHaveCount(0);
   });
 
   await test.step("3. Explain: the choice comes before any request; the reply is shown apart from the sentence, labelled as the machine's", async () => {
