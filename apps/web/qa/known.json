@@ -4,7 +4,7 @@
   { "id": "F3", "title": "A line break inside a coded passage joins the words (fixed in #25)", "status": "fixed" },
   { "id": "F4", "title": "The old slides preview and its Download stay live while Generate reads (fixed in #25)", "status": "fixed" },
   { "id": "F5", "title": "Locked Closeness says \"Write at least about 30 words first\" (fixed in #25)", "status": "fixed" },
-  { "id": "O1", "title": "The consent form ignores the under-18 answer: no parent's permission and no child's agreement (until Participants merges)", "status": "known", "owner": "Dr. Sharma" },
+  { "id": "O1", "title": "The consent form ignores the under-18 answer: no parent's permission and no child's agreement (fixed by Participants, #28)", "status": "fixed", "owner": "Dr. Sharma" },
   { "id": "O2", "title": "Overview says \"Not ready yet\" while saved work is still opening", "status": "known" },
   { "id": "O4", "title": "The AI-use statement says the browser sends requests to the provider; Appuscholar's server does", "status": "awaiting", "owner": "OJ" },
   { "id": "O5", "title": "\"I planned the argument and the structure myself\" is ticked for the student when the tab opens", "status": "awaiting", "owner": "OJ" },
