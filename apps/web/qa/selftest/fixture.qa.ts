@@ -528,18 +528,18 @@ test("fixture: a timed function that throws measured nothing, and the error goes
 test("fixture: a failing check with a known id is recorded with it, and does not fail the case", MECHANICS, async ({ qa }) => {
   // No selfTest here: the teardown runs as it does in a real case, and this test passes only if it does not throw.
   qa.begin(meta("SELF-19", ["go"]));
-  const ok = await qa.check("data", "open answers are not called names", async () => expect("looks like names").toBe("no flag"), { source: "tools-b row 4", known: "F1" });
+  const ok = await qa.check("data", "open answers are not called names", async () => expect("looks like names").toBe("no flag"), { source: "tools-b row 4", known: "O12" });
   expect(ok).toBe(false);
   const [c] = qa.result().checks;
-  expect(c).toMatchObject({ kind: "data", ok: false, fail: "unexpected", known: "F1", source: "tools-b row 4" });
+  expect(c).toMatchObject({ kind: "data", ok: false, fail: "unexpected", known: "O12", source: "tools-b row 4" });
   expect(qa.result().missingKnown ?? []).toEqual([]);
 });
 
 test("fixture: the same check passing is recorded ok with its known id (the report turns it into FIXED?)", TAGS, async ({ qa }) => {
   qa.selfTest = true;
   qa.begin(meta("SELF-20", ["go"]));
-  expect(await qa.check("data", "open answers are not called names", async () => expect("no flag").toBe("no flag"), { known: "F1" })).toBe(true);
-  expect(qa.result().checks[0]).toMatchObject({ kind: "data", ok: true, known: "F1" });
+  expect(await qa.check("data", "open answers are not called names", async () => expect("no flag").toBe("no flag"), { known: "O12" })).toBe(true);
+  expect(qa.result().checks[0]).toMatchObject({ kind: "data", ok: true, known: "O12" });
 });
 
 test("fixture: a failing check awaiting a decision does not fail the case either", MECHANICS, async ({ qa }) => {
@@ -571,10 +571,10 @@ test("fixture: the result notes an id that known.json lacks, once", TAGS, async 
   qa.begin(meta("SELF-25", ["go"]));
   await qa.check("data", "one", async () => expect(1).toBe(2), { known: "ZZ99" });
   await qa.check("data", "two", async () => {}, { known: "ZZ99" });
-  await qa.check("data", "three", async () => expect(1).toBe(2), { known: "F1" });
+  await qa.check("data", "three", async () => expect(1).toBe(2), { known: "O12" });
   const r = qa.result();
   expect(r.missingKnown).toEqual(["ZZ99"]);
-  expect(r.checks.map((c) => c.known)).toEqual(["ZZ99", "ZZ99", "F1"]);
+  expect(r.checks.map((c) => c.known)).toEqual(["ZZ99", "ZZ99", "O12"]);
 });
 
 test("fixture: a failing check with a very long label still leaves its screenshot, and the case goes on", TAGS, async ({ page, qa }) => {
