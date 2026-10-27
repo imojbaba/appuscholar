@@ -23,7 +23,7 @@ const EN = JSON.parse(readFileSync(path.join(MESSAGES, "tools/help-install.en.js
 const HI = JSON.parse(readFileSync(path.join(MESSAGES, "tools/help-install.hi.json"), "utf8")) as Record<string, string>;
 
 test("install, offline bar and the worker's files", async ({ page, context, request }) => {
-  await signIn(page, { prefix: "c8", newAccount: true, ready: ["first-run"] });
+  await signIn(page, { prefix: "c8", newAccount: true, ready: ["project-list"] });
 
   // 1. the manifest
   const href = await page.locator("link[rel=manifest]").getAttribute("href");

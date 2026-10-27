@@ -20,6 +20,7 @@ import { readFileSync } from "node:fs";
 import JSZip from "jszip";
 import { test, expect, type Page, type Request } from "@playwright/test";
 import { signIn } from "./support/signin";
+import { makeStudy } from "./support/study";
 import { API_ORIGIN } from "./support/origins";
 import { cursorToEnd } from "./support/editor";
 
@@ -58,13 +59,9 @@ test("restore adds the backup as new projects and leaves the first alone; the re
   let zipPath = "";
   let firstId = "";
 
-  await test.step("1. sign in with a new account, save a project from first run, write one sentence", async () => {
-    await signIn(page, { prefix: "c7", newAccount: true, ready: ["first-run"] });
-    await page.locator("#ideaTopic").fill(TOPIC);
-    await page.getByTestId("idea-save-title").fill(PROJECT);
-    await page.getByTestId("idea-save").click();
-    await expect(page.getByTestId("project-home")).toBeVisible();
-    firstId = /\/p\/([^/?#]+)/.exec(page.url())?.[1] ?? "";
+  await test.step("1. sign in with a new account, start a study, write one sentence", async () => {
+    await signIn(page, { prefix: "c7", newAccount: true, ready: ["project-list"] });
+    firstId = await makeStudy(page, { name: PROJECT, question: TOPIC });
     expect(firstId).not.toBe("");
     await page.getByTestId("home-open-writing").click();
     await expect(page.getByTestId("doc-select")).toBeVisible();
