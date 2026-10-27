@@ -267,8 +267,9 @@ function tabRow(page: Page) {
 }
 
 /**
- * A project made through first run, as the sheet's "You need" has it: the idea written, "Get feedback on my idea" pressed and its read waited for, then "Save as my project". The check is
- * the one request of the AI-use log. `afterCheck` runs after the check is pressed and before its read is waited for (the personal-details dialog of S3-04 stands in between).
+ * A study made as the sheet's "You need" has it: Start a new study, its question (and what the student has) in Shape your study, then the summary's optional "Check if it's
+ * doable" pressed and its read waited for, then Go to my study. The check is the one request of the AI-use log. `afterCheck` runs after the check is pressed and before its
+ * read is waited for (the personal-details dialog of S3-04 stands in between).
  */
 async function projectWithIdeaCheck(
   page: Page,
@@ -276,18 +277,32 @@ async function projectWithIdeaCheck(
   o: { vault?: "off" | "on"; resources?: string; afterCheck?: () => Promise<void> } = {}
 ): Promise<{ student: Student; id: string }> {
   const student = await newStudent(page, qa, { key: "ok", project: false, ...(o.vault ? { vault: o.vault } : {}) });
-  await page.locator("#ideaTopic").fill("Does a fixed bedtime routine for one week lower exam anxiety in first-year college students?");
-  // The three questions are folded away, optional ("Add details for better feedback").
-  if (o.resources) { await page.getByTestId("idea-details-toggle").click(); await page.locator("#ideaRes").fill(o.resources); }
-  await page.getByTestId("idea-save-title").fill(PROJECT);
+  const saved = () => page.waitForResponse((r) => r.request().method() === "PUT" && /\/blobs\/idea_intake$/.test(r.url()) && r.ok(), { timeout: 30_000 });
+  await page.getByTestId("new-project").click();
+  await page.getByTestId("new-name").fill(PROJECT);
+  await page.getByTestId("new-type-masters").check();
+  await page.getByTestId("new-create").click();
+  await expect(page.getByTestId("shape-part")).toBeVisible({ timeout: 30_000 });
+  let wrote = saved();
+  await page.getByTestId("shape-answer").fill("Does a fixed bedtime routine for one week lower exam anxiety in first-year college students?");
+  await wrote;
+  if (o.resources) {
+    await page.getByTestId("shape-dot-have").click();
+    await expect(page.getByTestId("shape-part")).toHaveAttribute("data-part", "have");
+    wrote = saved();
+    await page.getByTestId("shape-answer").fill(o.resources);
+    await wrote;
+  }
+  await page.getByTestId("shape-dot-ethics").click();
+  await page.getByTestId("shape-next").click();
+  await expect(page.getByTestId("shape-summary")).toBeVisible();
   await page.getByTestId("idea-check").click();
   if (o.afterCheck) await o.afterCheck();
   await expect(page.getByTestId("idea-read")).toBeVisible({ timeout: 30_000 });
-  await page.getByTestId("idea-save").click();
-  // The save took 21 s on the QA stack with no sign of progress (O3, S1-03): the case waits for it.
+  await page.getByTestId("shape-go-study").click();
   await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 90_000 });
   const id = /^\/p\/([^/?#]+)/.exec(new URL(page.url()).pathname)?.[1];
-  if (!id) throw new Error(`QA S3: the project was saved but the page is not on its home (${page.url()}).`);
+  if (!id) throw new Error(`QA S3: the study was made but the page is not on its home (${page.url()}).`);
   student.projectId = id;
   return { student, id };
 }

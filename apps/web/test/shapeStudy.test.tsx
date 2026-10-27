@@ -179,12 +179,32 @@ describe("Shape your study: the parts", () => {
     act(() => { $('[data-testid="shape-edit-how"]')!.click(); });
     await click("shape-help");
     const built = buildCoachPrompt(fieldLabel("  nursing "), "how", coachPlan(plan as never));
-    expect(h.callAI).toHaveBeenCalledWith(built.prompt, { temp: 0.5, max: 700 });
+    expect(h.callAI).toHaveBeenCalledWith(built.prompt, { temp: 0.5, max: 700, provider: "gemini" });
     expect(built.prompt).toContain("never give a verdict or a score");
     expect(classifyAiUse(built.prompt)?.k).toBe("thinking through my study plan");
     const next = lastUpdate(plan);
     expect(next.coach!.how).toEqual({ text: "Questions to ask yourself:\nWhich exams?", at: expect.any(String) });
     expect(next.topic).toBe(plan.topic);
+  });
+
+  it("with no AI key Help me think opens Connect AI first; once a key is connected the coach runs with no second press, to the company it was saved for", async () => {
+    h.hasKey = false;
+    h.blob.value = STORED;
+    h.callAI.mockResolvedValue("Questions to ask yourself:\nWhich exams?");
+    h.openConnect.mockResolvedValueOnce({ result: "connected", provider: "groq" });
+    mount();
+    act(() => { $('[data-testid="shape-edit-question"]')!.click(); });
+    await click("shape-help");
+    expect(h.openConnect).toHaveBeenCalledWith({ provider: "gemini", offerSave: false });
+    expect(h.callAI).toHaveBeenCalledTimes(1);
+    expect(h.callAI.mock.calls[0]![1]).toEqual({ temp: 0.5, max: 700, provider: "groq" });
+    // Connect AI closed without a key: nothing is sent, nothing is kept, and no toast says to connect AI (the window just did).
+    h.callAI.mockClear(); h.blob.set.mockClear(); h.toast.mockClear();
+    h.openConnect.mockResolvedValueOnce({ result: "closed", provider: "gemini" });
+    await click("shape-help");
+    expect(h.callAI).not.toHaveBeenCalled();
+    expect(h.blob.set).not.toHaveBeenCalled();
+    expect(h.toast).not.toHaveBeenCalled();
   });
 
   it("a coach reply kept with a part is shown under it as AI suggestions", () => {

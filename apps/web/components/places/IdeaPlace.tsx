@@ -17,34 +17,49 @@ export type IdeaFields = Pick<IdeaIntake, "topic" | "resources" | "timeframe" | 
 export type IdeaReadValue = NonNullable<IdeaIntake["read"]>;
 
 /**
+ * The provider a request on this screen goes to, with a key for it: the chosen one when it has a key; otherwise Connect AI opens (first-run build spec, OJ
+ * 2026-10-27, step 4) and, once a key is connected, the company it was saved for, so the request runs with no second press. Null when Connect AI ended
+ * without a key ("save" first runs `onSaveWithout`).
+ */
+export function useConnectedProvider(): (o?: { onSaveWithout?: () => void }) => Promise<ProviderId | null> {
+  const { settings } = useSettings();
+  const { openConnect } = useProject();
+  const { hasKey } = useKeys();
+  return async (o = {}) => {
+    const provider: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";
+    if (hasKey(provider)) return provider;
+    const end = await openConnect({ provider, offerSave: !!o.onSaveWithout });
+    if (end.result === "save") o.onSaveWithout?.();
+    // The key was saved a moment ago: the request goes to the company it was saved for, whatever the settings have caught up with.
+    return end.result === "connected" ? end.provider : null;
+  };
+}
+
+/**
  * "Get feedback on my idea": v1's Assess feasibility (ideaAssess 8568-8580, buildIdeaPromptV2 unchanged) as a read with its time, or null when nothing was read.
  * With no key for the chosen provider Connect AI opens (first-run build spec, OJ 2026-10-27, step 4); once a key is connected the feedback runs on the idea as it was
  * typed, with no second press. `onSaveWithout` (first run): Connect AI offers "Save my idea without feedback", which runs it. An empty idea gets v1's toast first.
  */
 export function useIdeaCheck(onSaveWithout?: () => void): { busy: boolean; check(intake: IdeaFields, onSending?: () => void): Promise<IdeaReadValue | null> } {
-  const { settings } = useSettings();
   const studyField = useStudyField();
-  const { openConnect } = useProject();
-  const { hasKey } = useKeys();
+  const connected = useConnectedProvider();
   const callAI = useCallAI();
   const [busy, setBusy] = useState(false);
   const running = useRef(false);
   /** `onSending`: called just before the idea goes to the AI (never when Connect AI ended without a key, or the idea is empty). */
   const check = async (intake: IdeaFields, onSending?: () => void): Promise<IdeaReadValue | null> => {
     if (running.current) return null;
-    let provider: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";
-    if (intake.topic.trim() && !hasKey(provider)) {
+    let provider: ProviderId | null = null;
+    // An empty idea gets v1's toast from checkIdea before any key is asked for.
+    if (intake.topic.trim()) {
       running.current = true;
-      const end = await openConnect({ provider, offerSave: !!onSaveWithout }).finally(() => { running.current = false; });
-      if (end.result === "save") onSaveWithout?.();
-      if (end.result !== "connected") return null;
-      // The key was saved a moment ago: this request goes to the company it was saved for, whatever the settings have caught up with.
-      provider = end.provider;
+      provider = await connected({ onSaveWithout }).finally(() => { running.current = false; });
+      if (!provider) return null;
     }
     running.current = true;
     setBusy(true);
     try {
-      const call: typeof callAI = (prompt, opts) => { onSending?.(); return callAI(prompt, { ...opts, provider }); };
+      const call: typeof callAI = (prompt, opts) => { onSending?.(); return callAI(prompt, { ...opts, ...(provider ? { provider } : {}) }); };
       const text = await checkIdea({ callAI: call, toast, field: studyField, intake });
       return text === null ? null : { text, at: new Date().toISOString() };
     } finally { running.current = false; setBusy(false); }

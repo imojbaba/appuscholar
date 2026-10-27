@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { useProject } from "@/components/frame/ProjectContext";
 import { PanelLoading } from "@/components/tools/PanelLoading";
-import { IdeaReadPanel, useIdeaCheck } from "./IdeaPlace";
+import { IdeaReadPanel, useConnectedProvider, useIdeaCheck } from "./IdeaPlace";
 
 const SUMMARY = SECTIONS.length;
 
@@ -128,6 +128,7 @@ function Progress({ index, intake, goTo }: { index: number; intake: IdeaIntake |
 function Coach({ sectionKey, intake, update }: { sectionKey: SectionKey; intake: IdeaIntake | null; update: PartProps["update"] }) {
   const t = useT();
   const callAI = useCallAI();
+  const connected = useConnectedProvider();
   const field = useStudyField();
   const [busy, setBusy] = useState(false);
   const reply = intake?.coach?.[sectionKey];
@@ -135,7 +136,10 @@ function Coach({ sectionKey, intake, update }: { sectionKey: SectionKey; intake:
     if (busy) return;
     setBusy(true);
     try {
-      const text = await coachSection({ callAI, toast, field, section: sectionKey, plan: coachPlan(intake) });
+      // With no key Connect AI opens first; once a key is connected the coach runs with no second press.
+      const provider = await connected();
+      if (!provider) return;
+      const text = await coachSection({ callAI: (prompt, opts) => callAI(prompt, { ...opts, provider }), toast, field, section: sectionKey, plan: coachPlan(intake) });
       if (text) update((prev) => ({ ...prev, coach: { ...(prev.coach ?? {}), [sectionKey]: { text, at: new Date().toISOString() } } }));
     } finally { setBusy(false); }
   };

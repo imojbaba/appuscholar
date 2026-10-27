@@ -31,6 +31,7 @@
 import path from "node:path";
 import { readFileSync } from "node:fs";
 import { test, expect, type Page, type Request } from "@playwright/test";
+import { makeStudy } from "./support/study";
 import { signIn } from "./support/signin";
 import { connectAI } from "./support/connect";
 import { API_ORIGIN, WEB_ORIGIN } from "./support/origins";
@@ -119,12 +120,8 @@ async function newProject(page: Page): Promise<string> {
   await page.getByTestId("terms-agree").check();
   await page.getByTestId("terms-continue").click();
   await connectAI(page, { keep: "plain" });
-  await expect(page.getByTestId("first-run")).toBeVisible();
-  await page.locator("#ideaTopic").fill(FIRST_RUN_IDEA);
-  // The three questions are folded away, optional ("Add details for better feedback").
-  await page.getByTestId("idea-details-toggle").click();
-  await page.locator("#ideaRes").fill("About 60 pupils in two villages");
-  await page.getByTestId("idea-save").click();
+  await expect(page.getByTestId("project-list")).toBeVisible();
+  await makeStudy(page, { question: FIRST_RUN_IDEA, have: "About 60 pupils in two villages" });
   await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });
   const id = /\/p\/([^/?#]+)/.exec(page.url())?.[1];
   if (!id) throw new Error("no project id in " + page.url());

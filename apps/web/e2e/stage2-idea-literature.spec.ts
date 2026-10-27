@@ -371,10 +371,10 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
   /** The Citation Manager's bookmark as the student drags it (step 4), clicked again on the stand-in PubMed page in 11b. */
   let bookmarkletSrc = "";
 
-  await test.step("1. create the project: sign in, a Groq key protected by the vault's passphrase; first run: the idea, Get feedback on my idea, Save as my project; the home's six stages", async () => {
+  await test.step("1. create the study: sign in, a Groq key protected by the vault's passphrase; the dashboard, Start a new study, Shape your study and the optional feasibility check; the home's six stages", async () => {
     await signIn(page, { prefix: "s2" });
-    // A student with no project starts at first run.
-    await expect(page).toHaveURL(/\/start$/);
+    // A student with no study starts at the dashboard.
+    await expect(page).toHaveURL(/\/projects$/);
     await page.getByTestId("terms-age").check();
     await page.getByTestId("terms-agree").check();
     await page.getByTestId("terms-continue").click();
@@ -393,20 +393,35 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await page.keyboard.press("Escape");
     await expect(page.getByTestId("help-dialog")).toBeHidden();
 
-    // First run: the rough idea and the three questions that sharpen it.
-    await expect(page.getByTestId("first-run")).toBeVisible();
-    await expect(page.getByTestId("first-run").locator("h1")).toHaveText(T("idea_h"));
-    await page.locator("#ideaTopic").fill(IDEA.topic);
-    // The three questions are folded away, optional ("Add details for better feedback").
-    await page.getByTestId("idea-details-toggle").click();
-    await page.locator("#ideaRes").fill(IDEA.resources);
-    await page.locator("#ideaTime").fill(IDEA.timeframe);
-    await page.locator("#ideaCons").fill(IDEA.constraints);
-    // Saving needs no feedback: "Save without feedback" is there before it.
-    await expect(page.getByTestId("idea-save")).toHaveText(T("idea_save_plain_btn"));
-    await expect(page.getByTestId("idea-check")).toHaveText(T("idea_check_btn"));
-    await page.getByTestId("idea-check").click();
-    await expect(page.getByTestId("idea-check")).toHaveText(T("idea_checking"));
+    // The dashboard, then Start a new study: its name, type and field; the title goes to the api sealed (start-a-study spec).
+    await expect(page.getByTestId("project-list")).toBeVisible();
+    await page.getByTestId("new-project").click();
+    await expect(page.getByTestId("new-study")).toBeVisible();
+    await page.getByTestId("new-name").fill(PROJECT);
+    await page.getByTestId("new-type-masters").check();
+    const created = page.waitForRequest((r) => r.method() === "POST" && r.url() === API_ORIGIN + "/projects");
+    await page.getByTestId("new-create").click();
+    const post = (await created).postDataJSON() as { title: string; titleKeyVersion: number; type: string; field: string };
+    expect(post.titleKeyVersion).toBeGreaterThanOrEqual(1);
+    expect(post.title).toMatch(CIPHERTEXT);
+    expect(post.title).not.toContain(PROJECT);
+    expect(post).toMatchObject({ type: "masters", field: "psychology" });
+    // Shape your study opens at its first part; each answer is saved sealed as it is typed.
+    await expect(page.getByTestId("shape-title")).toHaveText(T("shape_question_title"));
+    projectId = /\/p\/([0-9a-f-]+)\/idea/.exec(page.url())![1]!;
+    await sealedSave(page, "idea_intake", [IDEA.topic], () => page.getByTestId("shape-answer").fill(IDEA.topic));
+    for (const [part, text] of [["have", IDEA.resources], ["time", IDEA.timeframe], ["ethics", IDEA.constraints]] as const) {
+      await page.getByTestId("shape-dot-" + part).click();
+      await expect(page.getByTestId("shape-part")).toHaveAttribute("data-part", part);
+      await sealedSave(page, "idea_intake", [text], () => page.getByTestId("shape-answer").fill(text));
+    }
+    await page.getByTestId("shape-next").click();
+    await expect(page.getByTestId("shape-summary")).toBeVisible();
+    // The feasibility check is Dr. Sharma's optional outside opinion: it runs only when asked for.
+    expect(net.prompts.filter((p) => p.startsWith("You are an experienced research-methods advisor"))).toHaveLength(0);
+    await expect(page.getByTestId("idea-check")).toHaveText(T("shape_doable_btn"));
+    const sent = await sealedSave(page, "idea_intake", [IDEA.topic, "bedtime", IDEA.resources, "Proceed with"], () => page.getByTestId("idea-check").click());
+    expect(sent.body).not.toContain(IDEA.resources);
     // The read: five rated lines, each starting with its area, then the verdict, gold-edged and labelled as AI.
     const read = page.getByTestId("idea-read");
     await expect(read).toBeVisible();
@@ -422,24 +437,7 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
       return getComputedStyle(el).borderLeftColor === gold;
     })).toBe(true);
     expect(net.prompts.filter((p) => p.startsWith("You are an experienced research-methods advisor"))).toHaveLength(1);
-
-    // Save as my project: the name follows the idea until the student types one; the project's title goes to the api sealed, the idea as its idea_intake, sealed.
-    await expect(page.getByTestId("idea-save-title")).toHaveValue(IDEA.topic.slice(0, IDEA.topic.slice(0, 61).lastIndexOf(" ")));
-    await page.getByTestId("idea-save-title").fill(PROJECT);
-    const created = page.waitForRequest((r) => r.method() === "POST" && r.url() === API_ORIGIN + "/projects");
-    // The check ran before the project existed, so the save claims its AI-use rows for it (B1 walk row 12). Here the AI is answered in the browser
-    // and the api logs nothing, so the statement itself is checked by the api and first-run tests and on the live walk, not in this journey.
-    const claimed = page.waitForRequest((r) => r.method() === "POST" && /\/projects\/[0-9a-f-]+\/ai-use\/claim$/.test(r.url()));
-    const sent = await sealedSave(page, "idea_intake", [IDEA.topic, "bedtime", IDEA.resources, "Proceed with"], () => page.getByTestId("idea-save").click());
-    expect(sent.body).not.toContain(IDEA.resources);
-    const post = (await created).postDataJSON() as { title: string; titleKeyVersion: number };
-    expect(post.titleKeyVersion).toBeGreaterThanOrEqual(1);
-    expect(post.title).toMatch(CIPHERTEXT);
-    expect(post.title).not.toContain(PROJECT);
-    projectId = /\/projects\/([0-9a-f-]+)\/blobs\//.exec(puts.all.find((p) => p.kind === "idea_intake")!.url)![1]!;
-    const claim = await claimed;
-    expect(claim.url()).toBe(`${API_ORIGIN}/projects/${projectId}/ai-use/claim`);
-    expect((claim.postDataJSON() as { secondsAgo: number }).secondsAgo).toBeGreaterThanOrEqual(60);
+    await page.getByTestId("shape-go-study").click();
 
     // The home: the question card, a suggested next step, the six stages; Idea in progress, the rest not started.
     await expect(page).toHaveURL(new RegExp(`/p/${projectId}$`));
@@ -469,9 +467,8 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
 
     await toPlace(page, "idea");
     await expect(page.getByTestId("panel-idea")).toBeVisible();
-    // The intake is there again (it is the project's, sealed in the vault), with its read.
-    await expect(page.locator("#ideaTopic")).toHaveValue(IDEA.topic);
-    await expect(page.locator("#ideaCons")).toHaveValue(IDEA.constraints);
+    // The plan is there again (it is the study's, sealed in the vault), with its read: Shape your study opens at the summary.
+    await expect(page.getByTestId("shape-item-answer")).toHaveText([IDEA.topic, T("shape_unanswered"), T("shape_unanswered"), IDEA.timeframe, IDEA.resources, IDEA.constraints]);
     await expect(page.getByTestId("idea-read-verdict")).toHaveText(VERDICT);
     // The document is closed; Put in my document opens it beside the place and puts the read in once, as AI text.
     await expect(page.getByTestId("frame-doc")).toBeHidden();
@@ -488,7 +485,8 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await expect(page.locator(".ProseMirror span.ai-ins").filter({ hasText: "Verdict: Proceed with these modifications" })).toHaveCount(1);
 
     // An edit after the mark reopens the stage.
-    await sealedSave(page, "idea_intake", [TIME_EDIT], () => page.locator("#ideaTime").fill(TIME_EDIT));
+    await page.getByTestId("shape-edit-time").click();
+    await sealedSave(page, "idea_intake", [TIME_EDIT], () => page.getByTestId("shape-answer").fill(TIME_EDIT));
     await toHome(page);
     // Writing has words now (the read went in), so it is in progress too.
     await expectStates(page, { idea: "reopened", writing: "in-progress" });
@@ -1180,33 +1178,34 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     quiet();
   });
 
-  await test.step("14. two windows on one project: each saves a different idea box, and a reload shows both", async () => {
+  await test.step("14. two windows on one study: each saves a different part of the plan, and a reload shows both", async () => {
     const TIME_2 = "Two semesters, so the ethics approval fits before the exams";
     const CONS_2 = "No sleep-tracking devices; no budget for incentives; the ethics committee meets once a month.";
     const open = async (): Promise<Page> => {
       const w = await context.newPage();
-      // `/` opens the active project's home; its document asks for the passphrase.
+      // `/` opens the dashboard (start-a-study spec); the study's home is opened by its address, and its document asks for the passphrase.
       await w.goto("/");
+      await expect(w).toHaveURL(/\/projects$/);
+      await w.goto(`/p/${projectId}`);
       await unlock(w);
-      await expect(w).toHaveURL(new RegExp(`/p/${projectId}$`));
       await toPlace(w, "idea");
-      await expect(w.locator("#ideaTopic")).toHaveValue(IDEA.topic);
+      await expect(w.getByTestId("shape-item-answer").first()).toHaveText(IDEA.topic);
       return w;
     };
     const a = await open();
     const b = await open();
     // Both hold the same stored version. A saves first; B's save is then stale, the api answers 409, and B reads the newer value and replays its own edit on it.
-    await sealedSave(a, "idea_intake", [TIME_2], () => a.locator("#ideaTime").fill(TIME_2));
-    await sealedSave(b, "idea_intake", [CONS_2], () => b.locator("#ideaCons").fill(CONS_2));
+    await a.getByTestId("shape-edit-time").click();
+    await b.getByTestId("shape-edit-ethics").click();
+    await sealedSave(a, "idea_intake", [TIME_2], () => a.getByTestId("shape-answer").fill(TIME_2));
+    await sealedSave(b, "idea_intake", [CONS_2], () => b.getByTestId("shape-answer").fill(CONS_2));
     // Neither window told the student that a change was lost.
     for (const w of [a, b]) expect(await w.evaluate(() => (window as unknown as { __allToasts?: string[] }).__allToasts ?? [])).not.toContain(T("blob_conflict"));
     await b.close();
     await a.reload();
     await unlock(a);
     await expect(a).toHaveURL(new RegExp(`/p/${projectId}/idea$`));
-    await expect(a.locator("#ideaTime")).toHaveValue(TIME_2);
-    await expect(a.locator("#ideaCons")).toHaveValue(CONS_2);
-    await expect(a.locator("#ideaTopic")).toHaveValue(IDEA.topic);
+    await expect(a.getByTestId("shape-item-answer")).toHaveText([IDEA.topic, T("shape_unanswered"), T("shape_unanswered"), TIME_2, IDEA.resources, CONS_2]);
     await a.close();
     quiet();
   });
