@@ -13,7 +13,8 @@
     "qa": "playwright test -c qa/playwright.qa.config.ts",
     "qa:build": "pnpm --filter @appuscholar/api build && NEXT_PUBLIC_API_URL=http://localhost:${QA_API_PORT:-8798} next build",
     "qa:local": "node qa/run-local.mjs",
-    "doctext:capture": "node scripts/capture-doctext-chrome.mjs"
+    "doctext:capture": "node scripts/capture-doctext-chrome.mjs",
+    "i18n:remap": "node scripts/hindi-remap-sheet.mjs"
   },
   "dependencies": {
     "@appuscholar/core": "workspace:*",

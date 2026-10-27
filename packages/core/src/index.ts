@@ -151,3 +151,4 @@ export {
   RECORD_FIELDS, needsCombinationWarning, consentMarkdownV2, ethicsStatementV2, protocolMarkdownV2, ecMinorsNoteV2,
 } from "./designPlan";
 export type { IdMode, RecordField, Plan } from "./designPlan";
+export { citToRis, citToBibtex } from "./citexport";

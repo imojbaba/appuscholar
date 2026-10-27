@@ -1,0 +1,283 @@
+{
+  "set": "litreview",
+  "builder": "buildLitReviewPrompt",
+  "note": "The same three groups of four open-access (CC BY 4.0) abstracts as the gap set. The web's literature review builder has no V2, so this drives buildLitReviewPrompt; gradeGapNames holds the reply to naming the papers by surname; gradeNumbers holds it to the abstracts' numbers.",
+  "items": [
+    {
+      "id": "litreview-sleep-and-marks",
+      "input": {
+        "field": "psychology",
+        "group": "Sleep and academic performance in students",
+        "papers": [
+          {
+            "title": "Functional data analysis of college students' sleep patterns and their relationships with academic performance and social networks: A four-year longitudinal study",
+            "authors": "Yao Zhao, Haoyu Zhou",
+            "authorList": [
+              "Yao Zhao",
+              "Haoyu Zhou"
+            ],
+            "year": 2026,
+            "venue": "PLOS ONE",
+            "doi": "10.1371/journal.pone.0351120",
+            "licence": "CC BY 4.0",
+            "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "source": "europepmc",
+            "credit": "Abstract from the publisher's XML through Europe PMC (PMC13322549), licensed CC BY 4.0. Changed from the original: a trailing keywords line, where there was one, was removed.",
+            "abstract": "College students are subject to insufficient sleep and irregular sleep patterns. Most existing studies regarding sleep behaviors have relied on static measures or discrete time points for analyzing sleep data, potentially missing the dynamic and continuous nature of sleep behavior. To examine sleep pattern evolution and their relationships with academic performance and social networks among college students using functional data analysis. This study introduces functional data analysis to examine sleep patterns and their relationships with academic performance and social networks among college students throughout their four-year undergraduate experience. Using data from the NetHealth Project, we analyzed daily sleep records from Fitbit devices worn by 76 undergraduate students, along with their academic records and social network data, comprising 61,225 daily observations. We employed functional regression to model time-varying relationships between sleep and GPA, and functional t-tests to compare sleep patterns between students with different social activity levels. Sleep duration increased significantly across the undergraduate years, with pronounced seasonal fluctuations corresponding to academic cycles. The relationship between sleep and academic performance remained consistently positive throughout college, with each GPA point associated with 27.4 additional minutes of sleep on average. This relationship exhibited a U-shaped temporal pattern, strongest during freshman year (54 minutes/GPA point), weakest during junior year (5 minutes/GPA point), and recovering during senior year (48 minutes/GPA point). Social network characteristics showed no statistically significant associations with sleep patterns, though students with larger networks consistently slept slightly less than those with smaller networks. This study demonstrates the utility of functional data analysis in sleep research, revealing dynamic patterns in sleep behavior and time-varying relationships with academic performance that traditional discrete-time analyses would not capture. The consistently positive association between sleep duration and academic performance was maintained throughout the four-year undergraduate experience, with temporal variations suggesting the relationship is strongest during freshman and senior years. These findings provide longitudinal evidence about sleep patterns and their correlates among college students, with potential implications for the timing of sleep-related support services."
+          },
+          {
+            "title": "Relations between sleep quality and academic performance among Vietnamese high-school students",
+            "authors": "Trang Le, Bahr Weiss, Do Thi Linh Phuong, Ho Tuong Linh, et al.",
+            "authorList": [
+              "Trang Le",
+              "Bahr Weiss",
+              "Do Thi Linh Phuong",
+              "Ho Tuong Linh",
+              "Nguyen Xuan Tung"
+            ],
+            "year": 2026,
+            "venue": "Frontiers in Psychology",
+            "doi": "10.3389/fpsyg.2026.1848504",
+            "licence": "CC BY 4.0",
+            "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "source": "europepmc",
+            "credit": "Abstract from the publisher's XML through Europe PMC (PMC13612568), licensed CC BY 4.0. Changed from the original: a trailing keywords line, where there was one, was removed.",
+            "abstract": "Impaired sleep quality and insomnia are important predictors of reduced life functioning. Among adolescents, an important domain affected by insomnia is academic achievement. Insomnia has multiple components, and understanding how different components are related to academic achievement is important, so interventions can be designed to most efficiently target insomnia components. The present study's purpose was to assess relations between different components of insomnia and academic functioning among high-school students in Vietnam, where academic achievement is highly valued and strongly emphasized for adolescents. Six hundred and thirty-nine high-school students from a more highly-developed, urban area (Hanoi) and a lesser-developed, rural area (Hung Yen) were cross-sectionally assessed. The analysis sample contained 541 students without missing data. Self-report questionnaires assessed (a) sleep quality and insomnia, (b) academic performance, and (c1) fatigue, and (c2) student motivation as potential explanatory variables. Canonical correlation analyses indicated a significant (p < 0.05) canonical correlation (r = 0.20) between Insomnia and Academic Performance, with higher levels of insomnia symptoms associated with lower reported academic performance. Standardized canonical coefficients indicated that sleep quality components Sleep Duration, Day Dysfunction, and Medication Use had unique statistical relations to Academic Performance. The canonical variate for academic performance was primarily composed of Student-reported GPA. When Motivation and Fatigue were included as covariates, the canonical correlation between sleep quality and academic performance decreased by 25%, and became non-significant, suggesting these variables may function as explanatory variables of relations between sleep quality and academic performance. Moderator analyses indicated variation in results as a function of Grade but not Gender. Study results suggest that evaluation of Sleep Extension Therapy (which increases sleep duration) for improving academic performance in high school students in countries similar to Vietnam may be useful. Moderator analyses results suggest that for younger high school students, future longitudinal research should investigate whether insomnia interventions should emphasize a direct focus on reducing related functional impairment because of younger students' apparent higher sensitivity to functional impairment. For older high school students, future research should also assess whether it may be beneficial to emphasize increasing sleep duration, to directly reduce cognitive impairment associated with insomnia."
+          },
+          {
+            "title": "Depression trajectories and their associations with academic performance and sleep patterns among first-year college students",
+            "authors": "Asal Yunusova, Caitlin Huang, Stephen Price, Kunal Joshi, et al.",
+            "authorList": [
+              "Asal Yunusova",
+              "Caitlin Huang",
+              "Stephen Price",
+              "Kunal Joshi",
+              "Janine M Dutcher",
+              "Kirk Warren Brown",
+              "Daniella K Villalba",
+              "Michael J Tumminia",
+              "Kasey G Creswell",
+              "Sheldon Cohen",
+              "J David Creswell"
+            ],
+            "year": 2026,
+            "venue": "BMC Psychology",
+            "doi": "10.1186/s40359-026-04404-w",
+            "licence": "CC BY 4.0",
+            "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "source": "europepmc",
+            "credit": "Abstract from the publisher's XML through Europe PMC (PMC13463478), licensed CC BY 4.0. Changed from the original: a trailing keywords line, where there was one, was removed.",
+            "abstract": "Depressive symptoms have been on the rise among young adults, with the transition to college, particularly the first year, being a critical period of vulnerability. Despite prior research on depression trajectories in college students, limited longitudinal studies have explored unique depressive symptom trajectory groups among first-year students and their associations with academic achievement (GPA), sleep patterns, and whether sociodemographic factors are associated with certain trajectories. This study analyzed a pre-existing dataset that was collected over two waves from a private university (spring semester 2017 and 2018). The final pooled sample resulted in first-year undergraduate students (N = 271) who reported on their depressive symptoms (CES-D scale) at the start and end of the semester, signed a release record for their fall and spring term GPA, and provided continuous sleep data across the academic spring term with Fitbits. K-means + + clustering was conducted to form depressive symptom trajectory groups. ANOVAs, Watson-Williams, and Dunnett’s post hoc comparison tests were employed to examine how the resulting trajectory groups were associated with GPA and sleep outcomes (bedtime, waketime, total sleep time, time in bed). Associations between sociodemographic variables and trajectory groups were investigated using chi-square tests. K-means + + clustering identified four trajectory groups: low-stable (n = 109), increasing (n = 72), decreasing (n = 51), and high-stable depressive symptoms (n = 39). The low-stable and decreasing group had a higher spring term GPA (M = 3.44 and M = 3.39, respectively) compared to the increasing and high-stable groups (M = 3.22 and M = 3.18, respectively). The low-stable group generally had an earlier wake time and bedtime, greater total sleep time and time in bed, relative to the decreasing and increasing trajectory groups. Gender, ethnicity, international student status, and first-generation student status were not associated with trajectory groups. Consistent with prior work, there are unique depression trajectory groups among first-year college students that represent stability and change of depressive symptoms over the course of a spring semester. Favorable trajectories (low-stable and decreasing symptoms) are associated with better academic performance and sleep habits. The online version contains supplementary material available at 10.1186/s40359-026-04404-w."
+          },
+          {
+            "title": "Association of Sleep Patterns and Sleep Quality with Academic Performance Among Female University Students: Insights Supporting SDG 3 (Good Health and Well-Being)",
+            "authors": "Noorah Saleh Al-Sowayan, Lama Essam Aboselmiya",
+            "authorList": [
+              "Noorah Saleh Al-Sowayan",
+              "Lama Essam Aboselmiya"
+            ],
+            "year": 2026,
+            "venue": "Clocks & Sleep",
+            "doi": "10.3390/clockssleep8030039",
+            "licence": "CC BY 4.0",
+            "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "source": "europepmc",
+            "credit": "Abstract from the publisher's XML through Europe PMC (PMC13397848), licensed CC BY 4.0. Changed from the original: a trailing keywords line, where there was one, was removed.",
+            "abstract": "Background: Sleep quality plays an essential role in cognitive performance, memory consolidation, learning efficiency, and overall wellbeing. University students are particularly vulnerable to sleep disturbances because of academic stress, irregular sleep schedules, and lifestyle-related factors. Poor sleep quality has been associated with impaired academic performance and reduced cognitive functioning. Objective: This study aimed to evaluate the relationship between sleep patterns, sleep quality, and academic performance among female university students. Methods: A cross-sectional study was conducted among 201 female university students at Qassim University, Saudi Arabia. Data were collected using an electronic self-administered questionnaire that included demographic characteristics, sleep-related behaviors, and the Pittsburgh Sleep Quality Index (PSQI). Academic performance was assessed using self-reported Grade Point Average (GPA). Statistical analysis included descriptive statistics, Spearman correlation analysis, one-way ANOVA with Tukey post hoc analysis, Chi-square tests, and multiple linear regression analysis. Results: The mean GPA of the participants was 4.13 ± 0.60 (on a 5-point scale), while the mean PSQI score was 8.81 ± 3.26, indicating generally poor sleep quality. A significant negative correlation was observed between PSQI score and GPA (rho = −0.200, p = 0.0047). Students with good sleep quality demonstrated significantly higher GPA scores compared with students with poor sleep quality (F(2,194) = 6.31, p = 0.0022). Significant associations were also identified between sleep quality and both bedtime (p = 0.0009) and sleep duration category (p = 0.0002). However, after adjustment for other variables, the independent effect of PSQI on GPA was attenuated and did not reach statistical significance (p = 0.138). This discrepancy between the significant bivariate correlation (rho = −0.200, p = 0.005) and the non-significant multivariate result represents the most important finding of this study, suggesting that sleep quality alone does not independently predict GPA when other academic and behavioral factors are considered. Conclusion: Poor sleep quality was highly prevalent among female university students and showed a significant bivariate association with lower academic performance, though this relationship was attenuated in the multivariate model. Promoting healthy sleep behaviors may support student wellbeing and academic functioning, cognitive wellbeing, quality of life, and the advancement of Sustainable Development Goal 3 (Good Health and Well-Being)."
+          }
+        ]
+      },
+      "good": "One paragraph of 150 to 220 words that groups the four papers by theme and says where they agree and where they conflict, citing in text as (Author, Year), (Author & Author, Year) or (Author et al., Year) with only the authors and years given, and naming the papers by surname rather than by number. It states a finding only if its abstract states it, adds no sample size, effect size, cause, other source or reference list that the abstracts do not give, and says so in one sentence if the abstracts are too far apart to compare. (Group: sleep and academic performance in students.)",
+      "expect": {
+        "namedMin": 3,
+        "numbered": false,
+        "label": {
+          "k": "drafting a literature review paragraph from selected abstracts",
+          "g": "text"
+        }
+      }
+    },
+    {
+      "id": "litreview-smartphone-and-wellbeing",
+      "input": {
+        "field": "psychology",
+        "group": "Smartphone addiction and student wellbeing",
+        "papers": [
+          {
+            "title": "Network analysis of smartphone addiction and sleep disorder symptoms in Chinese college students",
+            "authors": "Xiaonan Li, Lin Mao",
+            "authorList": [
+              "Xiaonan Li",
+              "Lin Mao"
+            ],
+            "year": 2026,
+            "venue": "PLOS ONE",
+            "doi": "10.1371/journal.pone.0349016",
+            "licence": "CC BY 4.0",
+            "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "source": "europepmc",
+            "credit": "Abstract from the publisher's XML through Europe PMC (PMC13196963), licensed CC BY 4.0. Changed from the original: a trailing keywords line, where there was one, was removed.",
+            "abstract": "This study aims to examine the comorbid relationship between smartphone addiction and sleep disorders in Chinese college students. By constructing a comorbidity network, identifying core and bridge symptoms, and exploring potential directional associations among symptoms, this research intends to establish a theoretical foundation for targeted intervention strategies. A total of 1842 Chinese college students were recruited through convenience sampling. The smartphone addiction and sleep disorder symptoms were assessed using the Smartphone Addiction Scale-Short Version (SAS-SV) and the Pittsburgh Sleep Quality Index (PSQI), respectively. The data analysis was conducted in three steps. First, an undirected comorbidity network was constructed using the Gaussian Graphical Model (GGM) to identify core and bridge symptoms. Second, a Bayesian network approach was employed to generate Directed Acyclic Graphs (DAGs) that explored potential directional associations among symptoms. Finally, network comparison tests and community detection analyses were performed to examine gender differences in the comorbidity network structure. The GGM comorbidity network exhibited a connection density of 0.80 and a global strength of 9.39. Within this network, PSQI2 (sleep latency), SA2 (difficulty concentrating), and SA5 (impatience without phone) were identified as core symptoms. PSQI2 (sleep latency), PSQI1 (subjective sleep quality), and SA9 (longer use than intended) were identified as bridge symptoms. Further analysis using the DAGs suggested statistical directionality from sleep disorder symptoms toward smartphone addiction symptoms. Notably, SA5 (impatience without phone) served as an initial node in the DAGs. Finally, network comparison tests indicated no significant differences in the GGM network structure between genders; however, distinct gender differences were observed in the community clustering patterns of symptoms. In college students, smartphone addiction and sleep disorder symptoms interact to form a structurally stable comorbidity network. Consequently, interventions targeting core symptoms, bridge symptoms, and initial node could effectively interrupt the maintenance of this comorbidity."
+          },
+          {
+            "title": "Smartphone addiction, emotional coping strategies, and mental health symptoms in Chinese university students: a gender-based analysis",
+            "authors": "Xu Liu, Zhenggui Gu, Lulu Shi",
+            "authorList": [
+              "Xu Liu",
+              "Zhenggui Gu",
+              "Lulu Shi"
+            ],
+            "year": 2026,
+            "venue": "Frontiers in Psychology",
+            "doi": "10.3389/fpsyg.2026.1833715",
+            "licence": "CC BY 4.0",
+            "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "source": "europepmc",
+            "credit": "Abstract from the publisher's XML through Europe PMC (PMC13437285), licensed CC BY 4.0. Changed from the original: a trailing keywords line, where there was one, was removed.",
+            "abstract": "Smartphone addiction is an increasing mental health concern among university students, yet the emotional coping correlates related to this association remain insufficiently understood. This issue is strategically important in Chinese higher education because university students represent a large digitally embedded population facing academic, developmental, and psychosocial pressures. This study examined the cross-sectional associations among elevated addiction-like smartphone use, emotional coping strategies, mental health symptoms, and gender among Chinese university students who met the SAS-SV screening threshold. Guided by stress-coping theory, this study used convenience recruitment followed by criterion-based screening. A total of 2,401 students from two public universities in China completed the Smartphone Addiction Scale-Short Version (SAS-SV) screening procedure, and 1,276 students who met the SAS-SV screening threshold were included in the final analysis. Elevated addiction-like smartphone use was assessed using the SAS-SV, mental health symptoms using the Kessler Psychological Distress Scale (K10), and emotional coping strategies using the Emotion Regulation Questionnaire (ERQ), including reinterpretation strategy and suppression strategy. Direct and indirect statistical associations were tested using partial least squares structural equation modelling (PLS-SEM). Measurement invariance was evaluated before gender-based multigroup analysis. Smartphone addiction was positively associated with mental health symptoms (β = 0.748, t = 55.524, p < 0.001), suppression strategy (β = 0.357, t = 12.075, p < 0.001), and reinterpretation strategy (β = 0.214, t = 7.230, p < 0.001). Suppression strategy showed a positive indirect association between smartphone addiction and mental health symptoms, whereas reinterpretation strategy showed a negative indirect association. The model explained 66.2% of the variance in mental health symptoms. Gender did not significantly moderate the direct pathway, but the indirect pathway through reinterpretation strategy was significant among male students only. The findings identify theoretically meaningful cross-sectional associations among smartphone addiction, emotional coping strategies, and mental health symptoms. Suppression and reinterpretation strategies showed different patterns of association with mental health symptoms, suggesting that emotional coping strategies may be relevant targets for future longitudinal and intervention research. As the data were collected at a single time point, the observed relationships cannot support causal inference and should instead be interpreted as associations."
+          },
+          {
+            "title": "Smartphone addiction and self-esteem among university students: a moderated mediation and latent profile analysis",
+            "authors": "Shiyu Zhang, Xiao Zhang, Siyu Yuan, Tianpeng Yang, et al.",
+            "authorList": [
+              "Shiyu Zhang",
+              "Xiao Zhang",
+              "Siyu Yuan",
+              "Tianpeng Yang",
+              "Liang Li"
+            ],
+            "year": 2026,
+            "venue": "Frontiers in Psychiatry",
+            "doi": "10.3389/fpsyt.2026.1865079",
+            "licence": "CC BY 4.0",
+            "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "source": "europepmc",
+            "credit": "Abstract from the publisher's XML through Europe PMC (PMC13635312), licensed CC BY 4.0. Changed from the original: a trailing keywords line, where there was one, was removed.",
+            "abstract": "This study examined the relationship between smartphone addiction and self-esteem among university students, with a particular focus on the mediating roles of sleep quality and physical learning engagement and the moderating role of gender. Both variable centered and person centered approaches were employed. In total, 1,130 valid questionnaires were analyzed. The measurement tools included the Mobile Phone Addiction Index (MPAI), the Rosenberg Self-Esteem Scale (SES), the Pittsburgh Sleep Quality Index (PSQI), and the Utrecht Work Engagement Scale–Student (UWES-S). Common method bias tests, descriptive analyses, correlation analyses, and gender difference examinations were carried out in SPSS 26.0. A moderated serial mediation model was estimated using the PROCESS macro with bootstrap resampling, and latent profile analysis (LPA) was conducted in Mplus 8.3. Smartphone addiction was positively associated with sleep quality (β = 0.066, 95% CI [0.048,0.084], p < 0.001), negatively associated with physical learning engagement (β=−0.107, 95% CI [−0.203,−0.010], p = 0.031), and positively associated with self-esteem (β = 0.072, 95% CI [0.038,0.106], p < 0.001). Sleep quality was positively associated with self-esteem (β = 0.402, 95% CI [0.248,0.557], p < 0.001). Notably, the positive associations involving self-esteem were directionally inconsistent with most prior literature and should be regarded as unexpected and exploratory. The indirect effect through sleep quality was significant for both female students (effect=0.026, 95% CI [0.014,0.042]) and male students (effect=0.018, 95% CI [0.008,0.029]), whereas the indirect effect (effect=0.007, 95% CI [0.002,0.014]) through physical learning engagement and the serial indirect effect (effect=0.002, 95% CI [0.001,0.005]) were significant only among male students. However, none of the indices of moderated mediation was significant. Gender significantly moderated the direct smartphone addiction–self-esteem association (β=−0.055, 95% CI [−0.101,−0.010], p = 0.017). In addition, LPA identified three distinct subgroups characterized by different combinations of sleep quality and physical learning engagement, and these subgroups differed significantly in smartphone addiction and self-esteem. The association between smartphone addiction and self-esteem in university students appears to involve multiple pathways, with sleep quality representing a more stable correlate than physical learning engagement. Gender differences may also be relevant to this association. LPA identified three subgroups based on sleep quality and physical learning engagement that differed significantly in smartphone addiction and self-esteem. These findings provide only preliminary and exploratory evidence for a multifactorial understanding of the association between problematic smartphone use and self-esteem, particularly given the cross-sectional design, modest effect sizes, and the counterintuitive direction of some associations."
+          },
+          {
+            "title": "Smartphone Addiction and Health Indicators in Portuguese University Students: The Moderating Role of Physical Activity",
+            "authors": "Bebiana Sabino, Afonso Caixeiro, Pedro Bento, Luís Murta, et al.",
+            "authorList": [
+              "Bebiana Sabino",
+              "Afonso Caixeiro",
+              "Pedro Bento",
+              "Luís Murta",
+              "André Bento"
+            ],
+            "year": 2026,
+            "venue": "Healthcare",
+            "doi": "10.3390/healthcare14142152",
+            "licence": "CC BY 4.0",
+            "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "source": "europepmc",
+            "credit": "Abstract from the publisher's XML through Europe PMC (PMC13412029), licensed CC BY 4.0. Changed from the original: a trailing keywords line, where there was one, was removed.",
+            "abstract": "Background/Objectives: Smartphone addiction has emerged as an important public health concern among university students and has been linked to risky movement patterns, such as physical inactivity, prolonged sitting time, and poor sleep outcomes. The purpose of this study was to examine the relationships between smartphone addiction, sleep quality, sleep duration, sitting time, and physical activity among Portuguese higher education students, as well as to see if physical activity moderates the relationship between smartphone addiction and health-related behaviors. Methods: A cross-sectional correlational study included 147 Portuguese higher education students (70.1% male; mean age = 20.11 ± 1.94 years). Data were gathered by an online questionnaire that included the Smartphone Addiction Scale-Short Version (SAS-SV), the International Physical Activity Questionnaire-Short Form (IPAQ-SF), and the Pittsburgh Sleep Quality Index (PSQI-PT). Descriptive statistics, Spearman correlations, Mann–Whitney U tests, and hierarchical multiple linear regression analysis were run. Results: The prevalence of smartphone addiction was 22.4%. Smartphone addiction was positively associated with sitting time (r = 0.226, p = 0.007) and negatively associated with physical activity (r = −0.169, p = 0.047). The link between smartphone addiction and sleep quality (ΔR2 = 0.035, p = 0.028) and sleep duration (ΔR2 = 0.039, p = 0.017) was associated with a weaker relationship with physical activity. However, neither interaction survived Bonferroni correction for multiple comparisons (adjusted α = 0.017). Conclusions: Smartphone addiction is associated with increased sedentary behavior and decreased physical activity levels. The exploratory moderation pattern observed suggests a potential role of physical activity in the relationship between smartphone addiction and sleep indicators, pending replication in larger and more heterogeneous samples."
+          }
+        ]
+      },
+      "good": "One paragraph of 150 to 220 words that groups the four papers by theme and says where they agree and where they conflict, citing in text as (Author, Year), (Author & Author, Year) or (Author et al., Year) with only the authors and years given, and naming the papers by surname rather than by number. It states a finding only if its abstract states it, adds no sample size, effect size, cause, other source or reference list that the abstracts do not give, and says so in one sentence if the abstracts are too far apart to compare. (Group: smartphone addiction and student wellbeing.)",
+      "expect": {
+        "namedMin": 3,
+        "numbered": false,
+        "label": {
+          "k": "drafting a literature review paragraph from selected abstracts",
+          "g": "text"
+        }
+      }
+    },
+    {
+      "id": "litreview-exercise-and-mental-health",
+      "input": {
+        "field": "psychology",
+        "group": "Physical activity and the mental health of university students",
+        "papers": [
+          {
+            "title": "Effects of exercise on depression and anxiety in university students: a systematic review and meta-analysis",
+            "authors": "Silje Halvorsen Sveaas, Marthe Brandtzæg, Geir Smedslund, Marte Ørbæk Rognlien, et al.",
+            "authorList": [
+              "Silje Halvorsen Sveaas",
+              "Marthe Brandtzæg",
+              "Geir Smedslund",
+              "Marte Ørbæk Rognlien",
+              "Kjersti Karoline Danielsen"
+            ],
+            "year": 2026,
+            "venue": "Frontiers in Sports and Active Living",
+            "doi": "10.3389/fspor.2026.1708741",
+            "licence": "CC BY 4.0",
+            "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "source": "europepmc",
+            "credit": "Abstract from the publisher's XML through Europe PMC (PMC13260482), licensed CC BY 4.0. Changed from the original: a trailing keywords line, where there was one, was removed.",
+            "abstract": "Although the positive effect of exercise on mental health is well known, its application in the treatment of mental health challenges among students has been limited and lacks systematic evaluation. The aim of this study was to investigate the effect of cardiorespiratory and muscular strength exercise on mental health among students in higher education facing mental health challenges. Following PRISMA guidelines, a systematic search was conducted in six databases (Embase, Ovid MEDLINE, and APA PsycInfo via Ovid, CINAHL and SPORTDiscus via EBSCOhost, and Scopus) up to 8 April 2025. The search strategy included terms for the population (university students), intervention (exercise), and outcomes (mental health). Eligible studies included randomized controlled trials or quasi-experimental studies with a control group investigating the effect of cardiorespiratory and muscular strength exercise on mental health outcomes among students in higher education facing mental health challenges. Two independent reviewers performed screening and data extraction. Data were pooled in random-effects models, and standardized mean differences (SMDs) with 95% CI were calculated (SMDs: 0.2–0.4 = small, 0.5–0.7 = medium, and ≥0.8 = large effect sizes). Certainty of the evidence was evaluated according to the Grading of Recommendations Assessment, Development, and Evaluation (GRADE) approach. Of 6,173 records screened, 11 RCTs and four quasi-experimental trials were included, comprising a total of 659 students. There was low-certainty evidence for large effects of exercise on symptoms of depression [SMD=−1.05 (−1.49, −0.60), p < 0.001] and anxiety [SMD=−0.78 (−1.25, −0.31), p < 0.01]. There was very low-certainty evidence for the effect of exercise on anxiety sensitivity. The results suggest medium to large effects of cardiorespiratory and muscular strength exercise on symptoms of depression and anxiety among students in higher education facing mental health challenges. These forms of exercise may be considered as potential treatment modalities for mental health challenges within the student health services. PROSPERO CRD42023398623."
+          },
+          {
+            "title": "Physical Activity, Sedentary Behaviour and Mental Health in University Students: A Compositional Isotemporal Substitution Analysis",
+            "authors": "Flavia Pennisi, Antonio Pinto, Marco Colizzi, Carlo Signorelli, et al.",
+            "authorList": [
+              "Flavia Pennisi",
+              "Antonio Pinto",
+              "Marco Colizzi",
+              "Carlo Signorelli",
+              "Andrea Cozza",
+              "Vincenzo Baldo",
+              "Vincenza Gianfredi"
+            ],
+            "year": 2026,
+            "venue": "Depression and Anxiety",
+            "doi": "10.1155/da/4091641",
+            "licence": "CC BY 4.0",
+            "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "source": "europepmc",
+            "credit": "Abstract from the publisher's XML through Europe PMC (PMC13539619), licensed CC BY 4.0. Changed from the original: a trailing keywords line, where there was one, was removed.",
+            "abstract": "This cross-sectional study examined the associations between waking movement behaviour composition and depressive symptoms, self-rated health (SRH) and eating-disorder (ED)-related symptomatology (SCOFF) in university students using compositional data analysis (CoDA) and isotemporal substitution modelling. Data were collected through an anonymous web-based survey among students enrolled at the University of Milan, Italy. The analytical sample included 2636 participants. International Physical Activity Questionnaire (IPAQ) was used to measure daily time spent in moderate-to-vigorous physical activity (MVPA), light physical activity (LPA), and sedentary behaviour (SB) and analysed as a three-part composition. Outcomes included depressive symptoms (Patient Health Questionnaire-9 [PHQ-9]), SRH and SCOFF score. In adjusted compositional regression models, a higher relative proportion of MVPA was associated with lower depressive symptoms (β = −0.39, 95% confidence interval [CI]: −0.53 to −0.24) and higher SRH (β = 0.11, 95% CI: 0.08–0.13), whereas a higher relative proportion of SB was associated with higher depressive symptoms (β = 0.42, 95% CI: 0.21–0.64) and lower SRH (β = −0.11, 95% CI: −0.14 to −0.07). LPA was not significantly associated with outcomes. Isotemporal substitution analyses showed that reallocating 15 min from SB to MVPA was associated with lower PHQ-9 scores (−0.114, 95% CI: −0.156 to −0.072), higher SRH (0.031, 95% CI: 0.024–0.038) and SCOFF score (β = 0.04, 95% CI: 0.00–0.07). These findings suggest that, within the daily movement composition, increasing a greater relative allocation of time to MVPA at the expense of sedentary time is associated with modestly more favourable mental and perceived health in university students."
+          },
+          {
+            "title": "Physical Activity and Mental Well-Being Among University Students: The Role of Beliefs in the Mental Health Benefits of Physical Activity",
+            "authors": "Dragan Glavaš, Marija Šakić Velić, Patrik Grubor",
+            "authorList": [
+              "Dragan Glavaš",
+              "Marija Šakić Velić",
+              "Patrik Grubor"
+            ],
+            "year": 2026,
+            "venue": "Healthcare",
+            "doi": "10.3390/healthcare14070955",
+            "licence": "CC BY 4.0",
+            "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "source": "europepmc",
+            "credit": "Abstract from the publisher's XML through Europe PMC (PMC13073164), licensed CC BY 4.0. Changed from the original: a trailing keywords line, where there was one, was removed.",
+            "abstract": "Background/Objectives: In an effort to clarify the mechanisms underlying the relationship between physical activity (PA) and mental well-being, emerging evidence points to a potentially important role of beliefs about PA’s impact on mental health. Nevertheless, research in this area remains scarce. This cross-sectional study examined whether belief in the mental health benefits of PA mediates the relationship between PA level and mental well-being among university students. Methods: A total of 339 university students, aged 18–28, completed the Godin–Shephard Leisure-Time Physical Activity Questionnaire, the Warwick–Edinburgh Mental Wellbeing Scale, and a newly developed Belief in the Mental Health Benefits of Physical Activity Scale. Results: Structural equation modelling indicated a non-significant direct effect of PA level on mental well-being. However, a significant indirect effect was observed, with higher PA level being associated with stronger belief in the mental health benefits of one’s own PA, which in turn was related to better mental well-being. Conclusions: The findings suggest that PA level is indirectly associated with mental well-being through belief in the mental health benefits of PA among university students. These findings highlight the potential importance of PA-related beliefs in mental health promotion and point to indirect psychological pathways that may link PA and mental well-being, warranting further longitudinal examination."
+          },
+          {
+            "title": "Comparative effects of exercise modalities on depression, anxiety, and stress in university students: a systematic review and network meta-analysis of randomized controlled trials",
+            "authors": "Zheng Zhao, Ting Li, Huamin Lai, Renjun Yang",
+            "authorList": [
+              "Zheng Zhao",
+              "Ting Li",
+              "Huamin Lai",
+              "Renjun Yang"
+            ],
+            "year": 2026,
+            "venue": "Frontiers in Public Health",
+            "doi": "10.3389/fpubh.2026.1795525",
+            "licence": "CC BY 4.0",
+            "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "source": "europepmc",
+            "credit": "Abstract from the publisher's XML through Europe PMC (PMC13259812), licensed CC BY 4.0. Changed from the original: a trailing keywords line, where there was one, was removed.",
+            "abstract": "To compare the effects of different exercise interventions on depression, anxiety, and stress in university students and to identify outcome-specific patterns and relevant prescription features using network meta-analysis. A systematic review and network meta-analysis of randomized controlled trials was conducted following PRISMA guidelines. PubMed, Embase, Cochrane Central Register of Controlled Trials, Web of Science, and Google Scholar were searched from inception to 31 October 2025. Eligible studies included university students aged 18 years or older, structured exercise interventions lasting at least 4 weeks, and validated measures of depressive symptoms, anxiety symptoms, or perceived stress. Pairwise random-effects meta-analyses and random-effects network meta-analyses were performed. Effects were summarized as standardized mean differences (SMDs) with 95% confidence intervals (95% CIs), and treatments were ranked using the surface under the cumulative ranking curve. Twenty-five RCTs involving 2,127 students were included. Compared with control conditions, exercise was associated with improvements in depression (SMD −1.07, 95% CI −1.38 to −0.75; I2 = 87.6%), anxiety (SMD −0.69, 95% CI −1.00 to −0.38; I2 = 87.1%), and stress (SMD −0.45, 95% CI −0.73 to −0.16; I2 = 75.2%). These effects should be interpreted cautiously due to substantial heterogeneity and variation in outcome measures. Network meta-analysis indicated outcome-specific patterns: mind–body exercise and aerobic exercise were most consistently associated with favorable outcomes for depression; mind–body exercise showed clearer associations for anxiety, whereas team sports and resistance-based approaches appeared favorable but were supported by limited evidence; aerobic exercise was linked to the strongest comparative effect for stress. Exploratory subgroup analyses suggested that sessions of 30–59 min were more frequently associated with benefits for depression and anxiety, whereas stress benefits were more often observed with sessions of 30 min or longer. Moderate to vigorous intensity and higher weekly frequency were associated with more favorable anxiety and stress outcomes, although these findings should be considered exploratory rather than definitive. Exercise interventions are associated with improvements in depression, anxiety, and stress in university students, with outcome-specific patterns varying by modality. Exploratory findings suggest that time-efficient, moderate to vigorous exercise could inform future research on student mental health promotion. https://www.crd.york.ac.uk/PROSPERO/view/CRD420261379734."
+          }
+        ]
+      },
+      "good": "One paragraph of 150 to 220 words that groups the four papers by theme and says where they agree and where they conflict, citing in text as (Author, Year), (Author & Author, Year) or (Author et al., Year) with only the authors and years given, and naming the papers by surname rather than by number. It states a finding only if its abstract states it, adds no sample size, effect size, cause, other source or reference list that the abstracts do not give, and says so in one sentence if the abstracts are too far apart to compare. (Group: physical activity and the mental health of university students.)",
+      "expect": {
+        "namedMin": 3,
+        "numbered": false,
+        "label": {
+          "k": "drafting a literature review paragraph from selected abstracts",
+          "g": "text"
+        }
+      }
+    }
+  ]
+}

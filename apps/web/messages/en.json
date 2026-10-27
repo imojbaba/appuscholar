@@ -487,7 +487,7 @@
   "exp_detail_record": "What you typed and what came from AI, per version",
   "exp_detail_search": "Papers you searched and kept, with quick reads",
   "exp_download": "Download zip",
-  "exp_format_citations": "Library file and reference list (text)",
+  "exp_format_citations": "RIS, BibTeX, text",
   "exp_format_csv": "CSV",
   "exp_format_documents": "Word and HTML",
   "exp_format_json": "JSON",
