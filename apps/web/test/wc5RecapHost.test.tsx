@@ -33,7 +33,7 @@ const row = (id: string, over: Record<string, unknown> = {}) => ({
 });
 const shell = (over: Partial<ProjectValue> = {}): ProjectValue => ({
   dialog: null, projectId: "p1", wordCount: 420,
-  project: { id: "p1", title: "Sleep and exams", titleKeyVersion: 0, deks: [], field: "psychology", stage: "writing", status: "active", contentLang: "en", kind: "research" },
+  project: { id: "p1", title: "Sleep and exams", titleKeyVersion: 0, deks: [], field: "psychology", type: null, stage: "writing", status: "active", contentLang: "en", kind: "research" },
   documents: [row("d1")], currentDoc: { ...row("d1"), bodyHtml: "<p>open</p>", keyVersion: 0 },
   ...over
 } as unknown as ProjectValue);
@@ -95,7 +95,7 @@ describe("RecapSlot: the host (v1 recapCheck 3739-3750, touchActive 3696)", () =
     expect(dialog()).not.toBeNull();
     const text = dialog()!.textContent ?? "";
     expect(text).toContain("You have been away 8 days.");
-    expect(text).toContain("Project: Sleep and exams.");
+    expect(text).toContain("Study: Sleep and exams.");
     expect(text).toContain("Open document: Draft d1, 420 words.");
     expect(text).toContain("Nothing was found to count since your last visit.");
     expect(text).toContain("Sleep and attention in first-years, a short study");
@@ -253,6 +253,14 @@ describe("RecapSlot: the host (v1 recapCheck 3739-3750, touchActive 3696)", () =
     expect(dialog()?.textContent).toContain("You have been away 8 days.");
   });
 
+  it("an account that never saw a welcome tour (there is none now) is not held back by it", async () => {
+    plant(8);
+    h.settings.settings = {};
+    mount();
+    await tick(2500);
+    expect(dialog()?.textContent).toContain("You have been away 8 days.");
+  });
+
   it("waits for the vault to say what it is before it looks at titles and documents", async () => {
     plant(8);
     h.vault.status = "loading";
@@ -269,9 +277,8 @@ describe("RecapSlot: the host (v1 recapCheck 3739-3750, touchActive 3696)", () =
     const blocked: Array<[string, () => ProjectValue, () => void]> = [
       ["the terms gate is open", () => shell(), () => { h.settings.me = { ...ME, termsAcceptedAt: null }; }],
       ["the terms were accepted before the current terms", () => shell(), () => { h.settings.me = { ...ME, termsAcceptedAt: "2026-10-01T00:00:00Z" }; }],
-      ["the welcome tour has not been seen", () => shell(), () => { h.settings.settings = {}; }],
       ["the shell has a dialog open (Help)", () => shell({ dialog: "help" }), () => undefined],
-      ["the shell has the welcome tour open", () => shell({ dialog: "welcome" }), () => undefined],
+      ["the shell has Settings open", () => shell({ dialog: "settings" }), () => undefined],
       ["a dialog is open in the page when the timer fires", () => shell(), () => {
         const d = document.createElement("div"); d.setAttribute("role", "dialog"); document.body.appendChild(d);
       }],
@@ -313,7 +320,7 @@ describe("RecapSlot: the host (v1 recapCheck 3739-3750, touchActive 3696)", () =
 
   describe("the vault", () => {
     const sealed = () => shell({
-      project: { id: "p1", title: "ct-project", titleKeyVersion: 1, deks: [{ v: 1, wrapped: "w" }], field: "psychology", stage: "writing", status: "active", contentLang: "en", kind: "research" },
+      project: { id: "p1", title: "ct-project", titleKeyVersion: 1, deks: [{ v: 1, wrapped: "w" }], field: "psychology", type: null, stage: "writing", status: "active", contentLang: "en", kind: "research" },
       documents: [row("d1", { title: "ct-doc", titleKeyVersion: 1, deks: [{ v: 1, wrapped: "w" }] })],
       currentDoc: { ...row("d1", { title: "ct-doc", titleKeyVersion: 1, deks: [{ v: 1, wrapped: "w" }] }), bodyHtml: "", keyVersion: 1, unreadable: "locked" } as never
     });
@@ -352,7 +359,7 @@ describe("RecapSlot: the host (v1 recapCheck 3739-3750, touchActive 3696)", () =
       mount(sealed());
       await tick(2500);
       const text = dialog()!.textContent ?? "";
-      expect(text).toContain("Project: opened ct-project");
+      expect(text).toContain("Study: opened ct-project");
       expect(text).toContain("Open document: opened ct-doc");
       expect(text).toContain("words");
       expect(h.api.mock.calls.map((c) => String(c[0]))).toContain("/documents/d1");

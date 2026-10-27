@@ -307,7 +307,7 @@ describe("the backup reminder (Task C7)", () => {
 });
 
 describe("the reminder waits for the student's attention to be free", () => {
-  it("not over a dialog of the shell (Help, the terms, the tour): it appears when that closes", async () => {
+  it("not over a dialog of the shell (Help, the terms, Settings): it appears when that closes", async () => {
     mount(shell({ dialog: "help" }));
     await tick(4000);
     expect(h.api).toHaveBeenCalledTimes(1);
@@ -315,20 +315,22 @@ describe("the reminder waits for the student's attention to be free", () => {
     await rerender(shell({ dialog: null }));
     expect(nudge()).not.toBeNull();
     // Once it is on screen a dialog opening over the page does not take it away (the page would jump); it only waited to appear.
-    await rerender(shell({ dialog: "welcome" }));
+    await rerender(shell({ dialog: "settings" }));
     expect(nudge()).not.toBeNull();
   });
 
-  it("not over the terms gate, nor before the welcome tour has been seen", async () => {
-    h.settings = { me: { ...ME, termsAcceptedAt: null }, settings: { seenWelcome: true } };
+  it("not over the terms gate", async () => {
+    h.settings = { me: { ...ME, termsAcceptedAt: null }, settings: {} };
     mount();
     await tick(4000);
     expect(nudge()).toBeNull();
-    act(() => { for (const r of roots.splice(0)) r.unmount(); });
+  });
+
+  it("an account that never saw a welcome tour (there is none now) is not held back by it", async () => {
     h.settings = { me: ME, settings: {} };
     mount();
     await tick(4000);
-    expect(nudge()).toBeNull();
+    expect(nudge()).not.toBeNull();
   });
 
   it("not while any dialog is open, whoever opened it (the recap is one); it comes back when that dialog goes", async () => {

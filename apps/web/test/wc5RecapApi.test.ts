@@ -17,7 +17,7 @@ const doc = (id: string, over: Record<string, unknown> = {}) => ({
   id, projectId: "p1", title: "Draft " + id, titleKeyVersion: 0, deks: [], kind: "draft", currentSeq: 1, wordCount: 100,
   createdAt: iso(SINCE - DAY), updatedAt: iso(SINCE - DAY), ...over
 });
-const project = (over: Record<string, unknown> = {}) => ({ id: "p1", title: "Sleep and exams", titleKeyVersion: 0, deks: [], field: "psychology", stage: "writing", status: "active", contentLang: "en", kind: "research", ...over });
+const project = (over: Record<string, unknown> = {}) => ({ id: "p1", title: "Sleep and exams", titleKeyVersion: 0, deks: [], field: "psychology", type: "ug" as const, stage: "writing", status: "active", contentLang: "en", kind: "research", ...over });
 
 type Vault = RecapSource["vault"];
 const open: Vault = { status: "off", decryptBody: async (d) => d.bodyHtml };

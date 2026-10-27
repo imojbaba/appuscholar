@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import en from "../messages/en.json";
 
 /*
- * The specialty pack setting (v1 1171-1178, setPack 2677): a select of General research and Psychology in the AI Provider / Key dialog, below the content
+ * The specialty pack setting (v1 1171-1178, setPack 2677): a select of General research and Psychology in the Settings window, below the content
  * language. A pack not chosen yet reads as psychology (v1 getPack 2660, ruling P3), so nobody loses the Research helpers; picking one writes the account
  * setting `pack`. What the pack hides is tested in test/places.test.tsx; mergeSettings keeping the key is in test/settings.test.ts.
  */
@@ -14,7 +14,7 @@ const h = vi.hoisted(() => ({
   settings: {} as { pack?: "general" | "psychology" },
   update: vi.fn(async (_patch: Record<string, unknown>) => {}),
   toast: vi.fn(),
-  ws: { dialog: "settings", closeDialog: vi.fn(), project: null, reloadProject: vi.fn(), openTerms: vi.fn(), settingsProvider: null }
+  ws: { dialog: "settings", closeDialog: vi.fn(), project: null, reloadProject: vi.fn(), openTerms: vi.fn() }
 }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1" }, settings: h.settings, update: h.update }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
@@ -22,7 +22,7 @@ vi.mock("@/components/workspace/dialogs/VaultSetup", () => ({ openVaultSetup: vi
 vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => h.ws }));
 
 import { SettingsPack } from "../components/workspace/dialogs/SettingsPack";
-import { ProviderKey } from "../components/workspace/dialogs/ProviderKey";
+import { SettingsWindow } from "../components/workspace/dialogs/Settings";
 import { VaultProvider } from "../lib/vault/useVault";
 import { KeysProvider } from "../lib/ai/useKeys";
 
@@ -88,12 +88,12 @@ describe("Specialty pack setting (Task 11)", () => {
   });
 
   it("sits in the Settings dialog right after the content language", async () => {
-    await mount(<VaultProvider><KeysProvider><ProviderKey /></KeysProvider></VaultProvider>);
+    await mount(<VaultProvider><KeysProvider><SettingsWindow /></KeysProvider></VaultProvider>);
     const lang = $("content-lang")!;
     expect(select()).not.toBeNull();
     expect(lang.compareDocumentPosition(select()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    // The next block is the OpenAlex key's: nothing sits between the two.
+    // The next block is the ORCID field's: nothing sits between the two.
     expect(select().closest(".field")!.previousElementSibling).toBe(lang.closest(".field"));
-    expect(select().closest(".field")!.nextElementSibling).toBe($("oa-key-input")!.closest(".field"));
+    expect(select().closest(".field")!.nextElementSibling).toBe($("orcid-input")!.closest(".field"));
   });
 });

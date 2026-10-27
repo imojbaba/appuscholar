@@ -45,10 +45,10 @@ export function RecapHost({ shell }: { shell: ProjectValue }) {
     if (!ready || !uid || isPopout() || checkedThisLoad(uid)) return;
     let cancelled = false;
 
-    /** Something else has the student's attention: the terms, the tour, a dialog of the shell or any other open one. */
+    /** Something else has the student's attention: the terms, a dialog of the shell or any other open one. */
     const busy = () => {
       const l = live.current;
-      return needsTerms(l.me, TERMS_SINCE) || !l.settings.seenWelcome || l.shell.dialog !== null || l.shell.projectId === null || !!document.querySelector(OPEN_DIALOG);
+      return needsTerms(l.me, TERMS_SINCE) || l.shell.dialog !== null || l.shell.projectId === null || !!document.querySelector(OPEN_DIALOG);
     };
 
     const check = async () => {

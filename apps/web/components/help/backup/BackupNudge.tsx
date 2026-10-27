@@ -34,7 +34,7 @@ const useOnline = () => useSyncExternalStore(subscribeOnline, () => navigator.on
  * counts (GET /projects?include=work; no document is opened) and, if the student has written 150 or more words and has no backup on this device
  * (or one a week old), shows a strip under the header with Back up now and Later. It stays until one of them is pressed. It is in the page, not over
  * it, so it covers no control: the page moves down once when it appears. It is decided once for each student in a page load (nudgeVisit), however
- * many shells mount, and a strip that is showing keeps showing across them. It waits to appear while the terms or the tour are open, while any
+ * many shells mount, and a strip that is showing keeps showing across them. It waits to appear while the terms are open, while any
  * dialog is open (the welcome-back recap is one) and while offline (the export needs the connection); in a pop-out it never runs. Later hides it
  * for three days, for this student on this device. Announced politely, from a status region that is always there.
  */
@@ -88,7 +88,7 @@ export function BackupNudge({ shell }: { shell: ProjectValue }) {
     return () => watch.disconnect();
   }, [who, words, shell.dialog]);
 
-  const blocked = needsTerms(me, TERMS_SINCE) || !settings.seenWelcome || shell.dialog !== null || dialogOpen || !online;
+  const blocked = needsTerms(me, TERMS_SINCE) || shell.dialog !== null || dialogOpen || !online;
   // The waits are for appearing: a strip that is already on screen is not taken away when a dialog opens over the page.
   const visible = !!who && !!due && (shown || !blocked);
   useEffect(() => {
