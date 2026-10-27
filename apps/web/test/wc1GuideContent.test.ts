@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { sanitizeHtml } from "@appuscholar/core";
+import { PROVIDERS, sanitizeHtml } from "@appuscholar/core";
 import { GUIDE } from "@/lib/help/guide/content";
 import { DICTS, plainText } from "@/lib/i18n";
 
@@ -81,6 +81,11 @@ const UNTRUE_IN_V2 = [
   "Statistics & Charts",
   "Statistics panel",
   "Research panel",
+  // The key window and the first run before Connect AI and Shape your study (D-C-1, D-C-2).
+  "AI: add your key",
+  "Test my AI connection",
+  "Save Key",
+  "Check if it is doable",
   // Sentences the register rows rewrite (D-C-2, 5, 11, 12, 21, 23, 27, 33, 34, 38), so none can come back unnoticed.
   "Open the guide again",
   "on the left",
@@ -141,9 +146,11 @@ describe("the Guide's content (Task C1)", () => {
 
   it("names the buttons and places v2 has, so a student can follow the steps", () => {
     const html = (id: string) => GUIDE.find((s) => s.id === id)!.html;
-    expect(html("start")).toContain("<b>AI: add your key</b>");
-    expect(html("start")).toContain("<b>Check if it is doable</b>");
-    expect(html("start")).toContain("<b>Save as my project</b>");
+    expect(html("start")).toContain("<b>Start a new study</b>");
+    expect(html("start")).toContain("<b>Help me think</b>");
+    expect(html("start")).toContain("<b>Check if it's doable</b>");
+    expect(html("start")).toContain("<b>Connect AI</b>");
+    expect(html("start")).toContain("<b>AI: Gemini</b>");
     expect(html("faq")).toContain("<b>Export all my work</b>");
     expect(html("aiuse")).toContain("<b>Erase the log</b>");
     expect(html("stats")).toContain("<b>Sample size</b> tab");
@@ -153,12 +160,17 @@ describe("the Guide's content (Task C1)", () => {
   it("spells each button and tab it names exactly as v2's own copy does", () => {
     // [section, the label in bold, the key of v2's copy that holds it]. Buttons other wave C tasks add (Guide, Locked backup, Erase the log, Install) are not in this branch's copy.
     const LABELS: ReadonlyArray<readonly [string, string, string]> = [
-      ["start", "AI: add your key", "ai_pill_nokey"], ["start", "Menu", "hdr_menu"], ["start", "Save Key", "settings_savekey_btn"],
-      ["start", "Test my AI connection", "aitest_btn"], ["start", "How should this key be stored?", "settings_keymode_label"],
-      ["start", "New project", "projects_new"], ["start", "Your projects", "list_title"], ["start", "Check if it is doable", "idea_check_btn"],
-      ["start", "Save as my project", "idea_save_btn"], ["start", "Literature", "stage_name_lit"], ["start", "Find", "tab_name_find"],
+      ["start", "Your studies", "list_title"], ["start", "Start a new study", "dash_new"], ["start", "Create study", "new_create"], ["start", "Shape your study", "shape_h"],
+      ["start", "Skip for now", "shape_skip"], ["start", "Not sure yet", "shape_not_sure"], ["start", "Help me think", "shape_help_btn"],
+      ["start", "See my plan", "shape_to_summary"], ["start", "Check if it's doable", "shape_doable_btn"], ["start", "Go to my study", "shape_go_study"],
+      ["start", "Connect AI", "ai_pill_nokey"], ["start", "Yes, I have a key", "connect_yes"], ["start", "No, help me get a free one", "connect_no"],
+      ["start", "Open Google AI Studio", "connect_open_studio"], ["start", "Connect", "connect_go"], ["start", "Remember on this computer", "connect_keep_plain"],
+      ["start", "Protect with a passphrase", "connect_keep_pass"], ["start", "Not now", "connect_not_now"], ["start", "Menu", "hdr_menu"],
+      ["start", "Literature", "stage_name_lit"], ["start", "Find", "tab_name_find"],
       ["start", "Collection and analysis", "stage_name_collect"], ["start", "Statistics", "tab_name_data"], ["start", "Parse data", "stats_data_parse"],
       ["start", "Which test fits my data?", "stats_guide_title"], ["start", "Open the guide", "stats_guide_open"], ["start", "Help", "hdr_help"],
+      ["idea", "Shape your study", "shape_h"], ["idea", "Check if it's doable", "shape_doable_btn"],
+      ["faq", "Test", "connect_test"], ["faq", "Change key", "connect_change"],
       ["stages", "Idea", "stage_name_idea"], ["stages", "Literature", "stage_name_lit"], ["stages", "Design and ethics", "stage_name_design"],
       ["stages", "Collection and analysis", "stage_name_collect"], ["stages", "Writing", "stage_name_writing"], ["stages", "Review", "stage_name_review"],
       ["editor", "Viva question", "viva_btn"],
@@ -179,6 +191,9 @@ describe("the Guide's content (Task C1)", () => {
       expect(GUIDE.find((s) => s.id === id)!.html, `${id}: <b>${label}`).toContain("<b>" + label);
       expect(plainText(DICTS.en[key] ?? ""), `${key} holds "${label}"`).toContain(label);
     }
+    // The pill's text with a key is a template: the guide shows it filled in with the default provider's short name.
+    expect(PROVIDERS.gemini.short).toBe("Gemini");
+    expect((DICTS.en.ai_pill_key ?? "").replace("{provider}", PROVIDERS.gemini.short)).toBe("AI: Gemini");
     // The chat's insert button is written in its component, not in a message file.
     expect(GUIDE.find((s) => s.id === "chat")!.html).toContain("<b>Insert into document");
     expect(readFileSync(path.join(__dirname, "../components/tools/ChatPanel.tsx"), "utf8")).toContain("+ Insert into document");

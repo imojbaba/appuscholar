@@ -36,10 +36,17 @@ const measure = (m: Partial<Record<LayoutRule, number>>, findings: LayoutFinding
 describe("HINDI_EXCEPTIONS", () => {
   it("holds the sentences of the three keyed groups (D-S2-1, -2, -3) and the constants of D-S2-18", () => {
     const en = dictionary("en");
+    const hi = dictionary("hi");
     for (const prefix of ["rs2_", "ap2_", "sh2_"]) {
       const keys = Object.keys(en).filter((k) => k.startsWith(prefix));
       expect(keys.length, prefix).toBeGreaterThan(50);
-      for (const k of keys) expect(HINDI_EXCEPTIONS, k).toContain(en[k]);
+      // A key that has its own Hindi is no longer an exception (the wave-B port of v1's static Hindi tables gave many of them one).
+      const kept = keys.filter((k) => hi[k] === undefined || hi[k] === en[k]);
+      expect(kept.length, prefix).toBeGreaterThan(0);
+      for (const k of keys) {
+        if (kept.includes(k)) expect(HINDI_EXCEPTIONS, k).toContain(en[k]);
+        else expect(HINDI_EXCEPTIONS, k).not.toContain(en[k]);
+      }
     }
     expect(HINDI_EXCEPTIONS).toContain("Citation inserted ✓");
     expect(HINDI_EXCEPTIONS).toContain("{n} sources merged into your library ✓");

@@ -8,15 +8,15 @@ import aipill from "../messages/tools/aipill.en.json";
 
 /*
  * Quick provider switch on the AI pill (wave D Task 10, v1 renderProvTabs / toggleProvMenu / switchProv 5141-5169, ruling P6): the pill still opens
- * Settings; a caret beside it opens a menu of the six providers. A provider with a key becomes the chosen one; one without opens Settings on it.
+ * Connect AI; a caret beside it opens a menu of the six providers. A provider with a key becomes the chosen one; one without opens Connect AI on it.
  */
 
 const h = vi.hoisted(() => ({
-  update: vi.fn(async () => {}), openSettings: vi.fn(), toast: vi.fn(),
+  update: vi.fn(async () => {}), openConnect: vi.fn(), toast: vi.fn(),
   settings: {} as { provider?: string }, keys: new Set<string>()
 }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "s1" }, settings: h.settings, update: h.update }) }));
-vi.mock("@/lib/ai/useKeys", () => ({ useKeys: () => ({ hasKey: (p: string) => h.keys.has(p) }) }));
+vi.mock("@/lib/ai/useKeys", () => ({ useKeys: () => ({ hasKey: (p: string) => h.keys.has(p), loaded: true }) }));
 vi.mock("@/lib/vault/titles", () => ({ useTitle: (t: { title: string } | null) => ({ state: "open", text: t?.title ?? "" }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: (m: string) => h.toast(m) }));
 vi.mock("@/components/workspace/VaultPill", () => ({ VaultPill: () => null }));
@@ -31,11 +31,11 @@ import { ProjectProvider, type ProjectValue } from "../components/frame/ProjectC
 const E = { ...(en as Record<string, string>), ...(aipill as Record<string, string>) };
 const roots: Root[] = [];
 afterEach(() => { act(() => { for (const r of roots.splice(0)) r.unmount(); }); document.body.innerHTML = ""; });
-beforeEach(() => { h.update.mockClear(); h.openSettings.mockClear(); h.toast.mockClear(); h.settings = {}; h.keys = new Set(); });
+beforeEach(() => { h.update.mockClear(); h.openConnect.mockClear(); h.toast.mockClear(); h.settings = {}; h.keys = new Set(); });
 const tid = (id: string) => document.body.querySelector<HTMLElement>(`[data-testid="${id}"]`);
 
 function mount() {
-  const value = { project: null, projectId: null, openExport: () => {}, openSettings: h.openSettings, openHelp: () => {}, go: async () => true, openProject: async () => {} } as unknown as ProjectValue;
+  const value = { project: null, projectId: null, openExport: () => {}, openConnect: h.openConnect, openSettings: () => {}, openHelp: () => {}, go: async () => true, openProject: async () => {} } as unknown as ProjectValue;
   const el = document.body.appendChild(document.createElement("div"));
   const root = createRoot(el);
   roots.push(root);
@@ -50,14 +50,14 @@ const pick = async (id: string) => { await act(async () => { tid(id)!.click(); }
 const items = () => [...document.body.querySelectorAll<HTMLElement>('[data-testid^="ai-switch-"]')].filter((e) => e.getAttribute("role")?.startsWith("menuitem"));
 
 describe("the AI pill's provider switch", () => {
-  it("keeps the pill: its text is unchanged and a click still opens Settings with no provider", async () => {
+  it("keeps the pill: its text is unchanged and a click still opens Connect AI with no provider", async () => {
     h.settings = { provider: "groq" };
     h.keys = new Set(["groq"]);
     mount();
-    expect(tid("ai-pill")!.textContent).toBe("AI: Groq, your key");
+    expect(tid("ai-pill")!.textContent).toBe("AI: Groq");
     await pick("ai-pill");
-    expect(h.openSettings).toHaveBeenCalledTimes(1);
-    expect(h.openSettings.mock.calls[0]).toEqual([]);
+    expect(h.openConnect).toHaveBeenCalledTimes(1);
+    expect(h.openConnect.mock.calls[0]).toEqual([]);
     expect(tid("ai-pill-list")).toBeNull();
   });
 
@@ -116,20 +116,20 @@ describe("the AI pill's provider switch", () => {
     await pick("ai-switch-openai");
     expect(h.update).toHaveBeenCalledTimes(1);
     expect(h.update.mock.calls[0]).toEqual([{ provider: "openai" }]);
-    expect(h.openSettings).not.toHaveBeenCalled();
+    expect(h.openConnect).not.toHaveBeenCalled();
     expect(h.toast).toHaveBeenCalledTimes(1);
     expect(h.toast).toHaveBeenCalledWith("Now using ChatGPT (OpenAI). Your next AI request goes to ChatGPT.");
     expect(tid("ai-pill-list")).toBeNull();
   });
 
-  it("a provider without a key opens Settings on it and asks for the key", async () => {
+  it("a provider without a key opens Connect AI on it and asks for the key", async () => {
     h.keys = new Set(["groq"]);
     h.settings = { provider: "groq" };
     mount();
     await openSwitch();
     await pick("ai-switch-claude");
-    expect(h.openSettings).toHaveBeenCalledTimes(1);
-    expect(h.openSettings.mock.calls[0]).toEqual(["claude"]);
+    expect(h.openConnect).toHaveBeenCalledTimes(1);
+    expect(h.openConnect.mock.calls[0]).toEqual([{ provider: "claude" }]);
     expect(h.update).not.toHaveBeenCalled();
     expect(h.toast).toHaveBeenCalledTimes(1);
     expect(h.toast).toHaveBeenCalledWith("Paste your Claude key to enable it");

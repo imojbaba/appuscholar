@@ -106,7 +106,7 @@ function PdBody({ sc, finish }: { sc: ScanResult; finish(c: PdChoice): void }) {
       )}
       {locked && <p className="m-0 text-sm text-amber-900" data-testid="pd-locked">{t("pp_ai_locked")}</p>}
       {(listed || maybe.length > 0) && <p className="m-0 text-[13px] text-muted-foreground" data-testid="pd-mask-note">{t("pp_ai_mask_note")}</p>}
-      <p className="m-0 text-[13px] text-muted-foreground">This text goes straight to your AI provider. {t(checks)}</p>
+      <p className="m-0 text-[13px] text-muted-foreground">{t("pp_ai_goes")} {t(checks)}</p>
       <DialogFooter>
         {maskable && <Button variant="primary" data-testid="pd-mask" onClick={() => finish({ answer: "mask", leave })}>Mask them and send</Button>}
         {locked && <Button variant={maskable ? "ghost" : "primary"} data-testid="pd-unlock" onClick={() => finish({ answer: "unlock", leave: [] })}>{t("pp_ai_unlock")}</Button>}

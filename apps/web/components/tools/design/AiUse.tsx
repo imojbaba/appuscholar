@@ -14,8 +14,8 @@ import { Button } from "@/components/ui/button";
 
 /** The file the statement downloads as (v1 aiuDownload 5560). */
 const FILE = "ai-use-statement.txt";
-/** v1's dialog started with only "I planned the argument and the structure myself" ticked (aiuOwn is `checked`, the other four are not; 1897-1901). */
-const TICKS_AT_START: AiuTicks = { own: true, reword: false, cite: false, facts: false, noData: false };
+/** None of the five is ticked when the tab opens: the student claims each one (D-S2-127; v1 started with "I planned the argument and the structure myself" ticked, 1897-1901). */
+const TICKS_AT_START: AiuTicks = { own: false, reword: false, cite: false, facts: false, noData: false };
 /** The five truth ticks, in v1's order, with the key of their words. */
 const TICK_ROWS: ReadonlyArray<{ key: keyof AiuTicks; label: string }> = [
   { key: "own", label: "design_aiu_own" }, { key: "reword", label: "design_aiu_reword" }, { key: "cite", label: "design_aiu_cite" },
@@ -34,7 +34,7 @@ const isEntry = (x: unknown): x is AiuEntry => {
  * The AI-use statement (v1 aiuOpen, aiuRender, aiuToggle, aiuBuild, aiuCopy, aiuInsert, aiuDownload 5411-5568 and the dialog 1888-1910), as a tab.
  * It reads this project's AI log (GET /ai/log?projectId=, entries {d,p,m,k,g}; what first run's idea check logged before the project existed is claimed
  * into it when first run saves). The dates, the row for each kind of help in range (all ticked, as v1), the other tools, the five truth ticks and the
- * format go to core's aiuBuildV2 (aiuBuild with the two sentences that said where the log is kept made true, D-S2-58) with the style declaration (the style blobs, absent until My writing style is used) and the providers table; the text it
+ * format go to core's aiuBuildV2 (aiuBuild with the phrases that said where the log is kept and who sends the requests made true, D-S2-58 and D-S2-125) with the style declaration (the style blobs, absent until My writing style is used) and the providers table; the text it
  * returns, or its refusal, is shown as it is. The panel never offers a "no AI" statement of its own: with rows in range and nothing ticked and no other
  * tools, core refuses (rule 3). "Keep the log" is the existing setting `aiLogOff`, inverted. The statement is an editable box with Copy, Insert (plain
  * text, at the end of the open document) and Download. "Erase the log" (v1 aiuClear 5995-5999, the button at 1988) sits in the log section. DELETE /ai/log

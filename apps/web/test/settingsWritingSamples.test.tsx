@@ -21,7 +21,7 @@ const h = vi.hoisted(() => ({
   opened: [] as Array<[string, string | null, unknown]>,
   vaultStatus: "off" as string,
   api: vi.fn(), toast: vi.fn(), announce: vi.fn(),
-  ws: { dialog: "settings", closeDialog: vi.fn(), project: null, projectId: "p1", reloadProject: vi.fn(), openTerms: vi.fn(), settingsProvider: null }
+  ws: { dialog: "settings", closeDialog: vi.fn(), project: null, projectId: "p1", reloadProject: vi.fn(), openTerms: vi.fn() }
 }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "s1" }, settings: h.settings, update: h.update }) }));
 // Like the real hook, what it answers is read when the panel mounts: only a new mount sees a changed blob.
@@ -51,7 +51,7 @@ import { heldBlobs } from "../lib/blobs/held";
 import { fullSamples } from "../lib/writingSamples/captureSample";
 import { KeysProvider } from "../lib/ai/useKeys";
 import { SettingsWritingSamples } from "../components/workspace/dialogs/SettingsWritingSamples";
-import { ProviderKey } from "../components/workspace/dialogs/ProviderKey";
+import { SettingsWindow } from "../components/workspace/dialogs/Settings";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const E = en as Record<string, string>;
@@ -158,7 +158,7 @@ describe("the writing-sample block of Settings", () => {
     fullSamples.add("p1");
     await mount();
     expect($("wsamp-status")!.textContent).toBe(fill(E.writingsample_status_fmt!, { n: 1, w: 40 }) + " " + samplesEn.wsamp_full);
-    expect(samplesEn.wsamp_full).toBe("This project's saved copy is full, so newer writing is not being added. Clear it to make room.");
+    expect(samplesEn.wsamp_full).toBe("This study's saved copy is full, so newer writing is not being added. Clear it to make room.");
   });
 
   it("shows none yet for a project without a blob", async () => {
@@ -323,7 +323,7 @@ describe("the writing-sample block of Settings", () => {
   });
 
   it("is mounted in the Settings dialog, after the ORCID field and before the AI fallback", async () => {
-    await mount(<KeysProvider><ProviderKey /></KeysProvider>);
+    await mount(<KeysProvider><SettingsWindow /></KeysProvider>);
     await until(() => !!$("wsamp-toggle"));
     const orcid = $("orcid-input")!, block = $("wsamp")!, fallback = $("ai-fallback")!;
     expect(orcid.compareDocumentPosition(block) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

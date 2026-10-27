@@ -9,7 +9,7 @@ import designHi from "../messages/tools/design.hi.json";
 
 /*
  * Task C10, "Erase the log" on the AI-use tab (v1 aiuClear 5995-5999, the button at 1988). The log is erased for the whole account (DELETE /ai/log:
- * every project's rows and the rows of AI used with no project open), so the confirm says "all your projects" and "no project open"; the statement
+ * every study's rows and the rows of AI used with no study open), so the confirm says "all your studies" and "no study open"; the statement
  * already built stays in its box; a failure is said inline and changes nothing. v1 asked nothing of an empty log and said so: here this project's rows
  * being empty is not the account's log being empty, so the whole log (GET /ai/log with no projectId) is read first. The api is a fake: GET with a
  * projectId answers this project's rows, GET without one the whole account's, DELETE empties both and records its call.
@@ -102,8 +102,8 @@ describe("Erase the log (Task C10)", () => {
     await click("aiu-erase");
     const box = $("aiu-erase-confirm")!;
     expect(box).not.toBeNull();
-    expect(box.textContent).toContain("all your projects");
-    expect(box.textContent).toContain("no project open");
+    expect(box.textContent).toContain("all your studies");
+    expect(box.textContent).toContain("no study open");
     expect(box.textContent).toMatch(/cannot be undone/i);
     expect(box.textContent).toContain("stays in its box");
     expect(deletes()).toHaveLength(0);
@@ -168,7 +168,7 @@ describe("Erase the log (Task C10)", () => {
     expect(text("aiu-erase-msg")).toBe(E.wc_aiu_erase_failed);
     expect($("aiu-erase-confirm")).toBeNull();
     expect(rows()).toEqual(["grammar and polish", "feedback on my draft"]);
-    expect(text("aiu-count")).toBe("Requests logged for this project: 2. In the dates below: 2.");
+    expect(text("aiu-count")).toBe(E.design_aiu_count!.replace("{all}", "2").replace("{n}", "2"));
     expect(h.toast).not.toHaveBeenCalled();
     // A later success clears the failure line.
     h.deleteFails = false;
@@ -320,7 +320,7 @@ describe("Erase the log (Task C10)", () => {
       expect(hv, k).toBeTruthy();
       expect(hv, k).not.toMatch(/—|\p{Extended_Pictographic}/u);
     }
-    for (const k of ["wc_aiu_erase_desc", "wc_aiu_erased"]) expect(E[k], k).toMatch(/all your projects.*no project open/);
+    for (const k of ["wc_aiu_erase_desc", "wc_aiu_erased"]) expect(E[k], k).toMatch(/all your studies.*no study open/);
     expect(E.wc_aiu_erase_title).toContain("whole AI-use log in your account");
     // The failure line cannot promise that nothing changed (the answer may have been lost on the way); it asks to try again.
     expect(E.wc_aiu_erase_failed).toContain("Please try again.");

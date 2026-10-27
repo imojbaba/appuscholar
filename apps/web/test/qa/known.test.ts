@@ -110,9 +110,9 @@ describe("known.json", () => {
   });
 
   it("holds the faults fixed in #25 as fixed, and the open ones as known or awaiting a decision (spec section 9)", () => {
-    for (const id of ["F2", "F3", "F4", "F5", "O1", "O2", "O7", "Q12", "Q13", "Q14", "Q96"]) expect(byId(id)?.status, id).toBe("fixed");
+    for (const id of ["F2", "F3", "F4", "F5", "O1", "O2", "O4", "O5", "O7", "O14", "Q12", "Q13", "Q14", "Q96"]) expect(byId(id)?.status, id).toBe("fixed");
     for (const id of ["F1", "O10", "O12", "O15", "O21", "O24"]) expect(byId(id)?.status, id).toBe("known");
-    for (const id of ["O4", "O5", "O8", "O11", "O14", "O20"]) expect(byId(id)?.status, id).toBe("awaiting");
+    for (const id of ["O8", "O11", "O20"]) expect(byId(id)?.status, id).toBe("awaiting");
   });
 
   it("holds the accessibility, phone-size and Hindi faults Q10, Q11 and Q15 to Q19 as fixed", () => {
