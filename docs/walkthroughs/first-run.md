@@ -1,5 +1,7 @@
 # First run: the walk
 
+> Out of date since "Start a study" (OJ 2026-10-27): the idea screen below is gone. The first day now starts on the dashboard; see `start-a-study.md`.
+
 Five paths through the first-run flow (PR "First run: the idea screen first, Connect AI when AI is first needed"), each screen as a stranger meets it.
 
 For each screen: what it is, whether I must do it now, and where it lives later.
