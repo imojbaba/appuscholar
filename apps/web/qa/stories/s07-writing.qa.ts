@@ -15,7 +15,7 @@ import type { Qa } from "../support/qa";
 import { serverRows } from "../support/server";
 import { SERVICE_DOWN_CONSOLE, SERVICE_HOSTS, routeServices } from "../support/services";
 import {
-  OFFLINE_CONSOLE, answerPassphrase, apiGet, catchDownload, docText, goOffline, goOnline, lockByReload, newStudent, openUnlockWindow, providerCalls, qaKey, recordToasts, sameAccountElsewhere,
+  OFFLINE_CONSOLE, answerPassphrase, apiGet, catchDownload, connectKey, docText, goOffline, goOnline, lockByReload, newStudent, openConnectAI, openUnlockWindow, providerCalls, qaKey, recordToasts, sameAccountElsewhere,
   selectInDoc, setUpVault, toPlace, typeInDoc, unlock, type Student
 } from "../support/student";
 import { expect, notChecked, test } from "../support/test";
@@ -239,15 +239,10 @@ async function aiUseStatement(page: Page, projectId: string): Promise<{ log: Aiu
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const rowOf = (kind: string, n: number) => `${cap(kind)} (${n})`;
 
-/** The key window's replacement of the saved key by another (Groq, kept in the browser), as a student pastes a new one. */
+/** The saved key replaced by another (Groq, kept in the browser) through Connect AI (the header's AI pill, then Change key), as a student pastes a new one. A key the provider is told to fail is answered OK at its test (connectKey), so the case meets the failure where it means to. */
 async function replaceKey(page: Page, key: string): Promise<void> {
-  await page.getByTestId("ai-pill").click();
-  await expect(page.getByTestId("provider-dialog")).toBeVisible();
-  await page.getByTestId("prov-select").selectOption("groq");
-  await page.getByTestId("key-input").fill(key);
-  await page.getByTestId("key-mode-plain").check();
-  await page.getByTestId("key-save").click();
-  await expect(page.getByTestId("provider-dialog")).toBeHidden();
+  await openConnectAI(page);
+  await connectKey(page, { key, keep: "plain", answerTest: !key.startsWith("gsk_qa_ok_") });
 }
 
 /** The sentence for `key` in Hindi, checked to exist in the Hindi dictionary (a key without one would show English, and the check would pass on English). */
@@ -1022,7 +1017,7 @@ test("S7-02 I type two sentences with the network off, and when it returns both 
   const other = await qa.step("a fresh browser", () => sameAccountElsewhere(browser, page, qa));
   try {
     await qa.step("a fresh browser", async () => {
-      await other.page.goto("/");
+      await other.page.goto(`/p/${s.projectId}`);
       await unlock(other.page, s);
       await expect(other.page.getByTestId("project-home")).toBeVisible();
       await other.page.getByTestId("home-open-writing").click();
@@ -1074,7 +1069,7 @@ test("S7-03 I type while my vault is locked: the badge turns amber, and after I 
   });
 
   await qa.step("a second tab that does not know of the vault", async () => {
-    await stale.goto("/");
+    await stale.goto(`/p/${s.projectId}`);
     await expect(stale.getByTestId("project-home")).toBeVisible();
     await stale.getByTestId("home-open-writing").click();
     await qa.check("data", "the second tab shows the sentence, and its pill reads Vault off", async () => {
@@ -1334,10 +1329,10 @@ test("S7-05 when the AI fails, the grammar check says my key was rejected and Co
   await qa.step("the grammar check with a rejected key", async () => {
     await page.getByTestId("gram-ai").click();
     await expect(page.getByTestId("gram-status")).toHaveText(apiMsg("key-rejected"));
-    await qa.check("data", "the message names the key: \"Your API key was rejected. Open ⚙ and paste it again.\", and the checking line is gone", async () => {
-      expect(apiMsg("key-rejected")).toBe("Your API key was rejected. Open ⚙ and paste it again.");
+    await qa.check("data", "the message names the key: \"Your AI key was not accepted. Open AI at the top of the page and choose Change key.\", and the checking line is gone", async () => {
+      expect(apiMsg("key-rejected")).toBe("Your AI key was not accepted. Open AI at the top of the page and choose Change key.");
       await expect(page.getByTestId("gram-busy")).toHaveCount(0);
-      await expect(page.getByTestId("gram-status")).toContainText("API key");
+      await expect(page.getByTestId("gram-status")).toContainText("AI key");
     }, { source: "apps/web/lib/ai/callAI.ts apiMsg (v1 apiMsg, index.html:5253); task S7-05 (the message names the key)" });
     await qa.check("data", "no cards appear, and the document is untouched", async () => {
       await expect(page.getByTestId("gram-card")).toHaveCount(0);

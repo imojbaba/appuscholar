@@ -14,7 +14,7 @@ import { QA_API_ORIGIN } from "../support/origins";
 import type { Qa } from "../support/qa";
 import { serverRows } from "../support/server";
 import {
-  OFFLINE_CONSOLE, apiGet, cancelPassphraseAsks, catchDownload, docText, goOffline, goOnline, lockByReload, newStudent, providerCalls, qaKey, recordToasts, toPlace, typeInDoc, unlock,
+  OFFLINE_CONSOLE, apiGet, cancelPassphraseAsks, catchDownload, connectKey, docText, goOffline, goOnline, lockByReload, newStudent, openConnectAI, providerCalls, qaKey, recordToasts, toPlace, typeInDoc, unlock,
   type AiMode, type Student
 } from "../support/student";
 import { expect, notChecked, test } from "../support/test";
@@ -1103,18 +1103,12 @@ async function runWelch(page: Page, text: string, by: string): Promise<void> {
   await page.getByTestId("stats-run-btn").click();
   await expect(page.getByTestId("stats-sentence")).toBeVisible();
 }
-/** The AI key of the account changed to a new test key of `mode` through the key window, as a student pastes a different key. */
+/** The AI key of the account changed to a new test key of `mode` through Connect AI (the header's AI pill, then Change key), as a student pastes a different key. A key the provider is told to fail or delay is answered OK at its test (connectKey), so the case meets the failure where it means to. */
 async function switchKey(page: Page, qa: Qa, mode: AiMode): Promise<string> {
   const key = qaKey(mode);
   qa.useKey(key);
-  await page.getByTestId("ai-pill").click();
-  await expect(page.getByTestId("provider-dialog")).toBeVisible();
-  await page.getByTestId("prov-select").selectOption("groq");
-  await expect(page.getByTestId("prov-select")).toHaveValue("groq");
-  await page.getByTestId("key-input").fill(key);
-  await page.getByTestId("key-mode-plain").check();
-  await page.getByTestId("key-save").click();
-  await expect(page.getByTestId("provider-dialog")).toBeHidden();
+  await openConnectAI(page);
+  await connectKey(page, { key, keep: "plain", answerTest: mode !== "ok" });
   return key;
 }
 
