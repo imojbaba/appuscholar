@@ -44,6 +44,15 @@ curl -s localhost:8788/health   # {"ok":true}
 ## Vercel
 
 Project settings: **Root Directory** `apps/api`, framework preset **Other**. Vercel installs the pnpm workspace from the repo root.
+
+### Deploys from GitHub
+
+Both Vercel projects (`apps/api` and `apps/web`) deploy from GitHub once connected, and **only from `phase-3a-vault`**: `git.deploymentEnabled`
+in each app's `vercel.json` turns every other branch off (`"**": false`, `"phase-3a-vault": true`), so no branch or pull request gets a deployment
+that would run unmerged code against the production database. Each project's **Production Branch** must be `phase-3a-vault`. A merge builds
+both apps at once, so a release whose web needs a new API route can show the new web a minute before its API: for those, deploy by hand in
+order instead. `scripts/deploy-vercel.sh api|web` stays for that, and for redeploying an older commit. The web's version pill reads
+`VERCEL_GIT_COMMIT_SHA`, which Vercel sets on Git deploys. Migrations are still applied by hand, before the merge that needs them.
 `vercel.json` then:
 
 1. runs `pnpm run build` (the tsup bundle above) as the build command;
