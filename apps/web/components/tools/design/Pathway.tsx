@@ -54,11 +54,11 @@ export function Pathway({ projectId }: { projectId: string }) {
             {options(POPS, now.pop, (v) => t("design_reg_pop_" + v))}
           </select>
         </label>
-        <label className="flex items-center gap-2 text-[13.5px] text-ink">
+        <label className="tick-row flex items-center gap-2 text-[13.5px] text-ink">
           <input type="checkbox" className="size-[17px] accent-purple-600" data-testid="reg-bio" checked={now.bio} onChange={(e) => setEdit((p) => ({ ...p, bio: e.target.checked }))} />
           {t("design_reg_bio")}
         </label>
-        <label className="flex items-center gap-2 text-[13.5px] text-ink">
+        <label className="tick-row flex items-center gap-2 text-[13.5px] text-ink">
           <input type="checkbox" className="size-[17px] accent-purple-600" data-testid="reg-multi" checked={now.multi} onChange={(e) => setEdit((p) => ({ ...p, multi: e.target.checked }))} />
           {t("design_reg_multi")}
         </label>

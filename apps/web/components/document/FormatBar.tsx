@@ -237,8 +237,8 @@ export function FormatBar({ editor, openStudio: openWindow }: { editor: Editor; 
       if (!fitsBudget(editor, src.length, vaultOn)) { toast(t(sizeMessageKey)); return; }
       editor.chain().focus().insertContent({ type: "image", attrs: { src } }).run();
       // No drag handle: the size is set with the width slider that appears when the picture is selected.
-      toast("Image inserted — select it to change its size");
-    } catch { toast("Could not read that picture. Try a JPEG or PNG."); }
+      toast(t("fb_img_inserted"));
+    } catch { toast(t("fb_img_fail")); }
   }
 
   function setBlock(v: Block) {
@@ -251,46 +251,46 @@ export function FormatBar({ editor, openStudio: openWindow }: { editor: Editor; 
 
   return (
     <>
-      <div className="fmtbar" role="toolbar" aria-label="Formatting" data-testid="format-bar">
-        <select className="select" aria-label="Paragraph style" data-testid="fmt-paragraph" value={s.block} onChange={(e) => setBlock(e.target.value as Block)}>
-          <option value="paragraph">Paragraph</option>
-          <option value="h1">Heading 1</option>
-          <option value="h2">Heading 2</option>
-          <option value="h3">Heading 3</option>
-          <option value="quote">Quote</option>
+      <div className="fmtbar" role="toolbar" aria-label={t("fb_toolbar")} data-testid="format-bar">
+        <select className="select" aria-label={t("fb_para_style")} data-testid="fmt-paragraph" value={s.block} onChange={(e) => setBlock(e.target.value as Block)}>
+          <option value="paragraph">{t("fb_para")}</option>
+          <option value="h1">{t("fb_h1")}</option>
+          <option value="h2">{t("fb_h2")}</option>
+          <option value="h3">{t("fb_h3")}</option>
+          <option value="quote">{t("fb_quote")}</option>
         </select>
         <Sep />
-        <Fmt name="bold" label="Bold" active={s.bold} on={() => run().toggleBold().run()}><b>B</b></Fmt>
-        <Fmt name="italic" label="Italic" active={s.italic} on={() => run().toggleItalic().run()}><i>I</i></Fmt>
-        <Fmt name="underline" label="Underline" active={s.underline} on={() => run().toggleUnderline().run()}><u>U</u></Fmt>
+        <Fmt name="bold" label={t("fb_bold")} active={s.bold} on={() => run().toggleBold().run()}><b>B</b></Fmt>
+        <Fmt name="italic" label={t("fb_italic")} active={s.italic} on={() => run().toggleItalic().run()}><i>I</i></Fmt>
+        <Fmt name="underline" label={t("fb_underline")} active={s.underline} on={() => run().toggleUnderline().run()}><u>U</u></Fmt>
         <Sep />
-        <Fmt name="bullets" label="Bulleted list" active={s.bullets} on={() => run().toggleBulletList().run()}>≡•</Fmt>
-        <Fmt name="numbered" label="Numbered list" active={s.numbered} on={() => run().toggleOrderedList().run()}><span className="fmt-glyph" data-glyph="≡1" aria-hidden="true" /></Fmt>
+        <Fmt name="bullets" label={t("fb_bullets")} active={s.bullets} on={() => run().toggleBulletList().run()}>≡•</Fmt>
+        <Fmt name="numbered" label={t("fb_numbered")} active={s.numbered} on={() => run().toggleOrderedList().run()}><span className="fmt-glyph" data-glyph="≡1" aria-hidden="true" /></Fmt>
         <Sep />
-        <Fmt name="undo" label="Undo" disabled={!s.canUndo} on={() => run().undo().run()}>↶</Fmt>
-        <Fmt name="redo" label="Redo" disabled={!s.canRedo} on={() => run().redo().run()}>↷</Fmt>
+        <Fmt name="undo" label={t("fb_undo")} disabled={!s.canUndo} on={() => run().undo().run()}>↶</Fmt>
+        <Fmt name="redo" label={t("fb_redo")} disabled={!s.canRedo} on={() => run().redo().run()}>↷</Fmt>
         <Sep />
-        <Fmt name="image" label="Insert image" on={() => fileRef.current?.click()}>🖼 Image</Fmt>
-        <input ref={fileRef} type="file" accept="image/*" hidden data-testid="fmt-image-input" aria-label="Choose a picture"
+        <Fmt name="image" label={t("fb_image")} on={() => fileRef.current?.click()}>{t("fb_image_btn")}</Fmt>
+        <input ref={fileRef} type="file" accept="image/*" hidden data-testid="fmt-image-input" aria-label={t("fb_pick_picture")}
           onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; void onPicture(f); }} />
-        <Fmt name="table" label="Insert table" on={() => setTableOpen(true)}>⊞ Table</Fmt>
+        <Fmt name="table" label={t("fb_table")} on={() => setTableOpen(true)}>{t("fb_table_btn")}</Fmt>
         <Fmt name="caption" label={plainText(t("cap_btn"))} on={() => setCaptionOpen(true)}>{t("cap_btn")}</Fmt>
-        <Fmt name="find" label="Find and replace" active={findOpen} on={() => { setFindSeed(""); setFindOpen((o) => !o); }}>🔍 Find</Fmt>
+        <Fmt name="find" label={t("fb_find")} active={findOpen} on={() => { setFindSeed(""); setFindOpen((o) => !o); }}>{t("fb_find_btn")}</Fmt>
         <Fmt name="dictate" label={dictating ? t("dict_stop") : t("dict_btn")} title={t("dict_btn_title")} active={dictating} on={toggleDictation}>
           {dictating ? "⏹ " : "🎤 "}{dictating ? t("dict_stop") : t("dict_btn")}
         </Fmt>
         <select className="select" aria-label={t("dict_lang_label")} data-testid="fmt-dict-lang" value={lang} onChange={(e) => pickLang(e.target.value)}>
           {DICTATION_LANGS.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
         </select>
-        <button type="button" className="fmt" aria-label="More formatting" aria-expanded={more} data-testid="fmt-more" onMouseDown={(e) => e.preventDefault()}
+        <button type="button" className="fmt" aria-label={t("fb_more_label")} aria-expanded={more} data-testid="fmt-more" onMouseDown={(e) => e.preventDefault()}
           onClick={() => { void update({ fmtMore: !more }); }}>{t("fmt_more_btn", { a: more ? "▴" : "▾" })}</button>
       </div>
 
       {more && (
-        <div className="fmtbar fmtbar-more" role="toolbar" aria-label="More formatting" data-testid="format-bar-more">
-          <select className="select" aria-label="Font" data-testid="fmt-font" value={FONTS.includes(s.font) ? s.font : ""}
+        <div className="fmtbar fmtbar-more" role="toolbar" aria-label={t("fb_more_label")} data-testid="format-bar-more">
+          <select className="select" aria-label={t("fb_font")} data-testid="fmt-font" value={FONTS.includes(s.font) ? s.font : ""}
             onChange={(e) => { const c = run(); if (e.target.value) c.setFontFamily(e.target.value).run(); else c.unsetFontFamily().run(); }}>
-            <option value="">Font</option>
+            <option value="">{t("fb_font")}</option>
             {FONTS.map((f) => <option key={f} value={f}>{f}</option>)}
           </select>
           <select className="select" aria-label={t("ps_size")} data-testid="fmt-size" value={SIZES.some((n) => `${n}px` === s.size) ? s.size : ""}
@@ -299,36 +299,36 @@ export function FormatBar({ editor, openStudio: openWindow }: { editor: Editor; 
             {SIZES.map((n) => <option key={n} value={`${n}px`}>{n} px</option>)}
           </select>
           <Sep />
-          <Fmt name="strike" label="Strikethrough" active={s.strike} on={() => run().toggleStrike().run()}><s>S</s></Fmt>
-          <Fmt name="sup" label="Superscript" active={s.sup} on={() => run().toggleSuperscript().run()}>x²</Fmt>
-          <Fmt name="sub" label="Subscript" active={s.sub} on={() => run().toggleSubscript().run()}>x₂</Fmt>
+          <Fmt name="strike" label={t("fb_strike")} active={s.strike} on={() => run().toggleStrike().run()}><s>S</s></Fmt>
+          <Fmt name="sup" label={t("fb_sup")} active={s.sup} on={() => run().toggleSuperscript().run()}>x²</Fmt>
+          <Fmt name="sub" label={t("fb_sub")} active={s.sub} on={() => run().toggleSubscript().run()}>x₂</Fmt>
           <Sep />
-          <label className="fmt fmt-color" title="Text colour">A
-            <input type="color" aria-label="Text colour" data-testid="fmt-color" value={/^#[0-9a-f]{6}$/i.test(s.color) ? s.color : "#000000"} onChange={(e) => run().setColor(e.target.value).run()} />
+          <label className="fmt fmt-color" title={t("fb_text_colour")}>A
+            <input type="color" aria-label={t("fb_text_colour")} data-testid="fmt-color" value={/^#[0-9a-f]{6}$/i.test(s.color) ? s.color : "#000000"} onChange={(e) => run().setColor(e.target.value).run()} />
           </label>
-          <label className="fmt fmt-color" title="Highlight">🖍
-            <input type="color" aria-label="Highlight colour" data-testid="fmt-highlight" value={/^#[0-9a-f]{6}$/i.test(s.highlight) ? s.highlight : "#fde68a"} onChange={(e) => run().setHighlight({ color: e.target.value }).run()} />
+          <label className="fmt fmt-color" title={t("fb_highlight")}>🖍
+            <input type="color" aria-label={t("fb_highlight_colour")} data-testid="fmt-highlight" value={/^#[0-9a-f]{6}$/i.test(s.highlight) ? s.highlight : "#fde68a"} onChange={(e) => run().setHighlight({ color: e.target.value }).run()} />
           </label>
           <Sep />
-          <Fmt name="outdent" label="Outdent" disabled={!s.canOutdent} on={() => (editor.isActive("listItem") ? run().liftListItem("listItem") : run().outdent()).run()}>⇤</Fmt>
-          <Fmt name="indent" label="Indent" disabled={!s.canIndent} on={() => (editor.isActive("listItem") ? run().sinkListItem("listItem") : run().indent()).run()}>⇥</Fmt>
-          <Fmt name="clear" label="Clear formatting" on={() => { clearFormatting(editor); }}>Tx</Fmt>
+          <Fmt name="outdent" label={t("fb_outdent")} disabled={!s.canOutdent} on={() => (editor.isActive("listItem") ? run().liftListItem("listItem") : run().outdent()).run()}>⇤</Fmt>
+          <Fmt name="indent" label={t("fb_indent")} disabled={!s.canIndent} on={() => (editor.isActive("listItem") ? run().sinkListItem("listItem") : run().indent()).run()}>⇥</Fmt>
+          <Fmt name="clear" label={t("fb_clear")} on={() => { clearFormatting(editor); }}>Tx</Fmt>
           <Sep />
-          <Fmt name="align-left" label="Align left" active={s.left} on={() => run().setTextAlign("left").run()}>⇚</Fmt>
-          <Fmt name="align-center" label="Align centre" active={s.center} on={() => run().setTextAlign("center").run()}>≡</Fmt>
-          <Fmt name="align-right" label="Align right" active={s.right} on={() => run().setTextAlign("right").run()}>⇛</Fmt>
-          <Fmt name="align-justify" label="Justify" active={s.justify} on={() => run().setTextAlign("justify").run()}>☰</Fmt>
+          <Fmt name="align-left" label={t("fb_align_left")} active={s.left} on={() => run().setTextAlign("left").run()}>⇚</Fmt>
+          <Fmt name="align-center" label={t("fb_align_centre")} active={s.center} on={() => run().setTextAlign("center").run()}>≡</Fmt>
+          <Fmt name="align-right" label={t("fb_align_right")} active={s.right} on={() => run().setTextAlign("right").run()}>⇛</Fmt>
+          <Fmt name="align-justify" label={t("fb_justify")} active={s.justify} on={() => run().setTextAlign("justify").run()}>☰</Fmt>
           <Sep />
-          <Fmt name="row" label="Add row below" on={() => run().addRowAfter().run()}>+Row</Fmt>
-          <Fmt name="col" label="Add column right" on={() => run().addColumnAfter().run()}>+Col</Fmt>
+          <Fmt name="row" label={t("fb_row")} on={() => run().addRowAfter().run()}>{t("fb_row_btn")}</Fmt>
+          <Fmt name="col" label={t("fb_col")} on={() => run().addColumnAfter().run()}>{t("fb_col_btn")}</Fmt>
           <Fmt name="photo" label={plainText(t("ps_tb_btn"))} on={() => openStudio(null)}>{t("ps_tb_btn")}</Fmt>
-          <Fmt name="pagebreak" label="Insert page break" on={() => run().insertContentAt(editor.state.selection.to, { type: "pageBreak" }).run()}>⤓ Page Break</Fmt>
+          <Fmt name="pagebreak" label={t("fb_pagebreak")} on={() => run().insertContentAt(editor.state.selection.to, { type: "pageBreak" }).run()}>{t("fb_pagebreak_btn")}</Fmt>
         </div>
       )}
 
       {s.image && (
         <div className="fmtbar imgbar" data-testid="img-bar">
-          <label htmlFor="imgWidth">Picture width</label>
+          <label htmlFor="imgWidth">{t("fb_pic_width")}</label>
           <input id="imgWidth" type="range" min={MIN_IMG} max={MAX_IMG} step={10} value={s.imageWidth} data-testid="img-width"
             onChange={(e) => editor.chain().updateAttributes("image", { width: Number(e.target.value) }).run()} />
           <span className="findbar-count" data-testid="img-width-value">{s.imageWidth} px</span>

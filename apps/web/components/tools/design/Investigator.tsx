@@ -58,7 +58,7 @@ export function Investigator({ projectId, now = () => new Date() }: { projectId:
       <div className="stack" style={{ maxWidth: "62ch" }}>
         {!hidden && <section className="flex flex-col gap-1.5" aria-label={t("design_pi_list")} data-testid="pi-items">
           {PI_ITEMS.map((it, i) => (
-            <label key={i} className="flex cursor-pointer items-center gap-2 text-[13.5px] text-ink">
+            <label key={i} className="tick-row flex cursor-pointer items-center gap-2 text-[13.5px] text-ink">
               <input type="checkbox" className="size-[17px] accent-purple-600" data-testid={"pi-item-" + i} checked={!!checks[String(i)]} disabled={pi.unread} onChange={(e) => toggle(i, e.target.checked)} />
               {it}
             </label>

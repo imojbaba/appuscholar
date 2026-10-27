@@ -59,7 +59,7 @@ export function Budget({ projectId, now = () => new Date() }: { projectId: strin
                 type="number" className="input min-w-0 flex-1" data-testid={"budget-amount-" + i} aria-label={t("design_budget_amount", { n: i + 1 })}
                 placeholder={t("design_budget_amount_ph")} value={r.amount} readOnly={budget.unread} onChange={(e) => edit(i, "amount", e.target.value)}
               />
-              <Button variant="ghost" size="icon-sm" data-testid={"budget-remove-" + i} aria-label={t("design_budget_remove", { n: i + 1 })} disabled={budget.unread} onClick={() => remove(i)}>
+              <Button variant="ghost" size="icon-sm" className="budget-remove" data-testid={"budget-remove-" + i} aria-label={t("design_budget_remove", { n: i + 1 })} disabled={budget.unread} onClick={() => remove(i)}>
                 <X aria-hidden="true" />
               </Button>
             </div>

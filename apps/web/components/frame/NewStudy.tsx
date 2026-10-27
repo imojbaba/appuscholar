@@ -58,7 +58,7 @@ export function NewStudy({ moveDocId }: { moveDocId?: string }) {
       }
       // A move is idempotent, so a retry moves again harmlessly; the moved document is then the study's first, and none is made.
       if (moveDocId) await apiFetch(`/documents/${moveDocId}/move`, { method: "POST", body: JSON.stringify({ projectId: id }) });
-      await listOrSeed(id, vault);
+      await listOrSeed(id, vault, t("doc_first_title"));
       // The home says once, on the first visit, what is at the top of the page.
       markJustMade(id, false);
       await openProject(id, moveDocId ? { docId: moveDocId } : { place: "idea" });

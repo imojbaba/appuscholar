@@ -26,12 +26,12 @@ export function Overview({ projectId }: { projectId: string }) {
   const dash = designDashboard(s.done);
   const link = (key: string, tab: string, mark: boolean | null) => (
     <li key={key}>
-      <Link href={placeHref(projectId, STAGE_OF[tab]!, tab)} className="flex items-center gap-2 rounded-md px-1 py-1.5 text-[13.5px] text-ink hover:bg-soft" data-testid={"design-row-" + key}>
+      <Link href={placeHref(projectId, STAGE_OF[tab]!, tab)} className="design-link flex items-center gap-2 rounded-md px-1 py-1.5 text-[13.5px] text-ink hover:bg-soft" data-testid={"design-row-" + key}>
         {mark === null
           ? <span className="inline-block size-[18px] shrink-0" aria-hidden="true" />
           : mark
             ? <CheckCircle size={18} weight="fill" className="shrink-0 text-ok-ink" aria-hidden="true" />
-            : <Circle size={18} className="shrink-0 text-muted" aria-hidden="true" />}
+            : <Circle size={18} className="shrink-0 text-muted-foreground" aria-hidden="true" />}
         {mark !== null && <span className="sr-only">{mark ? t("design_mark_ready") : t("design_mark_not_ready")}</span>}
         <span data-testid="design-label">{t("design_row_" + key)}</span>
       </Link>

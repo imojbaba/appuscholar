@@ -465,7 +465,7 @@ test("S9-01 I take my work out: the project's zip, all my work, and my account d
     const dialog = page.getByTestId("export-dialog");
     await expect(dialog).toBeVisible();
     await qa.check("data", "the window is titled \"Export: Sleep and exam anxiety\", with \"What to include\", and says it is one zip of readable files", async () => {
-      await expect(dialog.locator("#exp-h")).toHaveText(T("exp_title", { title: PROJECT }));
+      await expect(dialog.locator(".exp-h")).toHaveText(T("exp_title", { title: PROJECT }));
       await expect(dialog).toContainText(T("exp_include"));
       await expect(dialog).toContainText(T("exp_sub"));
       await expect(dialog).toContainText(T("exp_one_zip"));
@@ -905,7 +905,7 @@ test("S9-02 with my vault locked, the exports ask for the passphrase and say so,
     await openExport(page, { via: "menu" });
     const dialog = page.getByTestId("export-dialog");
     await qa.check("data", "the window opens with no sealed text in it: the title is \"Locked title\"", async () => {
-      await expect(dialog.locator("#exp-h")).toHaveText(T("exp_title", { title: T("title_locked") }));
+      await expect(dialog.locator(".exp-h")).toHaveText(T("exp_title", { title: T("title_locked") }));
       expect(await dialog.innerText(), "the window's text").not.toMatch(CIPHERTEXT);
     }, { source: `${SHEET_B1} row 8 ("No ciphertext shows anywhere"); lib/vault/titles.ts` });
     await page.getByTestId("exp-download").click();
@@ -1270,7 +1270,7 @@ test("S9-05 on a phone in Hindi, the export window, Help and the window that ask
     await openExport(page);
     const dialog = page.getByTestId("export-dialog");
     await qa.check("data", "the window speaks Hindi: its title with my project's name, \"What to include\", its two notes, and each part's name, description and format", async () => {
-      await expect(dialog.locator("#exp-h")).toHaveText(inHindi("exp_title", { title: PROJECT_HI }));
+      await expect(dialog.locator(".exp-h")).toHaveText(inHindi("exp_title", { title: PROJECT_HI }));
       for (const key of ["exp_include", "exp_sub", "exp_one_zip", "exp_all_note", "exp_download", "exp_cancel"]) await expect(dialog, key).toContainText(inHindi(key));
       for (const part of LISTED) {
         const keys = PART_KEYS[part.id]!;

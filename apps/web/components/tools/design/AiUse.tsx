@@ -178,7 +178,7 @@ export function AiUse({ projectId }: { projectId: string }) {
   const logOff = settings.aiLogOff === true;
   const field = "flex flex-col gap-1 text-[13.5px] text-ink";
   const tick = (checked: boolean, on: (v: boolean) => void, label: string, testid: string) => (
-    <label key={testid} className="flex cursor-pointer items-center gap-2 text-[13.5px] text-ink">
+    <label key={testid} className="tick-row flex cursor-pointer items-center gap-2 text-[13.5px] text-ink">
       <input type="checkbox" className="size-[17px] accent-purple-600" data-testid={testid} checked={checked} onChange={(e) => { setRefuse(""); on(e.target.checked); }} />
       {label}
     </label>
@@ -190,7 +190,7 @@ export function AiUse({ projectId }: { projectId: string }) {
       <div className="stack" style={{ maxWidth: "62ch" }}>
         <section className="flex flex-col gap-1.5" aria-labelledby="aiu-log-h" data-testid="aiu-log">
           <h4 id="aiu-log-h" className="m-0 text-[15px] font-semibold text-ink">{t("design_aiu_log_h")}</h4>
-          <label className="flex cursor-pointer items-center gap-2 text-[13.5px] text-ink">
+          <label className="tick-row flex cursor-pointer items-center gap-2 text-[13.5px] text-ink">
             <input type="checkbox" className="size-[17px] accent-purple-600" data-testid="aiu-keep" checked={!logOff} onChange={(e) => { void update({ aiLogOff: !e.target.checked }); }} />
             {t("design_aiu_keep")}
           </label>
@@ -240,12 +240,12 @@ export function AiUse({ projectId }: { projectId: string }) {
           <p className="desc" style={{ margin: 0 }}>{t("design_aiu_dates_desc")}</p>
           <div className="flex flex-col gap-1.5" role="group" aria-label={t("design_aiu_rows")} data-testid="aiu-rows">
             {kinds.map(([k, n], i) => (
-              <label key={k} className="flex cursor-pointer items-center gap-2 text-[13.5px] text-ink">
+              <label key={k} className="tick-row flex cursor-pointer items-center gap-2 text-[13.5px] text-ink">
                 <input
                   type="checkbox" className="size-[17px] accent-purple-600" data-testid={"aiu-row-" + i} data-k={k} checked={!off.has(k)}
                   onChange={(e) => { setRefuse(""); setOff((p) => { const q = new Set(p); if (e.target.checked) q.delete(k); else q.add(k); return q; }); }}
                 />
-                <span>{k.charAt(0).toUpperCase() + k.slice(1)} <span className="text-muted">({n})</span></span>
+                <span>{k.charAt(0).toUpperCase() + k.slice(1)} <span className="text-muted-foreground">({n})</span></span>
               </label>
             ))}
             {log.state === "ready" && kinds.length === 0 && <p className="desc" style={{ margin: 0 }} data-testid="aiu-none">{t("design_aiu_none")}</p>}

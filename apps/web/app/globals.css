@@ -503,6 +503,15 @@
   [role="dialog"] button, [role="alertdialog"] button, [role="menuitem"], .toast button { min-height: 44px; }
   /* Dialogs render outside the frame: their close X gets a 44px hit area by padding, the icon stays 16px. */
   [data-slot="dialog-close"] { top: 4px; right: 4px; min-width: 44px; padding: 14px; display: inline-flex; align-items: center; justify-content: center; }
+  /* Links and summaries are not buttons, so the rule above misses them: the study name in the top line, the "Your question" strip, Overview's lines. */
+  .place-crumbs { padding: 0; }
+  .place-crumbs a { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
+  .place-q summary { min-height: 44px; }
+  .design-link { min-height: 44px; }
+  /* A tick is pressed through its whole row; a remove button is as wide as it is tall; the toolbar scrolls sideways, so its buttons keep 44px. */
+  .tick-row { min-height: 44px; align-items: center; }
+  .budget-remove { min-width: 44px; }
+  .fmt { min-width: 44px; }
 }
 /* Task 8b: a translated quote (v1 250), the quote box, the one-click capture's <details> (v1 921-928) and the library's last buttons (v1 940-946). */
 .editor .ProseMirror .translated-quote { border-bottom: 2px dotted #7c3aed; cursor: help; }
