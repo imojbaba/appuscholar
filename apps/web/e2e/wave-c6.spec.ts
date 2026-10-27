@@ -16,6 +16,7 @@ import { readFileSync } from "node:fs";
 import JSZip from "jszip";
 import { test, expect, type Page, type Request } from "@playwright/test";
 import { signIn } from "./support/signin";
+import { makeStudy } from "./support/study";
 import { API_ORIGIN } from "./support/origins";
 
 const dict = (f: string) => JSON.parse(readFileSync(path.join(__dirname, f), "utf8")) as Record<string, string>;
@@ -57,12 +58,9 @@ test("locked backup and check: make it, open it with the wrong passphrase and th
   let plainPath = "";
   let lockedWords = -1;
 
-  await test.step("1. sign in with a new account, save a project from first run, write one sentence", async () => {
-    await signIn(page, { prefix: "c6", newAccount: true, ready: ["first-run"] });
-    await page.locator("#ideaTopic").fill(TOPIC);
-    await page.getByTestId("idea-save-title").fill(PROJECT);
-    await page.getByTestId("idea-save").click();
-    await expect(page.getByTestId("project-home")).toBeVisible();
+  await test.step("1. sign in with a new account, start a study, write one sentence", async () => {
+    await signIn(page, { prefix: "c6", newAccount: true, ready: ["project-list"] });
+    await makeStudy(page, { name: PROJECT, question: TOPIC });
     await page.getByTestId("home-open-writing").click();
     await expect(page.getByTestId("doc-select")).toBeVisible();
     const saved = page.waitForResponse((r) => isDocPut(r) && r.ok() && (r.request().postData() ?? "").includes(SENTENCE));

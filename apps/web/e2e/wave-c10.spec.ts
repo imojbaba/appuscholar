@@ -5,7 +5,7 @@
  * here); DELETE /ai/log goes to the real api (the account's log is empty there, so it answers 204), and once it has answered the made-up GET answers
  * an empty list, as the api would; the made-up answer is then taken away, so what follows is the real api's. The steps:
  *   1. the AI-use tab lists the two rows; a statement is built into the box;
- *   2. Erase the log opens a confirm that says "all your projects" and "no project open"; Cancel sends nothing and the rows stay;
+ *   2. Erase the log opens a confirm that says "all your studies" and "no study open"; Cancel sends nothing and the rows stay;
  *   3. Erase the log, then the confirm's button: exactly one DELETE /ai/log, the tab shows the empty-log message and the erased line, the statement
  *      built in step 1 is still in its box;
  *   4. a reload reads the log from the real api and it is empty;
@@ -23,6 +23,7 @@ import { readFileSync } from "node:fs";
 import { test, expect, type Page, type Route } from "@playwright/test";
 import type { AiuEntry } from "@appuscholar/core";
 import { signIn } from "./support/signin";
+import { makeStudy } from "./support/study";
 import { API_ORIGIN, WEB_ORIGIN } from "./support/origins";
 
 const MESSAGES = path.join(__dirname, "../messages");
@@ -44,16 +45,10 @@ const CORS_APP = { "access-control-allow-origin": WEB_ORIGIN, "access-control-al
 test.describe.configure({ timeout: 300_000 });
 test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
 
-/** First run's "Save as my project" with a typed idea; the new project's home opens. Returns the project's id. */
+/** A new account makes its first study (Start a new study); the study's home opens. Returns the study's id. */
 async function newProject(page: Page): Promise<string> {
-  await signIn(page, { prefix: "c10", newAccount: true, ready: ["first-run"] });
-  await page.locator("#ideaTopic").fill("Does a fixed bedtime routine lower exam anxiety in first-year students?");
-  await page.locator("#ideaRes").fill("About 60 first-years");
-  await page.getByTestId("idea-save").click();
-  await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });
-  const id = /\/p\/([^/?#]+)/.exec(page.url())?.[1];
-  if (!id) throw new Error("no project id in " + page.url());
-  return id;
+  await signIn(page, { prefix: "c10", newAccount: true, ready: ["project-list"] });
+  return makeStudy(page, { question: "Does a fixed bedtime routine lower exam anxiety in first-year students?", have: "About 60 first-years" });
 }
 
 test("AI-use tab: Erase the log asks first, erases once, shows the empty log and keeps the statement", async ({ page }) => {
@@ -93,13 +88,13 @@ test("AI-use tab: Erase the log asks first, erases once, shows the empty log and
   });
   const built = await page.getByTestId("aiu-out").inputValue();
 
-  await test.step("2. the confirm names all your projects; Cancel sends nothing", async () => {
+  await test.step("2. the confirm names all your studies; Cancel sends nothing", async () => {
     await page.getByTestId("aiu-erase").click();
     const box = page.getByTestId("aiu-erase-confirm");
     await expect(box).toBeVisible();
-    await expect(box).toContainText("all your projects");
+    await expect(box).toContainText("all your studies");
     await expect(box).toContainText(T("wc_aiu_erase_desc"));
-    await expect(box).toContainText("no project open");
+    await expect(box).toContainText("no study open");
     await page.getByTestId("aiu-erase-cancel").click();
     await expect(box).toBeHidden();
     expect(sent).toEqual([]);
