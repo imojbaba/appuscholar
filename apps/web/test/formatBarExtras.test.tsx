@@ -449,6 +449,13 @@ describe("dictation: the controls", () => {
     expect(H.dict_lang_label).not.toBe(E.dict_lang_label);
   });
 
+  it("names the four languages in Hindi on a Hindi page (an English language name in a Hindi toolbar is English left behind)", async () => {
+    await mount(make(), "hi");
+    const names = [...(tid("fmt-dict-lang") as HTMLSelectElement).options].map((o) => o.textContent);
+    expect(names).toEqual(dictate.DICTATION_LANGS.map((l) => H[l.labelKey]));
+    for (const l of dictate.DICTATION_LANGS) expect(H[l.labelKey], l.code).not.toBe(l.label);
+  });
+
   it("the old UNSUPPORTED_MESSAGE export is gone (the sentence is t('dict_unsupported'))", () => {
     expect("UNSUPPORTED_MESSAGE" in dictate).toBe(false);
   });

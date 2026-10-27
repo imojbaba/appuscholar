@@ -280,7 +280,7 @@ export function FormatBar({ editor, openStudio: openWindow }: { editor: Editor; 
           {dictating ? "⏹ " : "🎤 "}{dictating ? t("dict_stop") : t("dict_btn")}
         </Fmt>
         <select className="select" aria-label={t("dict_lang_label")} data-testid="fmt-dict-lang" value={lang} onChange={(e) => pickLang(e.target.value)}>
-          {DICTATION_LANGS.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
+          {DICTATION_LANGS.map((l) => <option key={l.code} value={l.code}>{t(l.labelKey)}</option>)}
         </select>
         <button type="button" className="fmt" aria-label={t("fb_more_label")} aria-expanded={more} data-testid="fmt-more" onMouseDown={(e) => e.preventDefault()}
           onClick={() => { void update({ fmtMore: !more }); }}>{t("fmt_more_btn", { a: more ? "▴" : "▾" })}</button>

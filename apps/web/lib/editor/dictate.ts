@@ -12,12 +12,12 @@ type Recognition = {
 };
 type Ctor = new () => Recognition;
 
-/** v1 DICT_LANGS (4251), in v1 order. */
+/** v1 DICT_LANGS (4251), in v1 order. `label` is the English name; the toolbar shows the dictionary's `labelKey` (Hindi's is the one the citations' source language already has), so a Hindi page names the languages in Hindi. */
 export const DICTATION_LANGS = [
-  { code: "en-IN", label: "English (India)" },
-  { code: "hi-IN", label: "Hindi" },
-  { code: "en-GB", label: "English (UK)" },
-  { code: "en-US", label: "English (US)" }
+  { code: "en-IN", label: "English (India)", labelKey: "dict_lang_en_in" },
+  { code: "hi-IN", label: "Hindi", labelKey: "cite_sourcelang_hi" },
+  { code: "en-GB", label: "English (UK)", labelKey: "dict_lang_en_gb" },
+  { code: "en-US", label: "English (US)", labelKey: "dict_lang_en_us" }
 ] as const;
 
 /** hi-IN when the content language is Hindi, else en-IN. */

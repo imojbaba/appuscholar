@@ -245,7 +245,7 @@ describe("dictation messages", () => {
   });
   it("has a Hindi draft for every key, no key English lacks, no emoji and no dashes used as dashes", () => {
     const keys = Object.keys(E);
-    expect(keys.length).toBe(16);
+    expect(keys.length).toBe(19);
     expect(keys.filter((k) => !k.startsWith("dict_"))).toEqual([]);
     expect(keys.filter((k) => !H[k])).toEqual([]);
     expect(Object.keys(H).filter((k) => !k.startsWith("$") && !(k in E))).toEqual([]);
