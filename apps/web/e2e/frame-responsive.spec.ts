@@ -54,6 +54,8 @@ const pastGutter = (page: Page, root: string) => page.evaluate((sel) => {
 async function newProject(page: Page) {
   await signIn(page, NEW_ACCOUNT);
   await page.locator("#ideaTopic").fill("Does a fixed bedtime routine lower exam anxiety in first-year students?");
+  // The three questions are folded away, optional ("Add details for better feedback").
+  await page.getByTestId("idea-details-toggle").click();
   await page.locator("#ideaRes").fill("About 60 first-years");
   await page.getByTestId("idea-save").click();
   await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });

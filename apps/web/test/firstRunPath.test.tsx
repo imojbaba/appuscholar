@@ -64,7 +64,7 @@ describe("the header on the first-run path", () => {
     // Once both are known, a student with no key is told to add one.
     h.hasKey = false;
     rerender();
-    expect(tid("ai-pill")!.textContent).toBe(E.ai_pill_nokey);
+    expect(tid("ai-pill")!.textContent).toBe("Connect AI");
   });
 
   it("Q1: the language button's accessible name starts with the text it shows", () => {

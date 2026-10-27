@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { IBM_Plex_Sans, IBM_Plex_Sans_Devanagari, Fraunces } from "next/font/google";
 import { getServerLang } from "@/lib/serverLang";
@@ -10,6 +10,8 @@ const plexDev = IBM_Plex_Sans_Devanagari({ subsets: ["devanagari", "latin"], wei
 const fraunces = Fraunces({ subsets: ["latin"], weight: ["600"], style: ["normal", "italic"], variable: "--font-fraunces", display: "swap" });
 
 export const metadata: Metadata = { title: "Appuscholar", description: "A writing and research helper for psychology students." };
+// The phone keyboard shrinks the page, not only what is seen of it, so a centred window (Connect AI, a passphrase) and its buttons stay above the keyboard.
+export const viewport: Viewport = { width: "device-width", initialScale: 1, interactiveWidget: "resizes-content" };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const nonce = (await headers()).get("x-nonce") ?? undefined;

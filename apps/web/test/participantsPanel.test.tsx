@@ -804,11 +804,12 @@ describe("the vault and the other states", () => {
     expect(h.asked).toEqual([]);
   });
 
-  it("no vault yet: says to set it up first, with the vault's own set-up button, and shows no table and stores nothing", async () => {
+  it("no vault yet: says the list is only stored locked, with Lock my work (the vault's own set-up), and shows no table and stores nothing", async () => {
     seed(PLAN);
     h.status = "off";
     await mount();
-    expect(text("pp-off")).toContain("Set up your vault first: your participant list is only ever stored sealed.");
+    expect(text("pp-off")).toContain("Participant details are only ever stored locked. Lock your work with a passphrase to start your list.");
+    expect(text("pp-setup-vault")).toBe("Lock my work");
     expect($("pp-table")).toBeNull();
     expect($("pp-add")).toBeNull();
     expect(document.body.textContent).not.toContain("Priya");

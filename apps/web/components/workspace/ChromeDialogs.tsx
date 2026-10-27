@@ -4,22 +4,22 @@ import { useSettings } from "@/lib/settings";
 import { toast } from "@/components/ui/toast";
 import { Help } from "./dialogs/Help";
 import { Terms } from "./dialogs/Terms";
-import { Welcome } from "./dialogs/Welcome";
 import { PassphraseHost } from "./dialogs/Passphrase";
-import { ProviderKey } from "./dialogs/ProviderKey";
+import { SettingsWindow } from "./dialogs/Settings";
+import { ConnectAI } from "./dialogs/ConnectAI";
 import { RateLimit } from "./dialogs/RateLimit";
 import { VaultRecoverHost } from "./dialogs/VaultRecover";
 import { VaultSetupHost } from "./dialogs/VaultSetup";
 
-/** Help, Terms and Welcome live in dialogs/; the passphrase, personal-data and rate-limit dialogs open from callAI and the key dialog; the vault setup from the vault pill and the key dialog; the vault recovery from the unlock ask's vault_forgot link. */
+/** Help, Terms and Settings live in dialogs/; Connect AI opens from the AI pill, the account menu, an AI button with no key and the idea screen; the passphrase, personal-data and rate-limit dialogs open from callAI; the vault setup from the vault pill and the account menu; the vault recovery from the unlock ask's vault_forgot link. */
 export function ChromeDialogs() {
   const { update } = useSettings();
   return (
     <>
       <Help />
       <Terms />
-      <Welcome />
-      <ProviderKey />
+      <SettingsWindow />
+      <ConnectAI />
       <PassphraseHost />
       <VaultSetupHost />
       <VaultRecoverHost />

@@ -19,8 +19,14 @@ const GOLDEN = join(__dirname, "../../../packages/core/test/golden/citshare");
 const INPUTS = (JSON.parse(readFileSync(join(GOLDEN, "inputs.json"), "utf8")) as { quotes: Q[] }).quotes;
 const OUT = (JSON.parse(readFileSync(join(GOLDEN, "cases.json"), "utf8")) as { quotes: Out[] }).quotes;
 
-/** v1's callAI threw `new Error('key')` (apiMsg 5255); v2's callAI rejects with the AiCallError whose message is the same sentence. */
+/** v1's callAI threw `new Error('key')` (apiMsg 5255); v2's callAI rejects with the AiCallError whose message is v2's no-key sentence. */
 const v2Error = (code: string) => code === "key" ? new AiCallError("no-key", apiMsg("no-key")) : new Error(code);
+/** v1's no-key sentence named a ⚙ button v2 does not have; v2 names Connect AI (first-run build spec, OJ 2026-10-27). The expected toasts carry v2's sentence for it. */
+const V1_NO_KEY = "Add your API key first — click ⚙ at the top right.";
+const expected = (id: string) => {
+  const o = OUT.find((x) => x.id === id)!;
+  return { ...o, toasts: o.toasts.map((m) => (m === V1_NO_KEY ? apiMsg("no-key") : m)) };
+};
 
 async function run(q: Q) {
   const calls: Array<{ prompt: string; opts: Record<string, unknown> }> = [];
@@ -48,7 +54,7 @@ describe("citeInsertQuote equals v1's citInsertQuote", () => {
   });
   for (const q of INPUTS) {
     it(`${q.id}: the same calls, insert, toasts and textarea`, async () => {
-      expect(await run(q)).toEqual(OUT.find((o) => o.id === q.id));
+      expect(await run(q)).toEqual(expected(q.id));
     });
   }
   it("the prompt is v1 7896's text with the quote between the markers, at temperature 0.2, 900 tokens and no language line", () => {

@@ -7,7 +7,7 @@ import { QA_API_ORIGIN } from "../support/origins";
 import { serverRows } from "../support/server";
 import { routeServices, SERVICE_DOWN_CONSOLE, SERVICE_HOSTS } from "../support/services";
 import {
-  answerPassphrase, apiGet, cancelPassphraseAsks, catchDownload, docText, forgetOnThisComputer, goOffline, goOnline, lockByReload, newStudent, openUnlockWindow, providerCalls, recordToasts, sameAccountElsewhere, selectInDoc, setLang, slowApi, toPlace,
+  answerPassphrase, apiGet, KEY_TEST_PROMPT, cancelPassphraseAsks, catchDownload, docText, forgetOnThisComputer, goOffline, goOnline, lockByReload, newStudent, openUnlockWindow, providerCalls, recordToasts, sameAccountElsewhere, selectInDoc, setLang, slowApi, toPlace,
   OFFLINE_CONSOLE, typeInDoc, unlock, vaultRemembered, type Student
 } from "../support/student";
 import { expect, notChecked, test } from "../support/test";
@@ -53,8 +53,9 @@ test("student: a new student with the vault on; locked and unlocked; off and on 
       expect(page.url()).toContain(`/p/${s.projectId}`);
       await expect(page.getByTestId("project-switcher")).toContainText(PROJECT.name);
     });
-    await qa.check("data", "setting the key up sent nothing to the AI provider", async () => {
+    await qa.check("data", "setting the key up sent the provider only Connect AI's key test, once", async () => {
       expect(await providerCalls(s.key!)).toEqual([]);
+      expect((await providerCalls(s.key!, { keyTest: true })).map((e) => e.prompt)).toEqual([KEY_TEST_PROMPT]);
     });
     await qa.check("data", "newStudent excused no answer of its own: the only allowances in play are the watcher's built-in ones", async () => {
       expect((qa.result().allowed ?? []).filter((a) => !a.builtIn)).toEqual([]);

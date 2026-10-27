@@ -14,7 +14,7 @@ const h = vi.hoisted(() => ({
   blob: null as unknown as Blob,
   blobArgs: [] as unknown[],
   projectId: "p-9" as string | null,
-  openSettings: vi.fn(), toast: vi.fn(), api: vi.fn(), ask: vi.fn(),
+  openConnect: vi.fn(async () => ({ result: "closed", provider: "groq" })), toast: vi.fn(), api: vi.fn(), ask: vi.fn(),
   callAI: vi.fn(),
   hasKey: true,
   put: vi.fn(), requestInsert: vi.fn(),
@@ -31,7 +31,7 @@ vi.mock("@/lib/ai/useKeys", () => ({ useKeys: () => ({ hasKey: () => h.hasKey })
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => h.sug }));
 vi.mock("@/lib/editor/insert", () => ({ putAiInDocument: h.put }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch-1" }, settings: { field: "  nursing " } }) }));
-vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ projectId: h.projectId, openSettings: h.openSettings, requestInsert: h.requestInsert }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ projectId: h.projectId, openConnect: h.openConnect, requestInsert: h.requestInsert }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
 import { ApiError } from "../lib/api";
@@ -89,7 +89,7 @@ beforeEach(() => {
   h.blobArgs = [];
   h.projectId = "p-9";
   h.hasKey = true;
-  h.openSettings.mockReset(); h.toast.mockReset(); h.put.mockReset().mockResolvedValue(true); h.requestInsert.mockReset(); h.api.mockReset(); h.ask.mockReset();
+  h.openConnect.mockReset().mockResolvedValue({ result: "closed", provider: "groq" }); h.toast.mockReset(); h.put.mockReset().mockResolvedValue(true); h.requestInsert.mockReset(); h.api.mockReset(); h.ask.mockReset();
   h.callAI.mockReset().mockResolvedValue(FIVE);
   h.sug = { editor: { isDestroyed: false }, text: null, note: null, status: "idle", statusLabel: null, accept: vi.fn(), copy: vi.fn(), clear: vi.fn() };
   heldBlobs.clear();
@@ -106,11 +106,11 @@ describe("The Idea place: the form on the project's idea_intake", () => {
       .toEqual([E.idea_topic_lbl, E.idea_resources_lbl, E.idea_timeframe_lbl, E.idea_constraints_lbl]);
     expect([E.idea_topic_lbl, E.idea_resources_lbl, E.idea_timeframe_lbl, E.idea_constraints_lbl])
       .toEqual(["Your idea", "Who would you study, and what can you use?", "How much time do you have?", "What limits you: approvals, rules, anything else?"]);
-    expect($('[data-testid="idea-check"]')!.textContent).toBe("Check if it is doable");
-    expect($('[data-testid="idea-check-note"]')!.textContent).toBe("Uses your AI key. Takes about 10 seconds.");
+    expect($('[data-testid="idea-check"]')!.textContent).toBe("Get feedback on my idea");
+    expect($('[data-testid="idea-check-note"]')!.textContent).toBe("The AI reads your idea the way a supervisor would. It tells you whether it can be done as a thesis, and how to narrow it. About 10 seconds.");
     await click("idea-check");
     const built = buildIdeaPromptV2(fieldLabel("  nursing "), STORED);
-    expect(h.callAI).toHaveBeenCalledWith(built.prompt, { temp: 0.3, max: 1200 });
+    expect(h.callAI).toHaveBeenCalledWith(built.prompt, { temp: 0.3, max: 1200, provider: "gemini" });
     expect(classifyAiUse(built.prompt)?.k).toBe("checking whether my project idea is realistic");
     // The read is kept with the idea, as an update of the stored intake.
     const next = lastUpdate(STORED);
@@ -179,12 +179,12 @@ describe("The Idea place: checking the idea", () => {
     expect(h.callAI).not.toHaveBeenCalled();
   });
 
-  it("with no AI key the button opens the key dialog and sends nothing", async () => {
+  it("with no AI key the button opens Connect AI (no save offered: the idea is saved as typed here), and sends nothing", async () => {
     h.hasKey = false;
     h.blob.value = STORED;
     mount();
     await click("idea-check");
-    expect(h.openSettings).toHaveBeenCalledWith("gemini");
+    expect(h.openConnect).toHaveBeenCalledWith({ provider: "gemini", offerSave: false });
     expect(h.callAI).not.toHaveBeenCalled();
     expect(h.blob.set).not.toHaveBeenCalled();
   });
@@ -211,7 +211,7 @@ describe("The Idea place: checking the idea", () => {
     expect($('[data-testid="idea-read-verdict"]')!.textContent).toBe("Go ahead, with two changes.");
     // In the Idea place: Put in my document and Check again; saving a project belongs to first run.
     expect($('[data-testid="idea-insert"]')!.textContent).toBe("Put in my document");
-    expect($('[data-testid="idea-again"]')!.textContent).toBe("Check again");
+    expect($('[data-testid="idea-again"]')!.textContent).toBe("Get feedback again");
     expect($('[data-testid="idea-save"]')).toBeNull();
   });
 

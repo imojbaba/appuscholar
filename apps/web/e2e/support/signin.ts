@@ -11,7 +11,7 @@ export type SignInOptions = {
   email?: string;
   /** Default "u". */
   prefix?: string;
-  /** A new account: tick the terms, continue, and choose "Later" on the welcome tour. */
+  /** A new account: tick the terms and continue (first run's idea screen is then in front, with nothing over it). */
   newAccount?: boolean;
   /** Test ids that must be visible before the workspace counts as ready. */
   ready?: string[];
@@ -25,12 +25,11 @@ export async function signIn(page: Page, opts: SignInOptions = {}): Promise<stri
   await page.getByTestId("e2e-submit").click();
   await expect(page).toHaveURL(APP_URL);
   if (opts.newAccount) {
-    // A new account meets the terms gate, then the welcome tour.
+    // A new account meets the terms gate; after it, nothing else opens over the page.
     await page.getByTestId("terms-age").check();
     await page.getByTestId("terms-agree").check();
     await page.getByTestId("terms-continue").click();
-    await page.getByTestId("welcome-later").click();
-    await expect(page.getByTestId("welcome-dialog")).toBeHidden();
+    await expect(page.getByTestId("terms-dialog")).toBeHidden();
   }
   for (const id of opts.ready ?? []) await expect(page.getByTestId(id)).toBeVisible();
   return email;

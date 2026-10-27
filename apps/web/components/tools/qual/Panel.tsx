@@ -12,6 +12,7 @@ import { publishCodes, publishColors } from "@/lib/tools/qual/liveStore";
 import { stripFromDocuments } from "@/lib/tools/qual/strip";
 import { useCodes } from "@/lib/tools/qual/useCodes";
 import { Button } from "@/components/ui/button";
+import { LockOfferNote } from "@/components/workspace/LockOfferNote";
 import { PanelLoading } from "../PanelLoading";
 import { CodeTree, type Editing } from "./CodeTree";
 import { NameField } from "./NameField";
@@ -118,6 +119,8 @@ function Coding({ projectId }: { projectId: string }) {
     <div className="panel" data-testid="panel-qual" ref={root}>
       <h3>{plainText(t("tab_qual"))}</h3>
       <p className="desc">{t("qual_panel_desc")}</p>
+      {/* Codes are made on interviews: data about real people, saved. With no passphrase set, the lock is offered once (first-run build spec). */}
+      <LockOfferNote saved={codes.codes.length > 0} />
       <label className="mb-2.5 flex cursor-pointer items-center gap-2 text-[13.5px]">
         <input
           type="checkbox"

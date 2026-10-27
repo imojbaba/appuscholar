@@ -58,10 +58,10 @@ test("harness: production build, test sign-in, version", { tag: ["@selftest", "@
     await page.getByTestId("terms-age").check();
     await page.getByTestId("terms-agree").check();
     await page.getByTestId("terms-continue").click();
-    await page.getByTestId("welcome-later").click();
-    await qa.check("data", "the terms are accepted through the api and the welcome window goes", async () => {
-      await expect(page.getByTestId("welcome-dialog")).toBeHidden();
-    }, { source: "e2e: terms gate" });
+    await qa.check("data", "the terms are accepted through the api, and first run's idea screen is in front with nothing over it", async () => {
+      await expect(page.getByTestId("terms-dialog")).toBeHidden();
+      await expect(page.getByTestId("first-run")).toBeVisible();
+    }, { source: "e2e: terms gate; first-run build spec (OJ 2026-10-27)" });
   });
 
   await qa.step("read the version", async () => {

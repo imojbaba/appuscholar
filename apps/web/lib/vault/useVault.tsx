@@ -14,6 +14,7 @@ import { migrateToVault } from "./migrate";
 import { documentTitlePath, type Titled } from "./titles";
 import { forgetRemembered, hasRemembered, readRemembered, rememberVault } from "./remember";
 import { isPopout } from "@/lib/popout/mode";
+import { publishVaultStatus } from "./statusStore";
 
 /** A document's key, wrapped under the vault key, with the version that revisions name in `keyVersion`. */
 export type WrappedDek = { v: number; wrapped: string };
@@ -102,6 +103,9 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     setState((p) => ({ uid, status: p.uid === uid ? p.status : "loading", complete: c }));
   }, []);
   const status: VaultStatus = state.uid === userId ? state.status : "loading";
+  useEffect(() => { publishVaultStatus(status); }, [status]);
+  // Unmounted (sign-out, another account), nothing is known any more.
+  useEffect(() => () => publishVaultStatus("loading"), []);
   const complete = state.uid === userId && state.complete;
   const record = useRef<VaultRecord | null>(null);
   /** The vault key. Held in this tab's memory only, never sent and never written anywhere in clear. */

@@ -30,6 +30,7 @@ import { readFileSync } from "node:fs";
 import { test, expect as baseExpect, type Page, type Request, type Route, type BrowserContext } from "@playwright/test";
 import { BANK_CSV_NAME, STY_VOCAB, styleVocabScore, styleWordCount } from "@appuscholar/core";
 import { signIn } from "./support/signin";
+import { connectAI } from "./support/connect";
 import { API_ORIGIN, WEB_ORIGIN } from "./support/origins";
 import { tabBuilt } from "./support/builtTools";
 
@@ -202,25 +203,12 @@ test("Writing's My style and Words tabs, end to end", async ({ page, context }) 
   await page.getByTestId("terms-age").check();
   await page.getByTestId("terms-agree").check();
   await page.getByTestId("terms-continue").click();
-  await page.getByTestId("welcome-setup").click();
-  await expect(page.getByTestId("provider-dialog")).toBeVisible();
-  await page.getByTestId("prov-select").selectOption("groq");
-  await page.getByTestId("key-input").fill("gsk_test");
-  await page.getByTestId("key-mode-pass").check();
-  await page.getByTestId("key-save").click();
-  await expect(page.getByTestId("vault-setup-dialog")).toBeVisible();
-  await page.getByTestId("vault-setup-submit").click();
-  await page.getByTestId("pass-input").fill(PASS);
-  await page.getByTestId("pass-ok").click();
-  await expect(page.getByTestId("pass-message")).toHaveText(T("bk_pass2"));
-  await page.getByTestId("pass-input").fill(PASS);
-  await page.getByTestId("pass-ok").click();
-  await expect(page.getByTestId("vault-sheet-dialog")).toBeVisible();
-  await page.getByTestId("vault-sheet-saved").check();
-  await page.getByTestId("vault-sheet-done").click();
+  await connectAI(page, { keep: "pass", passphrase: PASS });
   await expect(page.getByTestId("vault-pill")).toHaveText(T("vault_pill_yours"));
   await expect(page.getByTestId("first-run")).toBeVisible();
   await page.locator("#ideaTopic").fill(IDEA);
+  // The three questions are folded away, optional ("Add details for better feedback").
+  await page.getByTestId("idea-details-toggle").click();
   await page.locator("#ideaRes").fill("About 60 first-years");
   await page.getByTestId("idea-save").click();
   await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 60_000 });

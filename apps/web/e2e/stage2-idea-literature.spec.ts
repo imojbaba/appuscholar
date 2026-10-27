@@ -30,6 +30,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import JSZip from "jszip";
 import { test, expect, type BrowserContext, type Page, type Request, type Route } from "@playwright/test";
 import { signIn } from "./support/signin";
+import { connectAI } from "./support/connect";
 import { recordToasts } from "./support/toasts";
 import { API_ORIGIN, WEB_ORIGIN } from "./support/origins";
 import { captureConfirmText } from "@appuscholar/core";
@@ -370,32 +371,18 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
   /** The Citation Manager's bookmark as the student drags it (step 4), clicked again on the stand-in PubMed page in 11b. */
   let bookmarkletSrc = "";
 
-  await test.step("1. create the project: sign in, a Groq key protected by the vault's passphrase; first run: the idea, Check if it is doable, Save as my project; the home's six stages", async () => {
+  await test.step("1. create the project: sign in, a Groq key protected by the vault's passphrase; first run: the idea, Get feedback on my idea, Save as my project; the home's six stages", async () => {
     await signIn(page, { prefix: "s2" });
     // A student with no project starts at first run.
     await expect(page).toHaveURL(/\/start$/);
     await page.getByTestId("terms-age").check();
     await page.getByTestId("terms-agree").check();
     await page.getByTestId("terms-continue").click();
-    await page.getByTestId("welcome-setup").click();
-    await expect(page.getByTestId("provider-dialog")).toBeVisible();
-    await page.getByTestId("prov-select").selectOption("groq");
-    await page.getByTestId("key-input").fill("gsk_test");
-    await page.getByTestId("key-mode-pass").check();
-    await page.getByTestId("key-save").click();
-    await expect(page.getByTestId("vault-setup-dialog")).toBeVisible();
+    // Nothing opens over first run; AI is connected from the AI pill here (the idea screen's own way in, at "Get feedback on my idea", is the QA story S1's).
     const toasts = await recordToasts(page);
-    await page.getByTestId("vault-setup-submit").click();
-    await page.getByTestId("pass-input").fill(PASS);
-    await page.getByTestId("pass-ok").click();
-    await expect(page.getByTestId("pass-message")).toHaveText(T("bk_pass2"));
-    await page.getByTestId("pass-input").fill(PASS);
-    await page.getByTestId("pass-ok").click();
-    await expect(page.getByTestId("vault-sheet-dialog")).toBeVisible();
-    await expect(page.getByTestId("vault-code")).toHaveText(RECOVERY_CODE);
-    await expect.poll(toasts).toEqual(expect.arrayContaining(["Groq connected ✓ and encrypted 🔒", T("vault_migrated")]));
-    await page.getByTestId("vault-sheet-saved").check();
-    await page.getByTestId("vault-sheet-done").click();
+    const code = await connectAI(page, { keep: "pass", passphrase: PASS });
+    expect(code).toMatch(RECOVERY_CODE);
+    await expect.poll(toasts).toEqual(expect.arrayContaining([T("connect_done_toast"), T("vault_migrated")]));
     await expect(page.getByTestId("vault-pill")).toHaveText(T("vault_pill_yours"));
     await expect(page.getByTestId("ai-pill")).toHaveText(T("ai_pill_key", { provider: "Groq" }));
 
@@ -410,11 +397,13 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await expect(page.getByTestId("first-run")).toBeVisible();
     await expect(page.getByTestId("first-run").locator("h1")).toHaveText(T("idea_h"));
     await page.locator("#ideaTopic").fill(IDEA.topic);
+    // The three questions are folded away, optional ("Add details for better feedback").
+    await page.getByTestId("idea-details-toggle").click();
     await page.locator("#ideaRes").fill(IDEA.resources);
     await page.locator("#ideaTime").fill(IDEA.timeframe);
     await page.locator("#ideaCons").fill(IDEA.constraints);
-    // Saving needs no check: the button is there before it.
-    await expect(page.getByTestId("idea-save")).toHaveText(T("idea_save_btn"));
+    // Saving needs no feedback: "Save without feedback" is there before it.
+    await expect(page.getByTestId("idea-save")).toHaveText(T("idea_save_plain_btn"));
     await expect(page.getByTestId("idea-check")).toHaveText(T("idea_check_btn"));
     await page.getByTestId("idea-check").click();
     await expect(page.getByTestId("idea-check")).toHaveText(T("idea_checking"));

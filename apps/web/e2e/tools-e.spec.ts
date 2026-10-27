@@ -28,6 +28,7 @@ import { readFileSync } from "node:fs";
 import JSZip from "jszip";
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { signIn } from "./support/signin";
+import { connectAI } from "./support/connect";
 import { API_ORIGIN, WEB_ORIGIN } from "./support/origins";
 import { tabBuilt } from "./support/builtTools";
 import { selectBlockWith } from "./support/editor";
@@ -192,14 +193,11 @@ test("0. sign in, an AI key on this device, a project, a named document", async 
   await page.getByTestId("terms-age").check();
   await page.getByTestId("terms-agree").check();
   await page.getByTestId("terms-continue").click();
-  await page.getByTestId("welcome-setup").click();
-  await page.getByTestId("prov-select").selectOption("groq");
-  await page.getByTestId("key-input").fill("gsk_test");
-  await page.getByTestId("key-mode-plain").check();
-  await page.getByTestId("key-save").click();
-  await expect(page.getByTestId("provider-dialog")).toBeHidden();
+  await connectAI(page, { keep: "plain" });
   await expect(page.getByTestId("first-run")).toBeVisible();
   await page.locator("#ideaTopic").fill("Does a fixed bedtime routine lower exam anxiety in first-year students?");
+  // The three questions are folded away, optional ("Add details for better feedback").
+  await page.getByTestId("idea-details-toggle").click();
   await page.locator("#ideaRes").fill("About 60 first-years");
   await page.getByTestId("idea-save").click();
   await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });

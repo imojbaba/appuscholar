@@ -7,7 +7,7 @@
  *   1. Data: a semicolon file offers "Split on semicolons" (used once); the columns show as chips; a student name column raises the personal-data
  *      box (replace by a code, keep the village), Apply downloads the key file and rewrites the paste box.
  *   2. Run: Welch t (the "Independent-samples t-test"), fields, Run; the sentence and the chart show; Insert into document; reload; the sentence is
- *      still in the document and the Check tab lists it Current.
+ *      still in the document and the Check tab lists it Current. The recorded table brings the offer to lock the work; Not now puts it away for good.
  *   3. Explain: the mask / send / cancel choice appears before any request (no AI request until the student chooses), the reply shows apart from the
  *      sentence under its machine label.
  *   4. Check: one number of the pasted data is edited and parsed again; the result is Out of date; Re-run replaces the sentence (the confirm is shown
@@ -32,6 +32,7 @@ import path from "node:path";
 import { readFileSync } from "node:fs";
 import { test, expect, type Page, type Request } from "@playwright/test";
 import { signIn } from "./support/signin";
+import { connectAI } from "./support/connect";
 import { API_ORIGIN, WEB_ORIGIN } from "./support/origins";
 import * as editorAt from "./support/editor";
 import { POWER_FOOTER_NOTE } from "@appuscholar/core";
@@ -117,14 +118,11 @@ async function newProject(page: Page): Promise<string> {
   await page.getByTestId("terms-age").check();
   await page.getByTestId("terms-agree").check();
   await page.getByTestId("terms-continue").click();
-  await page.getByTestId("welcome-setup").click();
-  await page.getByTestId("prov-select").selectOption("groq");
-  await page.getByTestId("key-input").fill("gsk_test");
-  await page.getByTestId("key-mode-plain").check();
-  await page.getByTestId("key-save").click();
-  await expect(page.getByTestId("provider-dialog")).toBeHidden();
+  await connectAI(page, { keep: "plain" });
   await expect(page.getByTestId("first-run")).toBeVisible();
   await page.locator("#ideaTopic").fill(FIRST_RUN_IDEA);
+  // The three questions are folded away, optional ("Add details for better feedback").
+  await page.getByTestId("idea-details-toggle").click();
   await page.locator("#ideaRes").fill("About 60 pupils in two villages");
   await page.getByTestId("idea-save").click();
   await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });
@@ -239,6 +237,14 @@ test("Collection and analysis: data, a test inserted and checked, explain, guide
     await expect(page.getByTestId("check-rt-meta")).toContainText(DATA_NAME);
     // "Current" is not offered as a check that the words still fit the number.
     await expect(page.getByTestId("check-rt-note")).toHaveText(T("rt_note"));
+    // A data table is recorded and no passphrase is set: the offer to lock the work sits above the tab. Not now puts it away for good.
+    await expect(page.getByTestId("lock-offer")).toBeVisible();
+    await expect(page.getByTestId("lock-offer").locator("h4")).toHaveText(T("lock_offer_h"));
+    await page.getByTestId("lock-offer-not-now").click();
+    await expect(page.getByTestId("lock-offer")).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByTestId("check-rt-run")).toBeVisible();
+    await expect(page.getByTestId("lock-offer")).toHaveCount(0);
   });
 
   await test.step("3. Explain: the choice comes before any request; the reply is shown apart from the sentence, labelled as the machine's", async () => {

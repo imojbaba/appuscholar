@@ -46,7 +46,7 @@ function setup(s: Setup = {}) {
       return typeof c === "function" ? c(sc) : c;
     }),
     names: vi.fn(names),
-    openSettings: vi.fn(), onFailover: vi.fn(), ...s.over
+    openConnect: vi.fn(), onFailover: vi.fn(), ...s.over
   };
   return { ctx, shown };
 }

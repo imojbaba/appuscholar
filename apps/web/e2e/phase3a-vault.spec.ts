@@ -16,6 +16,7 @@ import path from "node:path";
 import JSZip from "jszip";
 import { signIn } from "./support/signin";
 import { recordToasts } from "./support/toasts";
+import { answerKeyTests, connectAI } from "./support/connect";
 import { API_ORIGIN, WEB_ORIGIN } from "./support/origins";
 
 const APP = WEB_ORIGIN + "/";
@@ -52,7 +53,7 @@ async function unlockWith(page: Page, pass: string) {
 /** Reloads; the vault is locked again (nothing was remembered), so the document asks for the passphrase as it opens. */
 async function reloadLocked(page: Page) {
   await page.reload();
-  await expect(page.getByTestId("vault-pill")).toHaveText("Vault locked");
+  await expect(page.getByTestId("vault-pill")).toHaveText("🔒 Locked");
   await expect(page.getByTestId("pass-dialog")).toBeVisible();
 }
 
@@ -72,7 +73,7 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
   let docId = "";
 
   let projectId = "";
-  await test.step("1. sign in with a new account, accept the terms, skip the welcome tour; first run saves the project (its title in plaintext: the vault is off); Writing opens its document", async () => {
+  await test.step("1. sign in with a new account, accept the terms; first run saves the project (its title in plaintext: the vault is off); Writing opens its document", async () => {
     await signIn(page, { prefix: "v", newAccount: true, ready: ["first-run"] });
     await expect(page.getByTestId("vault-pill")).toHaveText("🔓 Protect my work");
     await page.locator("#ideaTopic").fill(TOPIC);
@@ -137,7 +138,7 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     await expect(page.getByTestId("vault-sheet-dialog")).toBeVisible();
     await expect(page.getByTestId("vault-code")).toHaveText(RECOVERY_CODE);
     firstCode = (await page.getByTestId("vault-code").innerText()).trim();
-    await expect.poll(toasts).toContain("All your documents are now locked in your vault ✓");
+    await expect.poll(toasts).toContain("All your work is now locked with your passphrase ✓");
     page.off("request", onRequest);
     // Every plaintext revision (the empty seed and the one with the two sentences) was rewritten in place as ciphertext.
     expect(rewrites.length).toBeGreaterThanOrEqual(2);
@@ -157,7 +158,7 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     await page.getByTestId("vault-sheet-saved").check();
     await page.getByTestId("vault-sheet-done").click();
     await expect(page.getByTestId("vault-sheet-dialog")).toBeHidden();
-    await expect(page.getByTestId("vault-pill")).toHaveText("Vault unlocked");
+    await expect(page.getByTestId("vault-pill")).toHaveText("🔓 Unlocked");
     // The titles are sealed after the unlock: the project's and its document's, on the server as ciphertext with a key version; the app shows the name.
     const sealed = async () => {
       const list = (await (await page.request.get(`${API}/projects`, { headers: bearer })).json()) as Array<{ id: string; title: string; titleKeyVersion: number }>;
@@ -178,7 +179,7 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     // Its plaintext save is refused (a vault exists now); the tab reads the vault and asks for its passphrase before it saves.
     await expect(stale.getByTestId("pass-dialog")).toBeVisible();
     await expect(stale.getByTestId("pass-message")).toHaveText(UNLOCK_HINT);
-    await expect(stale.getByTestId("vault-pill")).toHaveText("Vault locked");
+    await expect(stale.getByTestId("vault-pill")).toHaveText("🔒 Locked");
     await stale.getByTestId("pass-cancel").click();
     await expect(stale.getByTestId("pass-dialog")).toBeHidden();
     await expect(stale.getByTestId("save-status")).toHaveText("Unlock your vault to save your changes.");
@@ -208,7 +209,7 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     expect(sent.keyVersion).toBe(1);
     expect(sent.bodyHtml).not.toContain("Deadlines");
     await expect(stale.getByTestId("save-status")).toHaveText("Auto-save on");
-    await expect(stale.getByTestId("vault-pill")).toHaveText("Vault unlocked");
+    await expect(stale.getByTestId("vault-pill")).toHaveText("🔓 Unlocked");
     await expectAllSentences(stale);
     await stale.close();
   });
@@ -224,13 +225,13 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     await page.getByTestId("vault-pill").click();
     await unlockWith(page, PASS_1);
     await expectAllSentences(page);
-    await expect(page.getByTestId("vault-pill")).toHaveText("Vault unlocked");
+    await expect(page.getByTestId("vault-pill")).toHaveText("🔓 Unlocked");
     await expect(page.getByTestId("project-switcher")).toContainText(PROJECT);
   });
 
   await test.step("4d. the project list with the vault locked: Locked title, the six stage bars, no ciphertext; Unlock brings the name back", async () => {
     await page.goto(WEB_ORIGIN + "/projects");
-    await expect(page.getByTestId("vault-pill")).toHaveText("Vault locked");
+    await expect(page.getByTestId("vault-pill")).toHaveText("🔒 Locked");
     // The list needs nothing opened to show the states, so nothing asks; its line offers the unlock.
     await expect(page.getByTestId("list-vault-line")).toHaveText("Titles are locked. Enter your passphrase to see them.");
     const row = page.getByTestId("project-row");
@@ -259,7 +260,7 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     try {
       const p2 = await other.newPage();
       await p2.goto(APP);
-      await expect(p2.getByTestId("vault-pill")).toHaveText("Vault locked");
+      await expect(p2.getByTestId("vault-pill")).toHaveText("🔒 Locked");
       await expect(p2.locator(".ProseMirror")).toHaveCount(0);
       // `/` opens the active project's home, which loads the document: the passphrase is asked there.
       await unlockWith(p2, PASS_1);
@@ -267,7 +268,7 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
       await expect(p2.getByTestId("project-switcher")).toContainText(PROJECT);
       await p2.getByTestId("home-open-writing").click();
       await expectAllSentences(p2);
-      await expect(p2.getByTestId("vault-pill")).toHaveText("Vault unlocked");
+      await expect(p2.getByTestId("vault-pill")).toHaveText("🔓 Unlocked");
     } finally {
       await other.close();
     }
@@ -415,7 +416,6 @@ test("vault journey, 9b: after Delete my account the same address signs in to a 
   await page.getByTestId("terms-age").check();
   await page.getByTestId("terms-agree").check();
   await page.getByTestId("terms-continue").click();
-  await page.getByTestId("welcome-later").click();
   await expect(page.getByTestId("vault-pill")).toHaveText("🔓 Protect my work");
   // No project: first run; the scratch space holds an empty first document.
   await expect(page.getByTestId("first-run")).toBeVisible();
@@ -451,14 +451,13 @@ async function countAsks(page: Page) {
 }
 const asks = (page: Page) => page.evaluate(() => (window as unknown as { __asks: number }).__asks);
 
-/** The terms, then "Set up my key" on the welcome: the key window, as a new student meets it. */
-async function toKeyWindow(page: Page) {
+/** The terms, then Connect AI from the AI pill, as a new student who has a key meets it. */
+async function toConnect(page: Page) {
   await signIn(page, { prefix: "fr" });
   await page.getByTestId("terms-age").check();
   await page.getByTestId("terms-agree").check();
   await page.getByTestId("terms-continue").click();
-  await page.getByTestId("welcome-setup").click();
-  await expect(page.getByTestId("provider-dialog")).toBeVisible();
+  await expect(page.getByTestId("first-run")).toBeVisible();
 }
 
 test("first run: the key is saved without a vault; the setup says its rule and every refusal inside its window; the sheet says what Done needs; one ask per unlock; the home shows it is opening", async ({ page }) => {
@@ -466,14 +465,9 @@ test("first run: the key is saved without a vault; the setup says its rule and e
   await countAsks(page);
   let projectId = "";
 
-  await test.step("1. the key window starts at Remember on this computer, says the key can be locked later, and Save does not open the vault setup", async () => {
-    await toKeyWindow(page);
-    await expect(page.getByTestId("key-mode-plain")).toBeChecked();
-    await expect(page.getByTestId("key-mode-later")).toHaveText(T("settings_keymode_later"));
-    await page.getByTestId("prov-select").selectOption("groq");
-    await page.getByTestId("key-input").fill("gsk_test");
-    await page.getByTestId("key-save").click();
-    await expect(page.getByTestId("provider-dialog")).toBeHidden();
+  await test.step("1. Connect AI's Remember on this computer keeps the key without a vault, and does not open the vault setup", async () => {
+    await toConnect(page);
+    await connectAI(page, { keep: "plain" });
     await expect(page.getByTestId("vault-setup-dialog")).toBeHidden();
     await expect(page.getByTestId("pass-dialog")).toBeHidden();
     await expect(page.getByTestId("vault-pill")).toHaveText(T("vault_pill_off"));
@@ -587,7 +581,7 @@ test.describe("first run on a phone (375 px)", () => {
   }
   const noSidewaysScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
 
-  test("the terms and the key window fit the screen, every tick row and choice is 44 px tall, and the keyboard can scroll the terms", async ({ page }) => {
+  test("the terms, Connect AI and Settings fit the screen, every tick row and choice is 44 px tall, and the keyboard can scroll the terms", async ({ page }) => {
     test.setTimeout(120_000);
     await signIn(page, { prefix: "frt" });
     await expect(page.getByTestId("terms-dialog")).toBeVisible();
@@ -605,14 +599,37 @@ test.describe("first run on a phone (375 px)", () => {
     await page.getByTestId("terms-age").check();
     await page.getByTestId("terms-agree").check();
     await page.getByTestId("terms-continue").click();
-    await page.getByTestId("welcome-setup").click();
-    await expect(page.getByTestId("provider-dialog")).toBeVisible();
-    // Q8: the three key modes, the two option ticks and the ORCID link.
-    for (const id of ["key-mode-pass", "key-mode-plain", "key-mode-session", "ai-fallback", "ai-log"]) {
+    await expect(page.getByTestId("first-run")).toBeVisible();
+    // Connect AI from the phone's Menu: its three choices, then (the key tested) the two ways to keep it, each 44 px tall and inside the screen.
+    await answerKeyTests(page);
+    await page.getByTestId("phone-menu").click();
+    await page.getByTestId("menu-ai").click();
+    await expect(page.getByTestId("connect-dialog")).toBeVisible();
+    for (const id of ["connect-yes", "connect-no", "connect-not-now"]) await fitsAndTall(page, id);
+    expect(await noSidewaysScroll(page)).toBe(true);
+    await page.getByTestId("connect-no").click();
+    for (const id of ["connect-open-studio", "connect-have-key", "connect-back"]) await fitsAndTall(page, id);
+    await page.getByTestId("connect-have-key").click();
+    await fitsAndTall(page, "connect-other");
+    await page.getByTestId("connect-key").fill("gsk_test");
+    await page.getByTestId("connect-go").click();
+    await expect(page.getByTestId("connect-dialog")).toHaveAttribute("data-screen", "keep");
+    for (const id of ["connect-keep-plain", "connect-keep-pass"]) await fitsAndTall(page, id);
+    expect(await noSidewaysScroll(page)).toBe(true);
+    await page.getByTestId("connect-keep-pass").click();
+    for (const id of ["new-pass", "new-pass2"]) { const box = (await page.getByTestId(id).boundingBox())!; expect(box.x + box.width, id).toBeLessThanOrEqual(375 + 0.5); }
+    await fitsAndTall(page, "new-pass-go");
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId("connect-dialog")).toBeHidden();
+    // Settings, from the Menu: the two option ticks and the ORCID link (Q8).
+    await page.getByTestId("phone-menu").click();
+    await page.getByTestId("acct-settings").click();
+    await expect(page.getByTestId("settings-dialog")).toBeVisible();
+    for (const id of ["ai-fallback", "ai-log"]) {
       await page.getByTestId(id).scrollIntoViewIfNeeded();
       await fitsAndTall(page, id, true);
     }
-    const orcid = page.getByTestId("provider-dialog").getByRole("link", { name: T("settings_orcid_link") });
+    const orcid = page.getByTestId("settings-dialog").getByRole("link", { name: T("settings_orcid_link") });
     await orcid.scrollIntoViewIfNeeded();
     expect((await orcid.boundingBox())!.height).toBeGreaterThanOrEqual(44 - 0.5);
     expect(await noSidewaysScroll(page)).toBe(true);

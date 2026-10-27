@@ -5,14 +5,16 @@
  * One sign-in, one project, no AI (so nothing is recorded or mocked). The steps:
  *   1. the Coding tab opens (no "Not built yet"); it shows the description and the empty note;
  *   2. three codes are added with the inline field, never a native prompt: "Anxiety", its sub-code "Exam nerves", and "Sleep"; they take the first
- *      three palette colours in order; the home's Collection and analysis row then reads "3 codes";
+ *      three palette colours in order; the home's Collection and analysis row then reads "3 codes"; the first code brings the offer to lock the work
+ *      (no passphrase is set yet), which fits a 375 px screen with 44 px buttons;
  *   3. the document is opened and written (a heading and two paragraphs); a phrase is tagged "Anxiety" and drawn in its colour at alpha 0x55 while the
  *      saved document carries class, data-qcode and title and no style (R4); a second phrase is tagged "Sleep"; a selection across the heading and a
  *      paragraph, and a tap with nothing selected, are refused in v1's words and tag nothing;
  *   4. "Show code colors in the document" off removes the colour, on brings it back, and the choice stays after a reload;
  *   5. the eye button lists the phrase under the document's title in curly quotes; Back returns to the tree;
  *   6. after a reload the tag, its colour and its passage are still there; then the vault is turned on, the page reloaded locked, unlocked, and all
- *      three are there again (the tag survives the sanitizer, the sealing and the reload); left locked, the tab says the codes are locked;
+ *      three are there again (the tag survives the sanitizer, the sealing and the reload); left locked, the tab says the codes are locked; the vault is
+ *      set up from the offer's Lock my work, and the offer is gone after;
  *   7. a second document is created and a phrase of it tagged "Anxiety"; the passages view lists both documents;
  *   8. "Export all coded passages (Markdown)" downloads appuscholar-coded-passages-<today>.md with the exact text; the project export lists the part,
  *      ticked, and its zip holds qual/appuscholar-coded-passages-<today>.md;
@@ -87,6 +89,8 @@ test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
 async function newProject(page: Page): Promise<string> {
   await signIn(page, { prefix: "c", newAccount: true, ready: ["first-run"] });
   await page.locator("#ideaTopic").fill("Does a fixed bedtime routine lower exam anxiety in first-year students?");
+  // The three questions are folded away, optional ("Add details for better feedback").
+  await page.getByTestId("idea-details-toggle").click();
   await page.locator("#ideaRes").fill("About 60 first-years");
   await page.getByTestId("idea-save").click();
   await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });
@@ -232,8 +236,25 @@ test("the Coding tab: codes, tags, colours, passages, export and delete", async 
   // 2. Three codes with the inline field; the first three palette colours in order.
   let anxiety = "", nerves = "", sleep = "";
   await test.step("2. add Anxiety, its sub-code Exam nerves and Sleep with the inline field; palette colours in order; the home says 3 codes", async () => {
+    await expect(page.getByTestId("lock-offer")).toHaveCount(0);
     await addCode(page, "Anxiety");
     anxiety = await codeId(page, "Anxiety");
+    // The first code is data about real people, saved with no passphrase set: the offer to lock the work, once, at the top of the panel.
+    const offer = page.getByTestId("lock-offer");
+    await expect(offer).toBeVisible();
+    await expect(offer.locator("h4")).toHaveText(T("lock_offer_h"));
+    await expect(offer).toContainText(T("lock_offer"));
+    await expect(offer).toContainText(T("lock_offer_later"));
+    await expect(page.getByTestId("lock-offer-go")).toHaveText(T("lock_offer_btn"));
+    await expect(page.getByTestId("lock-offer-not-now")).toHaveText(T("lock_offer_not_now"));
+    // On a phone it fits, and its buttons are big enough to press.
+    const desk = page.viewportSize()!;
+    await page.setViewportSize(PHONE);
+    if (await page.getByTestId("doc-back").isVisible()) await page.getByTestId("doc-back").click();
+    await expectNoSideScroll(page, "the lock offer");
+    for (const id of ["lock-offer", "lock-offer-go", "lock-offer-not-now"]) await expectWithin(page, page.getByTestId(id), id);
+    for (const id of ["lock-offer-go", "lock-offer-not-now"]) expect((await page.getByTestId(id).boundingBox())!.height, id).toBeGreaterThanOrEqual(44);
+    await page.setViewportSize(desk);
     await addCode(page, "Exam nerves", anxiety);
     nerves = await codeId(page, "Exam nerves");
     await addCode(page, "Sleep");
@@ -383,9 +404,11 @@ test("the Coding tab: codes, tags, colours, passages, export and delete", async 
     await ensureDoc(page);
     await check();
 
-    // The vault: setup from the header pill (as phase3a-vault.spec.ts does), the recovery sheet, Done.
+    // The vault: set up from the offer to lock the work (still there: it was not answered), the recovery sheet, Done.
     await expect(page.getByTestId("vault-pill")).toHaveText(T("vault_pill_off"));
-    await page.getByTestId("vault-pill").click();
+    await expect(page.getByTestId("lock-offer")).toBeVisible();
+    await page.getByTestId("lock-offer-go").click();
+    await expect(page.getByTestId("lock-offer")).toHaveCount(0);
     await expect(page.getByTestId("vault-setup-dialog")).toBeVisible();
     await page.getByTestId("vault-setup-submit").click();
     await expect(page.getByTestId("pass-message")).toHaveText(T("vault_setup_intro"));
@@ -399,6 +422,7 @@ test("the Coding tab: codes, tags, colours, passages, export and delete", async 
     await page.getByTestId("vault-sheet-done").click();
     await expect(page.getByTestId("vault-sheet-dialog")).toBeHidden();
     await expect(page.getByTestId("vault-pill")).toHaveText(T("vault_pill_yours"));
+    await expect(page.getByTestId("lock-offer")).toHaveCount(0);
     // The migration also seals the codes: wait until it has finished and the page is quiet.
     await expect(page.getByTestId("qual-tree")).toBeVisible();
     // Sealed on the server: the codes (and the project's documents' titles) are ciphertext with a key version, not the names typed.

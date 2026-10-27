@@ -19,7 +19,7 @@ function ctx(over: Partial<CallCtx> = {}): CallCtx {
   return {
     provider: "gemini", blobs: {}, fallbackOn: true, contentLang: "en", projectId: null,
     askPassphrase: vi.fn(async () => null), askPd: vi.fn(async () => ({ answer: "cancel" as const, leave: [] })),
-    openSettings: vi.fn(), onFailover: vi.fn(), ...over
+    openConnect: vi.fn(), onFailover: vi.fn(), ...over
   };
 }
 const setLang = (lang: string) => vi.stubGlobal("document", { documentElement: { lang } });

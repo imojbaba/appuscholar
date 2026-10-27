@@ -5,7 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import en from "../messages/en.json";
 
 const h = vi.hoisted(() => ({
-  api: vi.fn(), toast: vi.fn(), go: vi.fn(async () => true), openExport: vi.fn(),
+  api: vi.fn(), toast: vi.fn(), go: vi.fn(async () => true), openExport: vi.fn(), openConnect: vi.fn(async () => ({ result: "closed", provider: "gemini" })),
+  hasKey: true, keysLoaded: true,
   vault: null as unknown,
   me: { id: "u1", activeProjectId: "p1", scratchProjectId: "s1" },
   designBuilt: false, designFacts: undefined as unknown
@@ -19,7 +20,8 @@ vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 // Task G3: the Design module, built or not per test, with the facts it declares (getters: the home reads it while drawing).
 vi.mock("@/components/tools/design", () => ({ get built() { return h.designBuilt; }, get facts() { return h.designFacts; } }));
 const project = { id: "p1", title: "Sleep and exam anxiety", titleKeyVersion: 0, deks: [], field: "Psychology", stage: "idea", status: "active", contentLang: "en", kind: "research" };
-vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project, projectId: "p1", go: h.go, place: null, openExport: h.openExport }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project, projectId: "p1", go: h.go, place: null, openExport: h.openExport, openConnect: h.openConnect }) }));
+vi.mock("@/lib/ai/useKeys", () => ({ useKeys: () => ({ hasKey: () => h.hasKey, loaded: h.keysLoaded }) }));
 
 import { ProjectHome, highlightCache } from "../components/frame/ProjectHome";
 import { clearJustMade, markJustMade, readJustMade } from "../lib/frame/justMade";
@@ -66,6 +68,7 @@ const work = () => [{
 }];
 beforeEach(() => {
   h.vault = vaultOff;
+  h.hasKey = true; h.keysLoaded = true; h.openConnect.mockClear();
   h.designBuilt = false; h.designFacts = undefined;
   h.go.mockClear();
   h.toast.mockClear();
@@ -289,7 +292,12 @@ describe("the project home", () => {
     await until(() => !!q("home-ready"));
     expect(text("home-ready")).toContain(en.home_ready_h);
     expect(text("home-ready")).toContain(en.home_ready_saved_checked);
-    expect(text("home-ready")).toContain(en.home_ready_where);
+    // What is at the top of the page, in the header's words: AI and Account; Lock only once a vault exists (here none).
+    expect(text("home-ready")).toContain(en.home_ready_top_h);
+    expect(text("home-ready-top-ai")).toBe(en.home_ready_top_ai_k + " " + en.home_ready_top_ai);
+    expect(text("home-ready-top-account")).toBe(en.home_ready_top_account_k + " " + en.home_ready_top_account);
+    expect(q("home-ready-top-lock")).toBeNull();
+    expect(text("home-ready-ok")).toBe("Got it");
     expect(q("home-stages")).not.toBeNull();
     await act(async () => { q("home-ready-ok")!.click(); });
     expect(q("home-ready")).toBeNull();
@@ -420,5 +428,36 @@ describe("the project home", () => {
       await act(async () => { q("home-export")!.click(); });
       expect(h.openExport).toHaveBeenCalledTimes(1);
     } finally { window.matchMedia = was; }
+  });
+
+  it("the ready card lists the lock at the top of the page only once a vault exists", async () => {
+    h.vault = { ...vaultOff, status: "unlocked", known: async () => "unlocked" };
+    markJustMade("p1", false);
+    mount();
+    await until(() => !!q("home-ready"));
+    expect(text("home-ready")).toContain(en.home_ready_saved);
+    expect(text("home-ready-top-lock")).toBe(en.home_ready_top_lock_k + " " + en.home_ready_top_lock);
+    // The words match the header's lock button exactly.
+    expect(en.home_ready_top_lock_k).toBe(en.vault_pill_locked + " / " + en.vault_pill_yours + ":");
+  });
+
+  it("with no AI key, one quiet line says AI is not connected, with Connect AI; it says nothing until the keys are read, and goes once a key is there", async () => {
+    h.hasKey = false; h.keysLoaded = false;
+    let r = mount();
+    await until(() => !!q("home-stages"));
+    expect(q("home-ai-off")).toBeNull();
+    act(() => { r.unmount(); });
+    h.keysLoaded = true;
+    r = mount();
+    await until(() => !!q("home-ai-off"));
+    expect(text("home-ai-off")).toBe(en.home_ai_off + en.ai_pill_nokey);
+    expect(text("home-connect")).toBe("Connect AI");
+    await act(async () => { q("home-connect")!.click(); });
+    expect(h.openConnect).toHaveBeenCalledWith({ provider: "gemini" });
+    act(() => { r.unmount(); });
+    h.hasKey = true;
+    mount();
+    await until(() => !!q("home-stages"));
+    expect(q("home-ai-off")).toBeNull();
   });
 });

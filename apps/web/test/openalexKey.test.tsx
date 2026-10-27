@@ -7,7 +7,7 @@ import { forgetRemembered } from "../lib/vault/remember";
 import en from "../messages/en.json";
 
 /*
- * The OpenAlex key (v1 1186-1190, oaKeySave 8031): the field in the AI Provider / Key dialog, below the content language as in v1, stored as the
+ * The OpenAlex key (v1 1186-1190, oaKeySave 8031): the field in Settings (v1 had it in the AI Provider / Key dialog), stored as the
  * credential `openalex` locked under the vault ("v2." + the vault's iv.ct, as an AI key) when there is one, else remembered on this computer (never
  * the vault setup), never an AI provider; useOpenAlexKey opens it once the vault is open and never asks for a passphrase itself.
  */
@@ -28,7 +28,7 @@ import { keyStore } from "../lib/ai/keys";
 import { KeysProvider, useKeys, type KeysValue } from "../lib/ai/useKeys";
 import { useVault, VaultProvider, type VaultValue } from "../lib/vault/useVault";
 import { useOpenAlexKey } from "../lib/research/oaKey";
-import { ProviderKey } from "../components/workspace/dialogs/ProviderKey";
+import { SettingsWindow } from "../components/workspace/dialogs/Settings";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const E = en as Record<string, string>;
@@ -63,7 +63,7 @@ async function mount(withDialog = false) {
   document.body.appendChild(el);
   const root = createRoot(el);
   roots.push(root);
-  await act(async () => { root.render(<VaultProvider><KeysProvider><Probe />{withDialog && <ProviderKey />}</KeysProvider></VaultProvider>); });
+  await act(async () => { root.render(<VaultProvider><KeysProvider><Probe />{withDialog && <SettingsWindow />}</KeysProvider></VaultProvider>); });
   return { get keys() { return box.keys!; }, get vault() { return box.vault!; }, get oa() { return box.oa; } };
 }
 function typeKey(v: string) {
@@ -88,7 +88,7 @@ beforeEach(async () => {
 afterEach(() => { act(() => { for (const r of roots.splice(0)) r.unmount(); }); document.body.innerHTML = ""; });
 
 describe("the OpenAlex key setting (v1 1186-1190)", () => {
-  it("sits below the content language with v1's label, placeholder and note", async () => {
+  it("sits below the AI writing language in Settings (the field of study first, in the first-run spec's order), with v1's label, placeholder and note", async () => {
     await mount(true);
     const input = $("oa-key-input") as HTMLInputElement;
     expect(input.type).toBe("password");
@@ -97,7 +97,7 @@ describe("the OpenAlex key setting (v1 1186-1190)", () => {
     expect(input.closest(".field")!.querySelector("p")!.textContent).toBe(E.rs2_oa_key_desc);
     const lang = $("content-lang")!, field = $("field-select")!;
     expect(lang.compareDocumentPosition(input) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(input.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(field.compareDocumentPosition(input) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   }, 30_000);
 
   it("with no vault yet, a key is remembered on this computer (as the AI key is then), the vault setup is not opened, and v1's sentence is toasted", async () => {

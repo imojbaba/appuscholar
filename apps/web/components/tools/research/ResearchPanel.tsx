@@ -26,6 +26,7 @@ import { Generators } from "./Generators";
 import { ManualAdd } from "./ManualAdd";
 import { ResultCard, type CardActions } from "./ResultCard";
 import { SearchForm } from "./SearchForm";
+import { OpenAlexKeyField } from "@/components/workspace/OpenAlexKeyField";
 
 /** The newest "🔗 Connected papers" request: an older one that answers later writes nothing (kept for the tab, as the box is). */
 let connectedGen = 0;
@@ -130,6 +131,8 @@ export function ResearchPanel() {
       <SearchForm s={s} rank={rank} rankLoading={prefs.loading && !prefs.locked} onRank={(on) => setResearch({ rank: on })} onSuggest={() => { void suggest(); }} onFind={() => { void search(); }} onShelf={() => setShelfOpen(true)} />
       <ShelfDialog open={shelfOpen} onOpenChange={setShelfOpen} />
       <p className="desc rs-status" id="rsStatus" data-testid="rs-status" role="status">{s.status}</p>
+      {/* The free daily OpenAlex allowance is used up (the status names it): the key that lifts it, right here, with no key yet (first-run build spec). */}
+      {!oaKey && s.status.includes(t("rs2_the_free_daily_openalex")) && <div className="rs-oa-key" data-testid="rs-oa-key"><OpenAlexKeyField id="rsOaKeyIn" testId="rs-oa-key-input" /></div>}
       {s.original.length > 0 && (
         <div className="rs-line rs-sort-row" id="rsSortRow" data-testid="rs-sort-row">
           <label htmlFor="rsSort">{t("research_sort_label")}</label>
