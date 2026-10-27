@@ -9,7 +9,7 @@
  *   4. the button switches back; a reload stays light.
  * The second test is the Review Focus 5 walk: at 1440 and at 375 px, in dark, the project home, the Writing place with a document (the paper is white
  * and keeps its text and highlight readable), the toast that offers Undo, the header's menus, Help and each dialog wave C built (Guide, problem report,
- * backup check, locked backup, recap, erase the log), the AI key dialog in each tone, the gold buttons and the simulator's chart are drawn, saved as
+ * backup check, locked backup, recap, erase the log), Connect AI on each screen and in each tone, the gold buttons and the simulator's chart are drawn, saved as
  * screenshots (C9_SHOTS_DIR, outside the repo) and checked for text under 4.5:1 as Chromium drew it (support/contrast.ts). The third visits every tab of
  * every place, the lists and the sign-in page; the fourth the participant list, its dialogs and the offline bar; the last checks the audit itself on
  * made-up pages. The AI is never called.
@@ -24,15 +24,16 @@ import path from "node:path";
 import { mkdirSync, readFileSync } from "node:fs";
 import { test, expect, type Page, type Route } from "@playwright/test";
 import { signIn } from "./support/signin";
+import { makeStudy } from "./support/study";
 import { lowContrast } from "./support/contrast";
 import { API_ORIGIN, WEB_ORIGIN } from "./support/origins";
 
 const MESSAGES = path.join(__dirname, "../messages");
 const EN = { ...JSON.parse(readFileSync(path.join(MESSAGES, "en.json"), "utf8")), ...JSON.parse(readFileSync(path.join(MESSAGES, "tools/help-theme.en.json"), "utf8")) } as Record<string, string>;
-const T = (key: string): string => {
+const T = (key: string, vars?: Record<string, string>): string => {
   const raw = EN[key];
   if (raw === undefined) throw new Error("no such key in the dictionaries: " + key);
-  return raw;
+  return vars ? raw.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? vars[k]! : m)) : raw;
 };
 
 /** Where the screenshots go: not the repo. */
@@ -46,16 +47,10 @@ test.describe.configure({ timeout: 480_000 });
 // The student's device prefers dark throughout: the app must still open light, and the light theme must not borrow the device's dark styles.
 test.use({ colorScheme: "dark", actionTimeout: 15_000, navigationTimeout: 30_000 });
 
-/** First run's "Save as my project" with a typed idea; the new project's home opens. Returns the project's id. */
+/** A new account makes its first study (Start a new study); the study's home opens. Returns the study's id. */
 async function newProject(page: Page): Promise<string> {
-  await signIn(page, { prefix: "c9", newAccount: true, ready: ["first-run"] });
-  await page.locator("#ideaTopic").fill("Does a fixed bedtime routine lower exam anxiety in first-year students?");
-  await page.locator("#ideaRes").fill("About 60 first-years");
-  await page.getByTestId("idea-save").click();
-  await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });
-  const id = /\/p\/([^/?#]+)/.exec(page.url())?.[1];
-  if (!id) throw new Error("no project id in " + page.url());
-  return id;
+  await signIn(page, { prefix: "c9", newAccount: true, ready: ["project-list"] });
+  return makeStudy(page, { question: "Does a fixed bedtime routine lower exam anxiety in first-year students?", have: "About 60 first-years" });
 }
 
 const theme = (page: Page) => page.evaluate(() => document.documentElement.getAttribute("data-theme"));
@@ -284,31 +279,57 @@ test("dark at 1440 and 375 px: home, the Writing place with a document, Help and
       await expect(page.getByTestId("help-dialog")).toBeHidden();
     });
 
-    await test.step(`${size.name}: the AI key dialog, in each tone of its test line`, async () => {
+    await test.step(`${size.name}: Connect AI, on each of its screens and in each tone of its lines`, async () => {
       const KEY_CORS = { "access-control-allow-origin": WEB_ORIGIN, "access-control-allow-headers": "authorization, content-type", "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS" };
-      let answer: "ok" | "fail" = "ok";
-      const test = async (route: Route) => {
+      let answer: "ok" | "fail" = "fail";
+      const keyTest = async (route: Route) => {
         if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: KEY_CORS });
         return answer === "ok"
           ? route.fulfill({ status: 200, contentType: "application/json", headers: KEY_CORS, body: JSON.stringify({ ok: true, reply: "Hello from the test" }) })
           : route.fulfill({ status: 500, contentType: "application/json", headers: KEY_CORS, body: JSON.stringify({ error: "upstream" }) });
       };
-      await page.route((url) => url.origin === API_ORIGIN && url.pathname === "/ai/test", test);
-      if (phone) { await page.getByTestId("phone-menu").click(); await page.getByTestId("menu-ai").click(); } else await page.getByTestId("ai-pill").click();
-      await expect(page.getByTestId("provider-dialog")).toBeVisible();
-      await page.getByTestId("key-test").click();
-      await expect(page.getByTestId("key-test-out")).toContainText("no key yet");
-      expect(await look("key-warn", size.name, "[data-testid=provider-dialog]")).toEqual([]);
-      await page.getByTestId("key-input").fill("AIzaSyInventedKeyForTheTest0123456789");
-      await page.getByTestId("key-test").click();
-      await expect(page.getByTestId("key-test-out")).toContainText("Hello from the test");
-      expect(await look("key-ok", size.name, "[data-testid=provider-dialog]")).toEqual([]);
+      await page.route((url) => url.origin === API_ORIGIN && url.pathname === "/ai/test", keyTest);
+      const dialog = page.getByTestId("connect-dialog");
+      const openConnect = async () => {
+        if (phone) { await page.getByTestId("phone-menu").click(); await page.getByTestId("menu-ai").click(); } else await page.getByTestId("ai-pill").click();
+        await expect(dialog).toBeVisible();
+      };
+      await openConnect();
+      await expect(dialog).toHaveAttribute("data-screen", "ask");
+      expect(await look("connect-ask", size.name, "[data-testid=connect-dialog]")).toEqual([]);
+      await page.getByTestId("connect-yes").click();
+      await expect(dialog).toHaveAttribute("data-screen", "paste");
+      // The line that asks for a key first (no key yet).
+      await page.getByTestId("connect-go").click();
+      await expect(page.getByTestId("connect-error")).toHaveText(T("connect_paste_first"));
+      expect(await look("connect-warn", size.name, "[data-testid=connect-dialog]")).toEqual([]);
+      // A key the company refuses.
+      await page.getByTestId("connect-key").fill("AIzaSyInventedKeyForTheTest0123456789");
+      await page.getByTestId("connect-go").click();
+      await expect(page.getByTestId("connect-error")).toContainText(T("connect_fail_other", { p: "" }).trim());
+      expect(await look("connect-fail", size.name, "[data-testid=connect-dialog]")).toEqual([]);
+      // A key that works: how it is kept, then the window of a connected key with its own test line.
+      answer = "ok";
+      await page.getByTestId("connect-go").click();
+      await expect(dialog).toHaveAttribute("data-screen", "keep");
+      expect(await look("connect-keep", size.name, "[data-testid=connect-dialog]")).toEqual([]);
+      await page.getByTestId("connect-keep-plain").click();
+      await expect(dialog).toBeHidden();
+      await openConnect();
+      await expect(dialog).toHaveAttribute("data-screen", "manage");
+      await page.getByTestId("connect-test").click();
+      await expect(page.getByTestId("connect-status")).toContainText("Your key works.");
+      expect(await look("connect-ok", size.name, "[data-testid=connect-dialog]")).toEqual([]);
       answer = "fail";
-      await page.getByTestId("key-test").click();
-      await expect(page.getByTestId("key-test-out")).toContainText("Not working");
-      expect(await look("key-fail", size.name, "[data-testid=provider-dialog]")).toEqual([]);
+      await page.getByTestId("connect-test").click();
+      await expect(page.getByTestId("connect-error")).toBeVisible();
+      expect(await look("connect-manage-fail", size.name, "[data-testid=connect-dialog]")).toEqual([]);
+      // The key is taken away again, so the other size starts as a student with no key does.
+      await page.getByTestId("connect-remove").click();
+      await expect(dialog).toHaveAttribute("data-screen", "ask");
       await page.keyboard.press("Escape");
-      await expect(page.getByTestId("provider-dialog")).toBeHidden();
+      await expect(dialog).toBeHidden();
+      await page.unroute((url) => url.origin === API_ORIGIN && url.pathname === "/ai/test", keyTest);
     });
 
     await test.step(`${size.name}: the gold buttons (Ethics) and the simulator's chart (Power)`, async () => {
@@ -389,7 +410,7 @@ test("dark: every tab of every place has no faint text, and the lists and the si
       await check(`${stage}/${tab || "(first)"}`);
     }
   }
-  for (const url of ["/projects", "/start"]) { await page.goto(url); await page.waitForLoadState("networkidle"); await check(url); }
+  for (const url of ["/", "/projects", "/start"]) { await page.goto(url); await page.waitForLoadState("networkidle"); await check(url); }
   // The sign-in page is drawn before anyone is signed in, in the theme this device chose.
   await page.context().clearCookies();
   await page.goto("/signin");
