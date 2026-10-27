@@ -9,7 +9,7 @@ export function StubPanel({ id }: { id: ToolId }) {
     <div className="panel" data-testid={"panel-" + id}>
       <h3>{plain(t(toolLabelKey(id)))}</h3>
       <p className="desc">{plain(t(toolTitleKey(id)))}</p>
-      <p className="note">This tool arrives in a later phase of the rebuild. Everything you write here is already saved under your project.</p>
+      <p className="note">This tool arrives in a later phase of the rebuild. Everything you write here is already saved under your study.</p>
     </div>
   );
 }

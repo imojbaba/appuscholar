@@ -23,7 +23,7 @@ export function ImportV1Dialog() {
             onBusyChange={setBusy}
             onDone={(projectId) => {
               closeDialog();
-              void openProject(projectId).catch(() => toast("Imported. Open it from All projects."));
+              void openProject(projectId).catch(() => toast("Imported. Open it from All studies."));
             }}
           />
         )}

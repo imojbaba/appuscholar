@@ -46,7 +46,7 @@ describe("RecapDialog (v1 returnDlg 1183-1195, retRender 3707-3727)", () => {
     show(facts());
     expect(text()).toContain(recap.wc_recap_h);
     expect(text()).toContain("You have been away 8 days.");
-    expect(text()).toContain("Project: Sleep and exams.");
+    expect(text()).toContain("Study: Sleep and exams.");
     expect(text()).not.toMatch(/stage/i);
     expect(text()).toContain("Open document: Draft one, 420 words.");
     expect(text()).toContain(recap.wc_recap_since + " 2 new document(s), 3 test result(s) inserted.");
@@ -68,7 +68,7 @@ describe("RecapDialog (v1 returnDlg 1183-1195, retRender 3707-3727)", () => {
 
   it("names a locked title as locked and never prints a ciphertext", () => {
     show(facts({ project: { name: null }, doc: { title: null, words: 12 } }));
-    expect(text()).toContain("Project: " + en.title_locked + ".");
+    expect(text()).toContain("Study: " + en.title_locked + ".");
     expect(text()).toContain("Open document: " + en.title_locked + ", 12 words.");
   });
 
