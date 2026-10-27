@@ -330,10 +330,34 @@ describe("Ethics and consent (Task A2)", () => {
     h.locked = true;
     await render();
     expect($(T("design-locked"))).not.toBeNull();
-    await click("ec-doc-0");
+    expect($(T("ec-doc-0"))).toBeNull();
     await fill({ title: "x" });
     await click("ec-save");
     expect(h.sets).toHaveLength(0);
+  });
+
+  it("the document ticks are off while the saved ticks open, not offered while locked or unreadable, and back when they are read (O7 for ticks)", async () => {
+    h.loading = true;
+    await render();
+    for (let i = 0; i < EC_DOCS.length; i++) expect(($(T("ec-doc-" + i)) as HTMLInputElement).disabled, "doc " + i).toBe(true);
+    await click("ec-doc-0");
+    expect(h.sets).toHaveLength(0);
+    for (const mode of ["locked", "error"] as const) {
+      for (const r of roots.splice(0)) await act(async () => { r.unmount(); });
+      document.body.innerHTML = "";
+      h.loading = false; h.locked = mode === "locked"; h.error = mode === "error";
+      await render();
+      expect($(T("ec-docs")), mode).toBeNull();
+      expect($(T("ec-doc-0")), mode).toBeNull();
+      expect($(T("ec-title")), mode).not.toBeNull();
+    }
+    for (const r of roots.splice(0)) await act(async () => { r.unmount(); });
+    document.body.innerHTML = "";
+    h.locked = false; h.error = false;
+    await render();
+    expect(($(T("ec-doc-0")) as HTMLInputElement).disabled).toBe(false);
+    await click("ec-doc-0");
+    expect(h.sets).toHaveLength(1);
   });
 
   it("a blob that does not open asks once before it is replaced, and a No saves nothing", async () => {

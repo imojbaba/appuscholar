@@ -24,6 +24,9 @@ export function Investigator({ projectId, now = () => new Date() }: { projectId:
   const [msg, setMsg] = useState("");
   const cv = edit ?? stored?.cv ?? "";
   const checks = (stored?.checklist ?? {}) as Record<string, boolean>;
+  // The saved ticks are not known, so a tick clicked now cannot be kept (save() refuses it). While they open the ticks show but are off (disabled); while locked or unreadable the list is
+  // not shown, since six empty ticks would say nothing was done. The note above says why, and the list returns when the work is read.
+  const hidden = pi.unread && !pi.loading;
   const toggle = (i: number, on: boolean) => {
     setMsg("");
     pi.save((prev) => {
@@ -53,14 +56,14 @@ export function Investigator({ projectId, now = () => new Date() }: { projectId:
       <p className="desc">{t("design_pi_intro")}</p>
       <Notes {...notesOf(pi)} />
       <div className="stack" style={{ maxWidth: "62ch" }}>
-        <section className="flex flex-col gap-1.5" aria-label={t("design_pi_list")} data-testid="pi-items">
+        {!hidden && <section className="flex flex-col gap-1.5" aria-label={t("design_pi_list")} data-testid="pi-items">
           {PI_ITEMS.map((it, i) => (
             <label key={i} className="flex cursor-pointer items-center gap-2 text-[13.5px] text-ink">
-              <input type="checkbox" className="size-[17px] accent-purple-600" data-testid={"pi-item-" + i} checked={!!checks[String(i)]} onChange={(e) => toggle(i, e.target.checked)} />
+              <input type="checkbox" className="size-[17px] accent-purple-600" data-testid={"pi-item-" + i} checked={!!checks[String(i)]} disabled={pi.unread} onChange={(e) => toggle(i, e.target.checked)} />
               {it}
             </label>
           ))}
-        </section>
+        </section>}
         <label className="flex flex-col gap-1 text-[13.5px] text-ink">
           {t("design_pi_cv")}
           <textarea className="input" rows={4} data-testid="pi-cv" placeholder={t("design_pi_cv_ph")} value={cv} onChange={(e) => { setMsg(""); setEdit(e.target.value); }} />
