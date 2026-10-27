@@ -26,6 +26,8 @@ export type PdAnswer = "mask" | "send" | "cancel" | "unlock";
 export type PdChoice = { answer: PdAnswer; leave: string[] };
 
 export type CallOpts = {
+  /** The AI company for this request instead of the workspace's (a key connected a moment ago, before the settings have come round). */
+  provider?: ProviderId;
   temp?: number; max?: number; noLang?: boolean; noScan?: boolean; purposeDay?: string;
   /** The text is published papers (Analyse a paper, the reading shelf, research ranking, citation tools): no name is suggested (C13). Names on the participant list are still matched. */
   literature?: boolean;
@@ -51,7 +53,8 @@ export type CallCtx = {
   names?(): Promise<NamesCtx>;
   /** The vault's unlock ask (ensureUnlocked), for the locked-list line's Unlock button: true once unlocked. */
   unlock?(): Promise<boolean>;
-  openSettings(): void;
+  /** Opens Connect AI (no key for the provider): the request stops, and the student connects AI there. */
+  openConnect(): void;
   onFailover(from: ProviderId, to: ProviderId): void;
   /** Optional: called when the last answer was a rate limit, so the workspace can offer Groq. */
   onRateLimit?(): void;
@@ -77,11 +80,11 @@ function quotaMessage(detail?: string): string {
 /** v1 apiMsg (index.html:5253-5266), keyed by the gateway's error class instead of by pattern-matching text. */
 export function apiMsg(code: AiErrorCode | "cancelled" | "bad-pass", detail?: string): string {
   switch (code) {
-    case "no-key": return "Add your API key first — click ⚙ at the top right.";
+    case "no-key": return "Connect AI first: press Connect AI at the top of the page.";
     case "blocked": case "personal-data": return detail?.trim() || "Something went wrong. Try again.";
     case "bad-pass": return "Wrong passphrase — nothing was unlocked. Try again.";
     case "cancelled": return "Cancelled. Nothing was sent to the AI provider.";
-    case "key-rejected": return "Your API key was rejected. Open ⚙ and paste it again.";
+    case "key-rejected": return "Your AI key was not accepted. Open AI at the top of the page and choose Change key.";
     case "model-gone": return "That AI model is no longer available. Try a different provider using the tabs at the top.";
     case "rate-limit": return "Free limit reached for now. Wait a minute, or switch provider using the tabs at the top.";
     case "provider-error": return "The AI service is having problems (already retried a couple of times). Try again in a few minutes, or switch provider using the tabs at the top. Detail: " + (detail ?? "").slice(0, 180);
@@ -142,7 +145,7 @@ async function ensureKey(ctx: CallCtx): Promise<string> {
   const have = keyStore.getUnlocked(p);
   if (have) return have;
   const blob = ctx.blobs[p];
-  if (!blob) { ctx.openSettings(); throw new AiCallError("no-key", apiMsg("no-key")); }
+  if (!blob) { ctx.openConnect(); throw new AiCallError("no-key", apiMsg("no-key")); }
   if (ctx.unlockKey) {
     let got: string | null;
     try { got = await ctx.unlockKey(p); } catch { throw new AiCallError("bad-pass", apiMsg("bad-pass")); }

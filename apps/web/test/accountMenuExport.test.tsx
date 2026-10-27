@@ -30,7 +30,7 @@ const tid = (id: string) => document.body.querySelector<HTMLElement>(`[data-test
 const project = { id: "p1", title: "Sleep and exam anxiety", titleKeyVersion: 0, deks: [] };
 
 function mount(projectId: string | null) {
-  const value = { project: projectId ? project : null, projectId, openExport: h.openExport, openSettings: h.openSettings, openHelp: h.openHelp, go: async () => true, openProject: async () => {} } as unknown as ProjectValue;
+  const value = { project: projectId ? project : null, projectId, openExport: h.openExport, openSettings: h.openSettings, openConnect: vi.fn(), openHelp: h.openHelp, go: async () => true, openProject: async () => {} } as unknown as ProjectValue;
   const el = document.body.appendChild(document.createElement("div"));
   const root = createRoot(el);
   roots.push(root);

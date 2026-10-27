@@ -14,6 +14,7 @@ import { latexDocument } from "@/lib/export/latex";
 import { fileTitle, useTitle } from "@/lib/vault/titles";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toast";
 import { Editor } from "@/components/editor/Editor";
 import { useProject } from "@/components/frame/ProjectContext";
@@ -32,7 +33,7 @@ function isProvider(v: unknown): v is ProviderId { return typeof v === "string" 
  */
 export function DocumentCard() {
   const t = useT();
-  const { settings } = useSettings();
+  const { settings, update } = useSettings();
   const { hasKey } = useKeys();
   const { currentDoc, registerFlush, registerEditor: registerForInsert, setWordCount, startImport, place, closeDocument } = useProject();
   // Writing always shows the document; beside any other place the student can close it.
@@ -70,11 +71,26 @@ export function DocumentCard() {
     downloadBlob(filename, blob);
     toast(WORD_DOWNLOADED_TOAST);
   };
-  const exportLatex = () => {
+  const latexNow = (orcid: string | undefined) => {
     if (!editor || !currentDoc) return;
-    const { filename, blob } = latexDocument(fileName, editor.getHTML(), settings.orcid);
+    const { filename, blob } = latexDocument(fileName, editor.getHTML(), orcid);
     downloadBlob(filename, blob);
     toast(LATEX_EXPORTED_TOAST);
+  };
+  // The ORCID iD is printed only on this export: with none set, it is asked for here, optional (first-run build spec: it waits until it is needed).
+  const [orcidAsk, setOrcidAsk] = useState(false);
+  const [orcidIn, setOrcidIn] = useState("");
+  const exportLatex = () => {
+    if (!editor || !currentDoc) return;
+    if (settings.orcid?.trim()) { latexNow(settings.orcid); return; }
+    setOrcidIn("");
+    setOrcidAsk(true);
+  };
+  const exportWithOrcid = () => {
+    const v = orcidIn.trim().slice(0, 40);
+    if (v) void update({ orcid: v });
+    setOrcidAsk(false);
+    latexNow(v || undefined);
   };
 
   const provider: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";
@@ -96,6 +112,17 @@ export function DocumentCard() {
           </div>
         </div>
         <DocBar />
+        <Dialog open={orcidAsk} onOpenChange={setOrcidAsk}>
+          <DialogContent className="max-w-md" data-testid="latex-orcid-dialog">
+            <DialogHeader><DialogTitle className="text-xl font-semibold text-purple-800">{t("latex_orcid_h")}</DialogTitle></DialogHeader>
+            <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); exportWithOrcid(); }}>
+              <label htmlFor="latexOrcid" className="text-sm font-semibold">{t("latex_orcid_label")}</label>
+              <input className="input" id="latexOrcid" type="text" placeholder="0000-0000-0000-0000" maxLength={40} value={orcidIn} onChange={(e) => setOrcidIn(e.target.value)} data-testid="latex-orcid-input" />
+              <a href="https://orcid.org/register" target="_blank" rel="noopener" className="inline-flex min-h-11 items-center text-[13px] text-purple-800 underline">{t("settings_orcid_link")}</a>
+              <DialogFooter><Button type="submit" variant="primary" data-testid="latex-orcid-go">{t("latex_orcid_go")}</Button></DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
         {/* Keyed by the instance, so a new document's bar subscribes afresh. Its slot keeps its height until the editor exists. */}
         {editor ? <FormatBar key={editor.instanceId} editor={editor} /> : <div className="fmtbar fmtbar-pending" aria-hidden="true" />}
         {/* A document that did not open (vault locked, or its key missing or the text damaged) gets no editor, so nothing can be saved over it. */}

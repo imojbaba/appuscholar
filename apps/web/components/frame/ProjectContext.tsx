@@ -19,6 +19,13 @@ export type DocumentSummary = { id: string; projectId: string; title: string; ti
  */
 export type DocumentWithBody = DocumentSummary & { bodyHtml: string; keyVersion: number; deks: WrappedDek[]; unreadable?: "locked" | "broken" };
 
+/** How Connect AI ended: a key was saved ("connected"), "Save my idea without feedback" was chosen ("save"), or it was closed or put off ("closed"). */
+export type ConnectResult = "connected" | "save" | "closed";
+/** How Connect AI ended, and the AI company it ended on (the one a "connected" key was saved for). */
+export type ConnectEnd = { result: ConnectResult; provider: ProviderId };
+/** Connect AI while it is open: `provider` preselected (null: the current one), `offerSave` when the idea screen can save without feedback. */
+export type ConnectAsk = { id: number; provider: ProviderId | null; offerSave: boolean };
+
 /** v1's apLoad(title, [head+ab], 'abstract', false) (8412): the title, the pages (one: the head and the abstract) and the source kind, for apBuild(title, pages, "abstract"). */
 export type PendingAnalyse = { title: string; pages: string[]; src: "abstract" };
 
@@ -89,8 +96,8 @@ export type ProjectValue = {
   setWordCount(docId: string, words: number): void;
   /** Re-reads the open project (status, language) after a change made elsewhere. */
   reloadProject(): Promise<void>;
-  /** The one dialog open now: Help, Terms (read-only), Welcome, AI Provider / Key, and the import dialogs. */
-  dialog: "help" | "terms" | "welcome" | "settings" | "importOrigin" | "myWriting" | "importV1" | null;
+  /** The one dialog open now: Help, Terms (read-only), Settings, and the import dialogs. Connect AI is `connect`, which can open over any of them. */
+  dialog: "help" | "terms" | "settings" | "importOrigin" | "myWriting" | "importV1" | null;
   /** Imports files as new documents (the Import button, a drop on the editor, a pasted file). Asks "Whose writing is this?" once unless every file is a PDF. */
   startImport(files: File[]): void;
   /** The names of the files waiting for the answer to "Whose writing is this?". */
@@ -100,16 +107,21 @@ export type ProjectValue = {
   openHelp(): void;
   /** The v1 backup import dialog (from Help, or /projects?import=1). */
   openImportV1(): void;
-  /** The Terms read-only (from Help and the AI Provider / Key dialog). The first-use gate is not a dialog state: it applies whenever the account has not accepted the current terms. */
+  /** The Terms read-only (from Help and Settings). The first-use gate is not a dialog state: it applies whenever the account has not accepted the current terms. */
   openTerms(): void;
-  /** The welcome tour (first run, and Help's replay button). */
-  openWelcome(): void;
   /** The "My writing" dialog (the % yours badge opens it). */
   openMyWriting(): void;
-  /** Opens AI Provider / Key, with `provider` preselected in its select (default: the current provider). */
-  openSettings(provider?: ProviderId): void;
-  /** The provider the AI Provider / Key dialog opened on, or null for the current one. */
-  settingsProvider: ProviderId | null;
+  /** Opens Settings (account menu): field of study, AI writing language, ORCID iD, OpenAlex key, the fallback and the log, the terms. */
+  openSettings(): void;
+  /**
+   * Opens Connect AI: the question, getting a key, pasting and testing it, and how it is kept; once a key exists, the AI connection (test, change,
+   * remove). Resolves when it ends. A second call while it is open answers the first "closed".
+   */
+  openConnect(opts?: { provider?: ProviderId; offerSave?: boolean }): Promise<ConnectEnd>;
+  /** Connect AI while it is open, else null. */
+  connect: ConnectAsk | null;
+  /** Ends the open Connect AI with its result. */
+  finishConnect(end: ConnectEnd): void;
   closeDialog(): void;
   /**
    * Opens the project's export place (wave B Task 12): with `preselect`, only that part is ticked (a tool's Export link, W11; a tool module's

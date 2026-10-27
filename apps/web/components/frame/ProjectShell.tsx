@@ -34,7 +34,8 @@ import type { ExportPartId } from "@/lib/export/projectExport";
 import { AppHeader } from "./AppHeader";
 import { WindowHeader } from "./WindowHeader";
 import { DocumentBeside } from "./DocumentBeside";
-import { ProjectProvider, type DocumentSummary, type DocumentWithBody, type PendingAnalyse, type Project, type ProjectValue } from "./ProjectContext";
+import { isProvider } from "@/lib/ai/keys";
+import { ProjectProvider, type ConnectAsk, type ConnectEnd, type DocumentSummary, type DocumentWithBody, type PendingAnalyse, type Project, type ProjectValue } from "./ProjectContext";
 
 /** Whether this tab has run the title-sealing pass since its last unlock (module scope: it outlives a project switch). */
 let sealPassRan = false;
@@ -149,7 +150,23 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [currentDoc, setCurrentDoc] = useState<DocumentWithBody | null>(null);
   const [dialog, setDialog] = useState<ProjectValue["dialog"]>(null);
-  const [settingsProvider, setSettingsProvider] = useState<ProviderId | null>(null);
+  const [connect, setConnect] = useState<ConnectAsk | null>(null);
+  const connectAnswer = useRef<((r: ConnectEnd) => void) | null>(null);
+  const connectProvider = useRef<ProviderId>("gemini");
+  const connectSeq = useRef(0);
+  const openConnect = useCallback((opts: { provider?: ProviderId; offerSave?: boolean } = {}) => new Promise<ConnectEnd>((resolve) => {
+    // One Connect AI at a time: an earlier one still open ends as closed.
+    connectAnswer.current?.({ result: "closed", provider: connectProvider.current });
+    connectAnswer.current = resolve;
+    connectProvider.current = opts.provider ?? (isProvider(settings.provider) ? settings.provider : "gemini");
+    setConnect({ id: ++connectSeq.current, provider: opts.provider ?? null, offerSave: !!opts.offerSave });
+  }), [settings.provider]);
+  const finishConnect = useCallback((r: ConnectEnd) => {
+    const answer = connectAnswer.current;
+    connectAnswer.current = null;
+    setConnect(null);
+    answer?.(r);
+  }, []);
   const [importWaiting, setImportWaiting] = useState<File[]>([]);
   const importing = useRef(false);
   const [pendingSearch, setPendingSearch] = useState<string | null>(null);
@@ -184,19 +201,19 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   // One load per project even when React runs the effect twice in development, so the first document is never created twice.
   const loading = useRef<{ key: string; p: Promise<Loaded> } | null>(null);
 
-  // First run: the terms gate (non-dismissible, in dialogs/Terms) comes first; once the account has accepted, the welcome tour opens once for a student who has not seen it.
+  // First run: the terms gate (non-dismissible, in dialogs/Terms) comes first; then a new account is on first run's idea screen, with nothing in front of
+  // it (first-run build spec, OJ 2026-10-27: no welcome window; AI is connected when the student first asks for feedback).
   const gated = needsTerms(me, TERMS_SINCE);
-  const [welcomeChecked, setWelcomeChecked] = useState(false);
-  if (me && !gated && !welcomeChecked) {
-    setWelcomeChecked(true);
-    // /projects?import=1 (the old /import link): the backup import wins over the tour (Help replays the tour).
+  const [importChecked, setImportChecked] = useState(false);
+  if (me && !gated && !importChecked) {
+    setImportChecked(true);
+    // /projects?import=1 (the old /import link) opens the backup import.
     if (openImportV1) setDialog("importV1");
-    else if (!settings.seenWelcome) setDialog("welcome");
   }
   // Strip ?import=1 once the dialog is open, so a reload or a copied link does not reopen it (after the render: the router listens to history).
   useEffect(() => {
-    if (openImportV1 && welcomeChecked && window.location.search) window.history.replaceState(null, "", window.location.pathname);
-  }, [openImportV1, welcomeChecked]);
+    if (openImportV1 && importChecked && window.location.search) window.history.replaceState(null, "", window.location.pathname);
+  }, [openImportV1, importChecked]);
 
   const userId = me?.id;
   const activeProjectId = me?.activeProjectId ?? null;
@@ -479,7 +496,7 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
     place, go, openProject, pendingSearch, setPendingSearch, pendingAnalyse, setPendingAnalyse, docOpen, openDocument, closeDocument, requestInsert, registerEditor,
     project, projectId, documents, currentDoc, selectDoc, reloadDocs, patchDoc, restoreDocument, registerFlush, flushOpen,
     wordCount: live && currentDoc && live.docId === currentDoc.id ? live.words : null, setWordCount, reloadProject,
-    dialog, startImport, importNames: importWaiting.map((f) => f.name), runImport, openHelp: () => setDialog("help"), openImportV1: () => setDialog("importV1"), openTerms: () => setDialog("terms"), openWelcome: () => setDialog("welcome"), openMyWriting: () => setDialog("myWriting"), openSettings: (provider) => { setSettingsProvider(provider ?? null); setDialog("settings"); }, settingsProvider, closeDialog: () => { setDialog(null); setImportWaiting([]); },
+    dialog, startImport, importNames: importWaiting.map((f) => f.name), runImport, openHelp: () => setDialog("help"), openImportV1: () => setDialog("importV1"), openTerms: () => setDialog("terms"), openMyWriting: () => setDialog("myWriting"), openSettings: () => setDialog("settings"), openConnect, connect, finishConnect, closeDialog: () => { setDialog(null); setImportWaiting([]); },
     openExport: (preselect) => setExportParts(exportPartsFor(preselect))
   };
 

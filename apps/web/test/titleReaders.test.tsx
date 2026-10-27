@@ -99,6 +99,10 @@ describe("the document's title readers, with the vault locked", () => {
     // The downloads take the opened-title rule: "untitled" while it is locked.
     await click(q("download-word"));
     await click(q("download-latex"));
+    // No ORCID iD yet: it is asked for at this export, optional; Export goes on without one.
+    expect(document.querySelector('[data-testid="latex-orcid-dialog"]')).not.toBeNull();
+    expect(h.downloads).toEqual(["untitled.doc"]);
+    await click(document.querySelector('[data-testid="latex-orcid-go"]'));
     expect(h.downloads).toEqual(["untitled.doc", "untitled.tex"]);
     expect(h.ask).not.toHaveBeenCalled();
   }, 30_000);

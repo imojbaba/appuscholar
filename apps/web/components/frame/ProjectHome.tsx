@@ -3,6 +3,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
+import type { ProviderId } from "@appuscholar/core";
+import { isProvider } from "@/lib/ai/keys";
+import { useKeys } from "@/lib/ai/useKeys";
 import { toast } from "@/components/ui/toast";
 import { projectBlobClient, useProjectBlob, type ProjectBlobState } from "@/lib/blobs/useProjectBlob";
 import { shelfPaperKind, type FixedBlobKind } from "@/lib/blobs/kinds";
@@ -183,7 +186,8 @@ function HomeLoad({ retry }: { retry(): void }) {
         <PanelLoading testId="home-loading" />
       ) : (
         <>
-          {made && <ProjectReady checked={made.checked} onDone={() => { clearJustMade(); setMade(null); }} />}
+          {made && <ProjectReady checked={made.checked} hasVault={vault.status !== "off" && vault.status !== "loading"} onDone={() => { clearJustMade(); setMade(null); }} />}
+          <AiOffLine />
           <HomeBody pv={pv} facts={facts} toolFacts={stageFacts} states={stageStates(mine ?? NO_WORK)} open={open} mark={mark} />
         </>
       )}
@@ -191,16 +195,40 @@ function HomeLoad({ retry }: { retry(): void }) {
   );
 }
 
-/** Once, right after first run made the project: what was saved, and what the home below holds. */
-function ProjectReady({ checked, onDone }: { checked: boolean; onDone(): void }) {
+/**
+ * Once, right after first run made the project: what was saved, and what is at the top of the page (AI; Lock, only once a vault exists; Account), in the
+ * words the header uses (first-run build spec, OJ 2026-10-27, step 6).
+ */
+function ProjectReady({ checked, hasVault, onDone }: { checked: boolean; hasVault: boolean; onDone(): void }) {
   const t = useT();
   return (
     <section className="home-card home-ready" role="status" data-testid="home-ready">
       <h2>{t("home_ready_h")}</h2>
       <p>{t(checked ? "home_ready_saved_checked" : "home_ready_saved")}</p>
-      <p>{t("home_ready_where")}</p>
+      <h3 className="home-ready-top-h">{t("home_ready_top_h")}</h3>
+      <ul className="home-ready-top" data-testid="home-ready-top">
+        <li data-testid="home-ready-top-ai"><b>{t("home_ready_top_ai_k")}</b> {t("home_ready_top_ai")}</li>
+        {hasVault && <li data-testid="home-ready-top-lock"><b>{t("home_ready_top_lock_k")}</b> {t("home_ready_top_lock")}</li>}
+        <li data-testid="home-ready-top-account"><b>{t("home_ready_top_account_k")}</b> {t("home_ready_top_account")}</li>
+      </ul>
       <button type="button" className="home-btn" onClick={onDone} data-testid="home-ready-ok">{t("home_ready_ok")}</button>
     </section>
+  );
+}
+
+/** No AI key yet: one quiet line with Connect AI (no banner, no nagging). Gone once a key is there; says nothing until the keys have been read. */
+function AiOffLine() {
+  const t = useT();
+  const { me, settings } = useSettings();
+  const { hasKey, loaded } = useKeys();
+  const { openConnect } = useProject();
+  const provider: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";
+  if (!me || !loaded || hasKey(provider)) return null;
+  return (
+    <p className="home-ai-off" data-testid="home-ai-off">
+      <span>{t("home_ai_off")}</span>
+      <button type="button" className="home-btn" onClick={() => { void openConnect({ provider }); }} data-testid="home-connect">{t("ai_pill_nokey")}</button>
+    </p>
   );
 }
 

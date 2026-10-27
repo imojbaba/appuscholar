@@ -12,6 +12,7 @@ import { PHONE_QUERY, useMedia } from "@/lib/useMedia";
 import { toast } from "@/components/ui/toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { VaultPill } from "@/components/workspace/VaultPill";
+import { openVaultSetup } from "@/components/workspace/dialogs/VaultSetup";
 import { useAccount } from "@/components/workspace/dialogs/Help";
 import { useProject, type Project } from "./ProjectContext";
 
@@ -28,7 +29,7 @@ const ITEM = "min-h-[40px]";
 export function AppHeader() {
   const t = useT();
   const { lang, setLang } = useLang();
-  const { openHelp, openSettings, go } = useProject();
+  const { openHelp, openConnect, go } = useProject();
   const phone = useMedia(PHONE_QUERY);
   // Called once here, so the account's dialogs stay mounted whichever menu opened them.
   const account = useAccount();
@@ -51,7 +52,7 @@ export function AppHeader() {
       <VaultPill />
       {phone ? <PhoneMenu account={account} lang={lang} switchLang={switchLang} /> : (
         <>
-          <AiPill onOpen={() => openSettings()} />
+          <AiPill onOpen={() => { void openConnect(); }} />
           {/* The name starts with the text the button shows, so speech input ("click हि") and screen readers agree with the screen (Q1). */}
           <button type="button" className="app-hbtn app-desk" aria-label={lang === "en" ? "हि — " + t("lang_switch_to_hi") : "EN — " + t("lang_switch_to_en")} title="हिन्दी / English" data-testid="lang-toggle" onClick={switchLang}>
             {lang === "en" ? "हि" : "EN"}
@@ -77,7 +78,7 @@ function PhoneMenu({ account, lang, switchLang }: { account: Account; lang: stri
   const t = useT();
   const { settings } = useSettings();
   const { hasKey } = useKeys();
-  const { openHelp, openSettings } = useProject();
+  const { openHelp, openConnect } = useProject();
   const { list, load, open, projectId, go } = useSwitcher();
   const current: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";
   return (
@@ -91,7 +92,7 @@ function PhoneMenu({ account, lang, switchLang }: { account: Account; lang: stri
         <DropdownMenuItem className={ITEM} data-testid="switcher-scratch" onSelect={() => open(null)}>{t("scratch_name")}</DropdownMenuItem>
         <DropdownMenuItem className={ITEM} data-testid="switcher-all" onSelect={() => { void go("/projects"); }}>{t("switcher_all")}</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className={ITEM} data-testid="menu-ai" onSelect={() => openSettings()}>
+        <DropdownMenuItem className={ITEM} data-testid="menu-ai" onSelect={() => { void openConnect(); }}>
           {hasKey(current) ? t("ai_pill_key", { provider: PROVIDERS[current].short }) : t("ai_pill_nokey")}
         </DropdownMenuItem>
         <DropdownMenuItem className={ITEM} data-testid="menu-help" onSelect={openHelp}>{t("hdr_help")}</DropdownMenuItem>
@@ -104,7 +105,7 @@ function PhoneMenu({ account, lang, switchLang }: { account: Account; lang: stri
   );
 }
 
-/** "AI: Gemini, your key" when a key for the chosen provider is usable or saved; "AI: add your key" otherwise. Both open the key dialog. */
+/** "AI: Gemini" when a key for the chosen provider is usable or saved; "Connect AI" otherwise. Both open Connect AI (the AI connection once a key exists). */
 function AiPill({ onOpen }: { onOpen(): void }) {
   const t = useT();
   const { me, settings } = useSettings();
@@ -168,7 +169,10 @@ function ProjectItem({ project, current, onOpen }: { project: Project; current: 
   );
 }
 
-/** The account menu: Export this project (inside a project: its export place, Task 12), Export all my work, AI provider and key, Change passphrase (once a vault exists), Sign out, Delete my account. */
+/**
+ * The account menu: Export this project (inside a project: its export place, Task 12), Export all my work, AI connection, Settings, Lock my work with a
+ * passphrase (no vault yet) or Change passphrase (once one exists), Help, Sign out, Delete my account.
+ */
 function AccountMenu({ account }: { account: Account }) {
   const t = useT();
   return (
@@ -183,17 +187,21 @@ function AccountMenu({ account }: { account: Account }) {
   );
 }
 
-/** The account's items, in the account menu and in the phone's Menu (which has its own AI item, so `ai` false leaves this one out). */
+/** The account's items, in the account menu and in the phone's Menu (which has its own AI and Help items, so `ai` false leaves those out). */
 function AccountItems({ account, ai }: { account: Account; ai: boolean }) {
   const t = useT();
-  const { openSettings, openExport, projectId } = useProject();
-  const { exportWork, exporting, startSignOut, hasVault, openChange, openErase } = account;
+  const { openSettings, openConnect, openHelp, openExport, projectId } = useProject();
+  const { exportWork, exporting, startSignOut, hasVault, noVault, openChange, openErase } = account;
   return (
     <>
       {projectId && <DropdownMenuItem className={ITEM} data-testid="acct-export-project" onSelect={() => openExport()}>{t("acct_export_project")}</DropdownMenuItem>}
       <DropdownMenuItem className={ITEM} disabled={exporting} data-testid="acct-export" onSelect={() => { void exportWork(); }}>{t("acct_export")}</DropdownMenuItem>
-      {ai && <DropdownMenuItem className={ITEM} data-testid="acct-ai" onSelect={() => openSettings()}>{t("acct_ai")}</DropdownMenuItem>}
+      {ai && <DropdownMenuItem className={ITEM} data-testid="acct-ai" onSelect={() => { void openConnect(); }}>{t("acct_ai")}</DropdownMenuItem>}
+      <DropdownMenuItem className={ITEM} data-testid="acct-settings" onSelect={openSettings}>{t("acct_settings")}</DropdownMenuItem>
+      {/* No vault yet: the work can be locked later from here (it runs the vault setup, then the migration of what was saved before). */}
+      {noVault && <DropdownMenuItem className={ITEM} data-testid="acct-lock" onSelect={() => { void openVaultSetup(); }}>{t("acct_lock")}</DropdownMenuItem>}
       {hasVault && <DropdownMenuItem className={ITEM} data-testid="acct-change-pass" onSelect={openChange}>{t("acct_change_pass")}</DropdownMenuItem>}
+      {ai && <DropdownMenuItem className={ITEM} data-testid="acct-help" onSelect={openHelp}>{t("hdr_help")}</DropdownMenuItem>}
       <DropdownMenuItem className={ITEM} data-testid="acct-sign-out" onSelect={() => { void startSignOut(); }}>{t("acct_sign_out")}</DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem className={ITEM + " text-destructive"} data-testid="acct-erase" onSelect={openErase}>{t("acct_erase")}</DropdownMenuItem>

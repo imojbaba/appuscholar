@@ -15,30 +15,41 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { useProject } from "@/components/frame/ProjectContext";
 import { PanelLoading } from "@/components/tools/PanelLoading";
+import { FieldPicker } from "@/components/frame/FieldPicker";
 
 export type IdeaFields = Pick<IdeaIntake, "topic" | "resources" | "timeframe" | "constraints">;
 export type IdeaReadValue = NonNullable<IdeaIntake["read"]>;
 export const EMPTY_INTAKE: IdeaFields = { topic: "", resources: "", timeframe: "", constraints: "" };
 
 /**
- * "Check if it is doable": v1's Assess feasibility (ideaAssess 8568-8580, buildIdeaPromptV2 unchanged) as a read with its time, or null when nothing was read.
- * With no key for the chosen provider the key dialog opens and nothing is sent (an empty idea still gets v1's toast first).
+ * "Get feedback on my idea": v1's Assess feasibility (ideaAssess 8568-8580, buildIdeaPromptV2 unchanged) as a read with its time, or null when nothing was read.
+ * With no key for the chosen provider Connect AI opens (first-run build spec, OJ 2026-10-27, step 4); once a key is connected the feedback runs on the idea as it was
+ * typed, with no second press. `onSaveWithout` (first run): Connect AI offers "Save my idea without feedback", which runs it. An empty idea gets v1's toast first.
  */
-export function useIdeaCheck(): { busy: boolean; check(intake: IdeaFields): Promise<IdeaReadValue | null> } {
+export function useIdeaCheck(onSaveWithout?: () => void): { busy: boolean; check(intake: IdeaFields, onSending?: () => void): Promise<IdeaReadValue | null> } {
   const { settings } = useSettings();
-  const { openSettings } = useProject();
+  const { openConnect } = useProject();
   const { hasKey } = useKeys();
   const callAI = useCallAI();
   const [busy, setBusy] = useState(false);
   const running = useRef(false);
-  const check = async (intake: IdeaFields): Promise<IdeaReadValue | null> => {
+  /** `onSending`: called just before the idea goes to the AI (never when Connect AI ended without a key, or the idea is empty). */
+  const check = async (intake: IdeaFields, onSending?: () => void): Promise<IdeaReadValue | null> => {
     if (running.current) return null;
-    const provider: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";
-    if (intake.topic.trim() && !hasKey(provider)) { openSettings(provider); return null; }
+    let provider: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";
+    if (intake.topic.trim() && !hasKey(provider)) {
+      running.current = true;
+      const end = await openConnect({ provider, offerSave: !!onSaveWithout }).finally(() => { running.current = false; });
+      if (end.result === "save") onSaveWithout?.();
+      if (end.result !== "connected") return null;
+      // The key was saved a moment ago: this request goes to the company it was saved for, whatever the settings have caught up with.
+      provider = end.provider;
+    }
     running.current = true;
     setBusy(true);
     try {
-      const text = await checkIdea({ callAI, toast, field: fieldLabel(settings.field), intake });
+      const call: typeof callAI = (prompt, opts) => { onSending?.(); return callAI(prompt, { ...opts, provider }); };
+      const text = await checkIdea({ callAI: call, toast, field: fieldLabel(settings.field), intake });
       return text === null ? null : { text, at: new Date().toISOString() };
     } finally { running.current = false; setBusy(false); }
   };
@@ -46,8 +57,9 @@ export function useIdeaCheck(): { busy: boolean; check(intake: IdeaFields): Prom
 }
 
 /**
- * The idea's four fields (v1's idea_intake keys, so the prompt is unchanged) under the canvas's heading and questions, and the check button.
- * `opening`: the saved intake is still being read, so the loading sign stands in for the boxes (W8). `level` is the heading's level (first run's page title is h1).
+ * The idea's four fields (v1's idea_intake keys, so the prompt is unchanged): the idea, the field of study under it, the three questions in a section that opens
+ * ("Add details for better feedback (optional)", open when one already holds something), and the feedback button. `opening`: the saved intake is still being
+ * read, so the loading sign stands in for the boxes (W8). `level` is the heading's level (first run's page title is h1).
  */
 export function IdeaForm({ intake, onEdit, waiting, opening, busy, onCheck, topicRef, level = 2 }: {
   intake: IdeaFields; onEdit(key: keyof IdeaFields, value: string): void; waiting: boolean; opening: boolean; busy: boolean; onCheck(): void;
@@ -55,8 +67,8 @@ export function IdeaForm({ intake, onEdit, waiting, opening, busy, onCheck, topi
 }) {
   const t = useT();
   const H = level === 1 ? "h1" : "h2";
-  const Sub = level === 1 ? "h2" : "h3";
   const edit = (key: keyof IdeaFields) => (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => onEdit(key, e.target.value);
+  const hasDetails = !!(intake.resources.trim() || intake.timeframe.trim() || intake.constraints.trim());
   return (
     <div className="idea-form">
       <div>
@@ -68,22 +80,25 @@ export function IdeaForm({ intake, onEdit, waiting, opening, busy, onCheck, topi
           <div className="field idea-topic">
             <label htmlFor="ideaTopic">{t("idea_topic_lbl")}</label>
             <textarea className="input" id="ideaTopic" ref={topicRef} rows={3} value={intake.topic} disabled={waiting} onChange={edit("topic")} />
+            <FieldPicker variant="inline" />
           </div>
-          <section className="idea-sharpen">
-            <Sub>{t("idea_sharpen_h")}</Sub>
-            <div className="field">
-              <label htmlFor="ideaRes">{t("idea_resources_lbl")}</label>
-              <input className="input" id="ideaRes" value={intake.resources} disabled={waiting} onChange={edit("resources")} />
+          <details className="idea-sharpen" open={hasDetails || undefined} data-testid="idea-details">
+            <summary data-testid="idea-details-toggle">{t("idea_sharpen_h")}</summary>
+            <div className="idea-sharpen-body">
+              <div className="field">
+                <label htmlFor="ideaRes">{t("idea_resources_lbl")}</label>
+                <input className="input" id="ideaRes" value={intake.resources} disabled={waiting} onChange={edit("resources")} />
+              </div>
+              <div className="field">
+                <label htmlFor="ideaTime">{t("idea_timeframe_lbl")}</label>
+                <input className="input" id="ideaTime" value={intake.timeframe} disabled={waiting} onChange={edit("timeframe")} />
+              </div>
+              <div className="field">
+                <label htmlFor="ideaCons">{t("idea_constraints_lbl")}</label>
+                <input className="input" id="ideaCons" value={intake.constraints} disabled={waiting} onChange={edit("constraints")} />
+              </div>
             </div>
-            <div className="field">
-              <label htmlFor="ideaTime">{t("idea_timeframe_lbl")}</label>
-              <input className="input" id="ideaTime" value={intake.timeframe} disabled={waiting} onChange={edit("timeframe")} />
-            </div>
-            <div className="field">
-              <label htmlFor="ideaCons">{t("idea_constraints_lbl")}</label>
-              <input className="input" id="ideaCons" value={intake.constraints} disabled={waiting} onChange={edit("constraints")} />
-            </div>
-          </section>
+          </details>
         </>
       )}
       <div className="idea-check">

@@ -40,7 +40,8 @@ vi.mock("@/components/frame/ProjectContext", () => ({
 }));
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off" }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
-vi.mock("@/lib/research/oaKey", () => ({ useOpenAlexKey: () => h.oaKey }));
+vi.mock("@/lib/research/oaKey", () => ({ useOpenAlexKey: () => h.oaKey, saveOpenAlexKey: vi.fn(async () => true) }));
+vi.mock("@/lib/ai/useKeys", () => ({ useKeys: () => ({ hasKey: () => false, blobs: {} }) }));
 
 import { ResearchPanel } from "../components/tools/research/ResearchPanel";
 import { resetResearch } from "../lib/research/useSearch";
@@ -211,6 +212,9 @@ describe("Research: a search (researchSearch 8283-8330)", () => {
       expect(tid("rs-status")!.textContent).toBe(c.status);
       expect(titles()).toEqual(c.merged.map((p) => p.title));
       expect(!!tid("rs-sort-row")).toBe(c.merged.length > 0);
+      // The free daily OpenAlex allowance used up: the key that lifts it is offered right under the status, with v1's note (first-run build spec).
+      expect(!!tid("rs-oa-key-input")).toBe(name === "both-oa429");
+      if (name === "both-oa429") expect(tid("rs-oa-key")!.textContent).toContain(en.rs2_oa_key_desc);
     });
   }
 

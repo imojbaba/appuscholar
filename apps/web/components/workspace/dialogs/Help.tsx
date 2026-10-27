@@ -157,12 +157,12 @@ export function useAccount() {
       <EraseAccount open={erasing} onClose={() => setErasing(false)} onErased={() => signOut(true)} />
     </>
   );
-  return { exportWork, exporting, startSignOut, hasVault, openChange: () => setChanging(true), openErase: () => setErasing(true), dialogs };
+  return { exportWork, exporting, startSignOut, hasVault, noVault: vault.status === "off", openChange: () => setChanging(true), openErase: () => setErasing(true), dialogs };
 }
 
 export function Help() {
   const t = useT();
-  const { dialog, closeDialog, openWelcome, openTerms, openImportV1 } = useProject();
+  const { dialog, closeDialog, openTerms, openImportV1 } = useProject();
   const { email } = useSession();
   const { exportWork, exporting, startSignOut, hasVault, openChange, openErase, dialogs } = useAccount();
   return (
@@ -192,7 +192,6 @@ export function Help() {
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="ghost" data-testid="help-tour" onClick={openWelcome}>{t("help_tour_btn")}</Button>
           <Button variant="ghost" data-testid="help-terms" onClick={openTerms}>{t("terms_reopen_btn")}</Button>
           <Button variant="ghost" data-testid="help-import-v1" onClick={openImportV1}>Import a v1 backup</Button>
         </div>

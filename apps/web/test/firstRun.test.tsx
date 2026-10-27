@@ -8,7 +8,7 @@ import en from "../messages/en.json";
 
 type Call = { path: string; method: string; body: unknown; headers?: Record<string, string> };
 const h = vi.hoisted(() => ({
-  api: vi.fn(), toast: vi.fn(), callAI: vi.fn(), openProject: vi.fn(), openSettings: vi.fn(),
+  api: vi.fn(), toast: vi.fn(), callAI: vi.fn(), openProject: vi.fn(), openConnect: vi.fn(async () => ({ result: "closed", provider: "groq" })),
   hasKey: true,
   vault: null as unknown as Record<string, unknown>
 }));
@@ -19,7 +19,7 @@ vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => h.callAI }));
 vi.mock("@/lib/ai/useKeys", () => ({ useKeys: () => ({ hasKey: () => h.hasKey }) }));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: null }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
-vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: null, projectId: null, openProject: h.openProject, openSettings: h.openSettings }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: null, projectId: null, openProject: h.openProject, openConnect: h.openConnect }) }));
 
 import { ApiError } from "../lib/api";
 import { ideaTitle } from "../lib/frame/ideaRead";
@@ -101,7 +101,7 @@ beforeEach(() => {
   h.vault = vaultOn();
   h.hasKey = true;
   h.api.mockReset().mockImplementation(fakeApi);
-  h.toast.mockReset(); h.openSettings.mockReset();
+  h.toast.mockReset(); h.openConnect.mockReset().mockResolvedValue({ result: "closed", provider: "groq" });
   h.openProject.mockReset().mockResolvedValue(true);
   h.callAI.mockReset().mockResolvedValue(FIVE);
 });
@@ -111,8 +111,16 @@ describe("First run", () => {
   it("asks what the student wants to study, in the canvas's words", async () => {
     await render();
     expect($("h1")!.textContent).toBe("What do you want to study?");
-    expect($('[data-testid="idea-hint"]')!.textContent).toBe("Write it roughly, in your own words. We will sharpen it together into a question you can actually answer.");
-    expect($("h2")!.textContent).toBe(E.idea_sharpen_h);
+    expect($('[data-testid="idea-hint"]')!.textContent).toBe("Write it roughly, in your own words. We'll help you sharpen it.");
+    // The field of study sits under the idea, with Change; the three questions are folded away, optional.
+    expect($('[data-testid="idea-field-value"]')!.textContent).toBe("Field: Psychology");
+    expect($('[data-testid="idea-field-change"]')!.textContent).toBe("Change");
+    expect($('[data-testid="idea-details-toggle"]')!.textContent).toBe("Add details for better feedback (optional)");
+    expect(($('[data-testid="idea-details"]') as HTMLDetailsElement).open).toBe(false);
+    expect($('[data-testid="idea-check"]')!.textContent).toBe("Get feedback on my idea");
+    expect($('[data-testid="idea-check-note"]')!.textContent).toBe(E.idea_check_note);
+    // Before any feedback the save is the screen's second way on.
+    expect($('[data-testid="idea-save"]')!.textContent).toBe("Save without feedback");
     expect($('label[for="ideaTopic"]')!.textContent).toBe("Your idea");
     expect($('[data-testid="idea-read"]')).toBeNull();
   });
@@ -121,7 +129,7 @@ describe("First run", () => {
     await render();
     await type("ideaTopic", TOPIC);
     await click("idea-check");
-    expect(h.callAI).toHaveBeenCalledWith(buildIdeaPromptV2(fieldLabel("psychology"), { topic: TOPIC, resources: "", timeframe: "", constraints: "" }).prompt, { temp: 0.3, max: 1200 });
+    expect(h.callAI).toHaveBeenCalledWith(buildIdeaPromptV2(fieldLabel("psychology"), { topic: TOPIC, resources: "", timeframe: "", constraints: "" }).prompt, { temp: 0.3, max: 1200, provider: "groq" });
     const panel = $('[data-testid="idea-read"]')!;
     expect(panel.querySelector(".ai-read-label")!.textContent).toBe(E.idea_read_label);
     expect(panel.querySelectorAll('[data-testid="idea-read-line"]')).toHaveLength(5);
@@ -249,14 +257,48 @@ describe("First run", () => {
     expect(h.openProject).toHaveBeenCalledWith("pNew", {});
   });
 
-  it("with no AI key the button opens the key dialog and sends nothing", async () => {
+  it("with no AI key the button opens Connect AI (offering to save without feedback), not Settings; closed, it sends nothing and the idea stays typed", async () => {
     h.hasKey = false;
     await render();
     await type("ideaTopic", TOPIC);
+    await type("ideaRes", "Sixty volunteers");
     await click("idea-check");
-    expect(h.openSettings).toHaveBeenCalledWith("groq");
+    expect(h.openConnect).toHaveBeenCalledWith({ provider: "groq", offerSave: true });
     expect(h.callAI).not.toHaveBeenCalled();
     expect($('[data-testid="idea-read"]')).toBeNull();
+    expect(($("#ideaTopic") as HTMLTextAreaElement).value).toBe(TOPIC);
+    expect(($("#ideaRes") as HTMLInputElement).value).toBe("Sixty volunteers");
+    expect(sent("POST", "/projects")).toHaveLength(0);
+  });
+
+  it("once Connect AI has connected a key, the feedback runs on the typed idea with no second press, on the company the key was saved for", async () => {
+    h.hasKey = false;
+    h.openConnect.mockResolvedValue({ result: "connected", provider: "gemini" });
+    await render();
+    await type("ideaTopic", TOPIC);
+    await click("idea-check");
+    await until(() => $('[data-testid="idea-read"]') !== null);
+    expect(h.callAI).toHaveBeenCalledTimes(1);
+    expect(h.callAI).toHaveBeenCalledWith(buildIdeaPromptV2(fieldLabel("psychology"), { topic: TOPIC, resources: "", timeframe: "", constraints: "" }).prompt, { temp: 0.3, max: 1200, provider: "gemini" });
+    // Read first, then the name, then Save as my project.
+    const panel = $('[data-testid="idea-read"]')!;
+    expect(panel.querySelector('[data-testid="idea-save"]')!.textContent).toBe("Save as my project");
+    expect(panel.querySelector('[data-testid="idea-save-title"]')).not.toBeNull();
+  });
+
+  it("Connect AI's \"Save my idea without feedback\" creates the project with no read and sends nothing to the AI", async () => {
+    h.hasKey = false;
+    h.openConnect.mockResolvedValue({ result: "save", provider: "groq" });
+    await render();
+    await type("ideaTopic", TOPIC);
+    await click("idea-check");
+    await until(() => h.openProject.mock.calls.length > 0);
+    expect(h.callAI).not.toHaveBeenCalled();
+    expect(sent("POST", "/projects")).toHaveLength(1);
+    expect(sent("POST", "/projects/pNew/ai-use/claim")).toHaveLength(0);
+    const intake = JSON.parse(((sent("PUT", "/projects/pNew/blobs/idea_intake")[0]!.body as { body: string }).body).replace(/^sealed\[[^\]]+\]/, ""));
+    expect(intake).toEqual({ topic: TOPIC, resources: "", timeframe: "", constraints: "" });
+    expect(readJustMade("pNew")).toEqual({ id: "pNew", checked: false });
   });
 
   it("an unparsable read is shown as it came", async () => {

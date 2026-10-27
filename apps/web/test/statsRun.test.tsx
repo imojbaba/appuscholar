@@ -50,7 +50,7 @@ vi.mock("@/lib/ai/useCallAI", async () => {
   return {
     useCallAI: () => (prompt: string, opts: { temp?: number; max?: number } = {}) => callAI(prompt, opts, {
       provider: "gemini", blobs: {}, fallbackOn: false, contentLang: "en", projectId: "p1",
-      askPassphrase: async () => null, askPd: async (sc) => { h.calls.push("askPd"); return h.askPd(sc); }, openSettings: () => {}, onFailover: () => {},
+      askPassphrase: async () => null, askPd: async (sc) => { h.calls.push("askPd"); return h.askPd(sc); }, openConnect: () => {}, onFailover: () => {},
       ...(h.names ? { names: async () => h.names as unknown as import("../lib/ai/names").NamesCtx } : {})
     })
   };

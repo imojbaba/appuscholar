@@ -5,6 +5,7 @@ import { useT } from "@/lib/i18n";
 import { useVault } from "@/lib/vault/useVault";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { SecretInput } from "@/components/ui/secret-input";
 import { toast } from "@/components/ui/toast";
 import { askPassphrase, VAULT_MIN_PASS } from "./Passphrase";
 import { RecoverySheet } from "./RecoverySheet";
@@ -29,6 +30,50 @@ export function openVaultSetup(): Promise<boolean> {
     waiting.push(resolve);
     opener();
   });
+}
+
+/**
+ * A new passphrase chosen inside another window (Connect AI's "Protect with a passphrase"): typed twice on one screen, with the two rules
+ * ("at least 10 characters", "both match") ticked as they are typed, so the button is never pressed into a refusal. What still goes wrong
+ * (`onSubmit` answers a sentence: offline, the server failed) is said under the fields, in the window (#37's rule), and the entries stay.
+ * `children` are the footer's other buttons, before the submit.
+ */
+export function NewPassphraseForm({ submitLabel, onSubmit, children }: { submitLabel: string; onSubmit(pass: string): Promise<string | null>; children?: React.ReactNode }) {
+  const t = useT();
+  const [first, setFirst] = useState("");
+  const [again, setAgain] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const long = first.length >= VAULT_MIN_PASS;
+  const same = again.length > 0 && again === first;
+  async function submit() {
+    if (!long || !same || busy) return;
+    setBusy(true);
+    setError(null);
+    try { setError(await onSubmit(first)); } finally { setBusy(false); }
+  }
+  const rule = (ok: boolean, text: string, id: string) => (
+    <li className={"flex items-center gap-2 " + (ok ? "text-ok-ink" : "text-muted-foreground")} data-testid={id} data-ok={ok}>
+      <span aria-hidden="true">{ok ? "✓" : "○"}</span><span>{text}</span>
+    </li>
+  );
+  return (
+    <form className="grid gap-3" aria-busy={busy || undefined} onSubmit={(e) => { e.preventDefault(); void submit(); }}>
+      <label className="grid gap-1 text-sm font-semibold" htmlFor="newPass">{t("connect_pass_label")}</label>
+      <SecretInput id="newPass" autoComplete="new-password" autoFocus value={first} onChange={(e) => setFirst(e.target.value)} data-testid="new-pass" toggleTestId="new-pass-toggle" />
+      <label className="grid gap-1 text-sm font-semibold" htmlFor="newPass2">{t("connect_pass2_label")}</label>
+      <SecretInput id="newPass2" autoComplete="new-password" value={again} onChange={(e) => setAgain(e.target.value)} data-testid="new-pass2" toggleTestId="new-pass2-toggle" />
+      <ul className="m-0 grid list-none gap-1 p-0 text-sm" aria-live="polite">
+        {rule(long, t("connect_pass_rule_len", { n: VAULT_MIN_PASS }), "new-pass-len")}
+        {rule(same, t("connect_pass_rule_same"), "new-pass-same")}
+      </ul>
+      {error && <p role="alert" className="m-0 text-sm font-semibold text-destructive" data-testid="new-pass-error">{error}</p>}
+      <DialogFooter className="sticky bottom-0 bg-background pt-1">
+        {children}
+        <Button type="submit" variant="primary" disabled={!long || !same || busy} data-testid="new-pass-go">{submitLabel}</Button>
+      </DialogFooter>
+    </form>
+  );
 }
 
 /** Mount once, in ChromeDialogs. */

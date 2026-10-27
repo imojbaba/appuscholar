@@ -8,6 +8,7 @@ import en from "../messages/en.json";
 
 const h = vi.hoisted(() => ({
   api: vi.fn(), ask: vi.fn(), toast: vi.fn(), push: vi.fn(), reload: vi.fn(), path: "/p/p1", ws: null as unknown, stub: () => null, header: false,
+  settings: { seenWelcome: true } as Record<string, unknown>,
   me: { id: "u-ws", activeProjectId: "p1" as string | null, scratchProjectId: "s1", termsAcceptedAt: "2999-01-01T00:00:00Z" }
 }));
 vi.mock("next/navigation", () => ({
@@ -17,7 +18,7 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api")>()), apiFetch: h.api }));
 vi.mock("@/lib/settings", () => ({
-  useSettings: () => ({ me: h.me, settings: { seenWelcome: true }, update: async () => undefined, reload: h.reload })
+  useSettings: () => ({ me: h.me, settings: h.settings, update: async () => undefined, reload: h.reload })
 }));
 vi.mock("@/components/workspace/dialogs/Passphrase", async () => (await import("./support/passphraseMock")).passphraseMock(h.ask));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
@@ -101,7 +102,34 @@ const patches = () => h.api.mock.calls.filter(([p, i]) => p === "/me/active-proj
 
 beforeEach(() => {
   h.api.mockReset(); h.toast.mockReset(); h.push.mockReset(); h.ask.mockReset(); h.reload.mockReset().mockResolvedValue(undefined);
-  h.path = "/p/p1"; h.ws = null; h.header = false; h.me = { ...h.me, activeProjectId: "p1" };
+  h.path = "/p/p1"; h.ws = null; h.header = false; h.me = { ...h.me, activeProjectId: "p1" }; h.settings = { seenWelcome: true };
+});
+
+describe("ProjectShell: first run (OJ 2026-10-27)", () => {
+  it("a new account past the terms has nothing in front of the page: no welcome window, no key window", async () => {
+    plainApi();
+    h.settings = {};
+    await mount("p1");
+    await until(() => ws()?.currentDoc?.id === "Dp1");
+    expect(ws().dialog).toBeNull();
+    expect(ws().connect).toBeNull();
+  });
+
+  it("openConnect opens Connect AI and resolves with how it ended; a second opening ends the first as closed", async () => {
+    plainApi();
+    await mount("p1");
+    await until(() => !!ws());
+    let first!: Promise<unknown>;
+    act(() => { first = ws().openConnect({ provider: "groq", offerSave: true }); });
+    expect(ws().connect).toMatchObject({ provider: "groq", offerSave: true });
+    let second!: Promise<unknown>;
+    act(() => { second = ws().openConnect(); });
+    await expect(first).resolves.toEqual({ result: "closed", provider: "groq" });
+    expect(ws().connect).toMatchObject({ provider: null, offerSave: false });
+    act(() => { ws().finishConnect({ result: "connected", provider: "gemini" }); });
+    await expect(second).resolves.toEqual({ result: "connected", provider: "gemini" });
+    expect(ws().connect).toBeNull();
+  });
 });
 
 describe("ProjectShell", () => {

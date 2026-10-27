@@ -52,7 +52,7 @@ async function unlockWith(page: Page, pass: string) {
 /** Reloads; the vault is locked again (nothing was remembered), so the document asks for the passphrase as it opens. */
 async function reloadLocked(page: Page) {
   await page.reload();
-  await expect(page.getByTestId("vault-pill")).toHaveText("Vault locked");
+  await expect(page.getByTestId("vault-pill")).toHaveText("🔒 Locked");
   await expect(page.getByTestId("pass-dialog")).toBeVisible();
 }
 
@@ -157,7 +157,7 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     await page.getByTestId("vault-sheet-saved").check();
     await page.getByTestId("vault-sheet-done").click();
     await expect(page.getByTestId("vault-sheet-dialog")).toBeHidden();
-    await expect(page.getByTestId("vault-pill")).toHaveText("Vault unlocked");
+    await expect(page.getByTestId("vault-pill")).toHaveText("🔓 Unlocked");
     // The titles are sealed after the unlock: the project's and its document's, on the server as ciphertext with a key version; the app shows the name.
     const sealed = async () => {
       const list = (await (await page.request.get(`${API}/projects`, { headers: bearer })).json()) as Array<{ id: string; title: string; titleKeyVersion: number }>;
@@ -178,7 +178,7 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     // Its plaintext save is refused (a vault exists now); the tab reads the vault and asks for its passphrase before it saves.
     await expect(stale.getByTestId("pass-dialog")).toBeVisible();
     await expect(stale.getByTestId("pass-message")).toHaveText(UNLOCK_HINT);
-    await expect(stale.getByTestId("vault-pill")).toHaveText("Vault locked");
+    await expect(stale.getByTestId("vault-pill")).toHaveText("🔒 Locked");
     await stale.getByTestId("pass-cancel").click();
     await expect(stale.getByTestId("pass-dialog")).toBeHidden();
     await expect(stale.getByTestId("save-status")).toHaveText("Unlock your vault to save your changes.");
@@ -208,7 +208,7 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     expect(sent.keyVersion).toBe(1);
     expect(sent.bodyHtml).not.toContain("Deadlines");
     await expect(stale.getByTestId("save-status")).toHaveText("Auto-save on");
-    await expect(stale.getByTestId("vault-pill")).toHaveText("Vault unlocked");
+    await expect(stale.getByTestId("vault-pill")).toHaveText("🔓 Unlocked");
     await expectAllSentences(stale);
     await stale.close();
   });
@@ -224,13 +224,13 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     await page.getByTestId("vault-pill").click();
     await unlockWith(page, PASS_1);
     await expectAllSentences(page);
-    await expect(page.getByTestId("vault-pill")).toHaveText("Vault unlocked");
+    await expect(page.getByTestId("vault-pill")).toHaveText("🔓 Unlocked");
     await expect(page.getByTestId("project-switcher")).toContainText(PROJECT);
   });
 
   await test.step("4d. the project list with the vault locked: Locked title, the six stage bars, no ciphertext; Unlock brings the name back", async () => {
     await page.goto(WEB_ORIGIN + "/projects");
-    await expect(page.getByTestId("vault-pill")).toHaveText("Vault locked");
+    await expect(page.getByTestId("vault-pill")).toHaveText("🔒 Locked");
     // The list needs nothing opened to show the states, so nothing asks; its line offers the unlock.
     await expect(page.getByTestId("list-vault-line")).toHaveText("Titles are locked. Enter your passphrase to see them.");
     const row = page.getByTestId("project-row");
@@ -259,7 +259,7 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     try {
       const p2 = await other.newPage();
       await p2.goto(APP);
-      await expect(p2.getByTestId("vault-pill")).toHaveText("Vault locked");
+      await expect(p2.getByTestId("vault-pill")).toHaveText("🔒 Locked");
       await expect(p2.locator(".ProseMirror")).toHaveCount(0);
       // `/` opens the active project's home, which loads the document: the passphrase is asked there.
       await unlockWith(p2, PASS_1);
@@ -267,7 +267,7 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
       await expect(p2.getByTestId("project-switcher")).toContainText(PROJECT);
       await p2.getByTestId("home-open-writing").click();
       await expectAllSentences(p2);
-      await expect(p2.getByTestId("vault-pill")).toHaveText("Vault unlocked");
+      await expect(p2.getByTestId("vault-pill")).toHaveText("🔓 Unlocked");
     } finally {
       await other.close();
     }

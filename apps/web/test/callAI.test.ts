@@ -18,7 +18,7 @@ function ctx(over: Partial<CallCtx> = {}): CallCtx {
   return {
     provider: "gemini", blobs: {}, fallbackOn: true, contentLang: "en", projectId: null,
     askPassphrase: vi.fn(async () => null), askPd: vi.fn(async () => ({ answer: "cancel" as const, leave: [] })),
-    openSettings: vi.fn(), onFailover: vi.fn(), ...over
+    openConnect: vi.fn(), onFailover: vi.fn(), ...over
   };
 }
 const body = (call = 0) => JSON.parse(mockFetch.mock.calls[call]![1]!.body as string) as Record<string, unknown>;
@@ -59,7 +59,7 @@ describe("callAI personal-data step", () => {
   it("scans before the key step: personal data, no key, cancel -> Cancelled message and the settings dialog is not opened", async () => {
     const c = ctx({ askPd: vi.fn(async () => ({ answer: "cancel" as const, leave: [] })) });
     await expect(callAI("mail a@b.com now", {}, c)).rejects.toThrow("Cancelled. Nothing was sent to the AI provider.");
-    expect(c.openSettings).not.toHaveBeenCalled();
+    expect(c.openConnect).not.toHaveBeenCalled();
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
@@ -117,10 +117,10 @@ describe("callAI key step", () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  it("with no key at all it opens the settings dialog and rejects", async () => {
+  it("with no key at all it opens Connect AI, not Settings, and rejects", async () => {
     const c = ctx();
-    await expect(callAI("hello", {}, c)).rejects.toThrow("Add your API key first — click ⚙ at the top right.");
-    expect(c.openSettings).toHaveBeenCalled();
+    await expect(callAI("hello", {}, c)).rejects.toThrow("Connect AI first: press Connect AI at the top of the page.");
+    expect(c.openConnect).toHaveBeenCalled();
     expect(mockFetch).not.toHaveBeenCalled();
   });
 });
@@ -174,13 +174,13 @@ describe("callAI terms gate", () => {
 
 describe("apiMsg", () => {
   it("returns the v1 strings", () => {
-    expect(apiMsg("key-rejected")).toBe("Your API key was rejected. Open ⚙ and paste it again.");
+    expect(apiMsg("key-rejected")).toBe("Your AI key was not accepted. Open AI at the top of the page and choose Change key.");
     expect(apiMsg("network")).toBe("Could not reach the AI provider. Check your connection and try again, or switch provider using the tabs at the top.");
     expect(apiMsg("rate-limit")).toBe("Free limit reached for now. Wait a minute, or switch provider using the tabs at the top.");
     expect(apiMsg("model-gone")).toBe("That AI model is no longer available. Try a different provider using the tabs at the top.");
     expect(apiMsg("truncated")).toBe("The answer was cut off. Select a smaller piece of text and try again.");
     expect(apiMsg("empty")).toBe("The AI returned an empty answer. Try again.");
-    expect(apiMsg("no-key")).toBe("Add your API key first — click ⚙ at the top right.");
+    expect(apiMsg("no-key")).toBe("Connect AI first: press Connect AI at the top of the page.");
     expect(apiMsg("bad-pass")).toBe("Wrong passphrase — nothing was unlocked. Try again.");
     expect(apiMsg("terms")).toBe("Accept the terms first (open ❓ Help → Terms and where your data goes).");
     expect(apiMsg("cancelled")).toBe("Cancelled. Nothing was sent to the AI provider.");

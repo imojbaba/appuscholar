@@ -132,7 +132,7 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     await page.getByTestId("vault-sheet-done").click();
     await expect(page.getByTestId("vault-sheet-dialog")).toBeHidden();
     await expect(page.getByTestId("provider-dialog")).toBeHidden();
-    await expect(page.getByTestId("vault-pill")).toHaveText("Vault unlocked");
+    await expect(page.getByTestId("vault-pill")).toHaveText("🔓 Unlocked");
 
     // The AI pill names the provider; it opens the key dialog.
     await expect(page.getByTestId("ai-pill")).toHaveText("AI: Groq, your key");
@@ -384,7 +384,7 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     expect(new URL(popup.url()).pathname + new URL(popup.url()).search).toBe(projectPath + "?window=1");
     // Nothing in the window needed the vault yet, so it is locked there: the project's name reads "Locked title" until its pill opens it.
     await expect(popup.getByTestId("window-where")).toHaveText("Locked title / Literature");
-    await expect(popup.getByTestId("vault-pill")).toHaveText("Vault locked");
+    await expect(popup.getByTestId("vault-pill")).toHaveText("🔒 Locked");
     await popup.getByTestId("vault-pill").click();
     await popup.getByTestId("pass-input").fill(PASS);
     await popup.getByTestId("pass-ok").click();

@@ -357,7 +357,12 @@
 .idea-hint { margin: 8px 0 0; color: var(--muted); max-width: 60ch; }
 .idea-topic .input { font-size: 17px; }
 .idea-sharpen, .idea-save-plain { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); padding: var(--s6); }
-.idea-sharpen h2, .idea-sharpen h3 { margin: 0 0 var(--s4); font-size: 18px; }
+.idea-sharpen summary { cursor: pointer; font-size: 16px; font-weight: 600; min-height: 44px; display: flex; align-items: center; }
+.idea-sharpen[open] summary { margin-bottom: var(--s3); }
+.idea-sharpen:not([open]) { padding-top: var(--s2); padding-bottom: var(--s2); }
+.idea-sharpen summary:focus-visible, .idea-field-change:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
+.idea-field { margin-top: var(--s2); font-size: 14px; color: var(--muted); display: grid; gap: var(--s1); }
+.idea-field-change { min-height: 44px; padding: 0 4px; border: none; background: none; color: var(--purple-800); text-decoration: underline; text-underline-offset: 2px; font: inherit; cursor: pointer; }
 .idea-check, .ai-read-acts { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: center; }
 .idea-check button, .ai-read-acts button { min-height: 44px; }
 .idea-note { margin: 0; font-size: 13px; color: var(--muted); }
@@ -615,6 +620,9 @@
 .home-ready { margin: 0 0 var(--s5); padding: var(--s5) var(--s6); display: flex; flex-direction: column; gap: var(--s2); border-color: var(--purple-500); background: var(--soft); }
 .home-card.home-ready h2 { font-size: 16px; color: var(--purple-800); }
 .home-ready p { margin: 0; font-size: 14px; line-height: 1.55; }
+.home-ready-top-h { margin: var(--s2) 0 0; font-size: 14px; font-weight: 600; }
+.home-ready-top { margin: 0; padding-left: 1.2em; font-size: 14px; line-height: 1.55; display: grid; gap: 2px; }
+.home-ai-off { margin: 0 0 var(--s5); display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3); font-size: 14px; color: var(--muted); }
 @media (max-width: 700px) {
   .home-title { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .home-ready { padding: var(--s4); }
