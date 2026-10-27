@@ -242,7 +242,10 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     const stem = title.replace(/[^\w\- ]+/g, "").trim() || "appuscholar-document";
     const [word] = await Promise.all([page.waitForEvent("download"), page.getByTestId("download-word").click()]);
     expect(word.suggestedFilename()).toBe(stem + ".doc");
-    const [tex] = await Promise.all([page.waitForEvent("download"), page.getByTestId("download-latex").click()]);
+    // No ORCID iD is set: the LaTeX export asks for one here, optional (first-run build spec: it waits until it is needed); Export goes on without it.
+    await page.getByTestId("download-latex").click();
+    await expect(page.getByTestId("latex-orcid-dialog")).toBeVisible();
+    const [tex] = await Promise.all([page.waitForEvent("download"), page.getByTestId("latex-orcid-go").click()]);
     expect(tex.suggestedFilename()).toBe(stem + ".tex");
   });
 
