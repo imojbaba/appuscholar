@@ -91,8 +91,8 @@ export function Dictionary({ data, callAI, field }: Props) {
   return (
     <div className="ap-box" data-testid="words-dictionary" style={{ background: "transparent" }}>
       <b>{t("wd2_dict_title")}</b>
-      <div className="ap-row mt-1.5">
-        <input type="text" className="input flex-1" maxLength={40} value={word} placeholder={t("wd2_word_ph")} aria-label={t("wd2_word_label")} data-testid="dict-in"
+      <div className="ap-row ap-wrap mt-1.5">
+        <input type="text" className="input flex-1 min-w-[10rem]" maxLength={40} value={word} placeholder={t("wd2_word_ph")} aria-label={t("wd2_word_label")} data-testid="dict-in"
           onChange={(e) => setWord(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void go(); }} />
         <Button variant="primary" data-testid="dict-go" onClick={() => void go()}><MagnifyingGlass aria-hidden />{t("wd2_lookup")}</Button>
         <Button variant="ghost" data-testid="dict-selected" onClick={fromSelection}><TextAa aria-hidden />{t("wd2_use_selected")}</Button>
