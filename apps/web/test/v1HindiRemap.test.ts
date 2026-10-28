@@ -461,8 +461,8 @@ describe("applyV1HindiRemap", () => {
 
 describe("the committed remap file", () => {
   it("records the v1 commit, build and sha256 it was made from", () => {
-    expect(remap.v1.commit).toBe("f5336be");
-    expect(remap.v1.build).toBe("2026.10.24a");
+    expect(remap.v1.commit).toBe("6b70c3e");
+    expect(remap.v1.build).toBe("2026.10.27d");
     expect(remap.v1.sha256).toMatch(/^[0-9a-f]{64}$/);
   });
 
@@ -562,7 +562,7 @@ describe("the committed remap file", () => {
 });
 
 // With the pinned v1 (V1_INDEX_HTML, as in i18n.test.ts) the dictionaries at the re-map step can be rebuilt, and the generator's input compared with them.
-// V1_NEWEST_INDEX_HTML (the v1 of commit f5336be) also makes the last test regenerate the whole remap file.
+// V1_NEWEST_INDEX_HTML (the v1 of commit 6b70c3e) also makes the last test regenerate the whole remap file.
 describe("the remap file against the pinned v1", () => {
   const SET = process.env.V1_INDEX_HTML;
   const V1 = SET ?? "/Users/poojadudani/Documents/Claude cowork/Scholarly/appuscholer/index.html";
