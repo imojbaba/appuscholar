@@ -313,7 +313,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Likely wider (read, not run): the same for the first blob of every stage 3 to 6 tool (Design, Collection, Review), since they all save through `useProjectBlob`, and for the project list, which reads the same list once (`components/frame/ProjectList.tsx` line 47).
 - Fix, either way: the home waits for `heldBlobs` to settle before its `GET /projects?include=work` (as the export does), or it asks again once the held saves have settled.
 - Evidence: the run of 2026-10-24 on 66d8ec3: case S6-01, the failed check "going home straight after the last code, the home's Collection and analysis row says \"3 codes\" and the stage is not Not started, without a reload". Re-run: `pnpm --filter @appuscholar/web qa:local -g "S6-01"`. The check is NOT CHECKED when the press came after the save was let go (a stalled runner), so a later FIXED? means the page was fixed, not that the timing changed.
-- Status: known
+- Status: fixed on phase-3a-vault (2026-10-27, c43ccbd "The home reads the study's work after the last saves have landed": `useProjectWork` waits for the saves still running, `heldBlobs.settled`, before it asks); S6-01 and the developers' Coding e2e pass again
 
 ### Q32: On a phone the passage to be tagged is not on the screen when the code is tapped
 

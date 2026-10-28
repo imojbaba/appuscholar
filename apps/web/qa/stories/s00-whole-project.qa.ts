@@ -438,18 +438,7 @@ const editorSelection = (page: Page) =>
 
 /** The caret at the very end of the open document, on a new empty line. */
 async function newLineAtEnd(page: Page): Promise<void> {
-  await page.locator(".ProseMirror").first().focus();
-  await page.evaluate(() => {
-    const last = document.querySelector(".ProseMirror")!.lastElementChild!;
-    last.scrollIntoView({ block: "center" });
-    const range = document.createRange();
-    range.selectNodeContents(last);
-    range.collapse(false);
-    const sel = window.getSelection()!;
-    sel.removeAllRanges();
-    sel.addRange(range);
-  });
-  await page.keyboard.press("Enter");
+  await typeInDoc(page, "\n");
 }
 
 /** The document closed: Back on a phone (full screen), the document bar's close beside a place. */
@@ -961,7 +950,6 @@ async function journey(page: Page, context: Parameters<typeof goOffline>[0], qa:
   await qa.step(S_WRITING, async () => {
     await toPlace(page, id, "writing", "document");
     await expect(page.getByTestId("frame-doc")).toBeVisible();
-    // The document opens a moment after it is picked: typed before its text is there, the keys land while the editor swaps documents (CI, first try: the draft became headings).
     await pickDoc(page, mainTitle, sentence);
     await typeInDoc(page, `\n# ${N.project}\n## Introduction\n${OWN_DRAFT}\n${COPIED}\n## Language check\n${RULES_TEXT}`);
     await qa.check("data", "my draft stands at the end of the document under its three headings, and the t-test sentence above it is untouched", async () => {
