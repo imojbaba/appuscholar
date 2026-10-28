@@ -63,6 +63,7 @@ jobs:
           echo "Built from the merge of $HEAD_SHA into $BASE_REF. The full report, screenshots and replays: the run's artifact qa-report-slice." >> "$GITHUB_STEP_SUMMARY"
           echo >> "$GITHUB_STEP_SUMMARY"
           if [ -f apps/web/qa-report/summary.md ]; then cat apps/web/qa-report/summary.md >> "$GITHUB_STEP_SUMMARY"; else echo "No report was written: see the log of the first step that failed (the build or the slice)." >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -s apps/web/qa-report/fix-brief.md ]; then echo "::group::fix-brief.md (every failure, as in the artifact)"; cat apps/web/qa-report/fix-brief.md; echo "::endgroup::"; fi
 
   qa-full:
     if: github.event_name != 'pull_request'
@@ -144,3 +145,4 @@ jobs:
           echo "The full grid on $GITHUB_SHA: ${{ steps.gather.outputs.joined || 0 }} of 4 shards joined. The full report, screenshots and replays: the run's artifact qa-report-full." >> "$GITHUB_STEP_SUMMARY"
           echo >> "$GITHUB_STEP_SUMMARY"
           if [ -f apps/web/qa-report/summary.md ]; then cat apps/web/qa-report/summary.md >> "$GITHUB_STEP_SUMMARY"; else echo "No report was written: see the Join step's log." >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -s apps/web/qa-report/fix-brief.md ]; then echo "::group::fix-brief.md (every failure, as in the artifact)"; cat apps/web/qa-report/fix-brief.md; echo "::endgroup::"; fi
