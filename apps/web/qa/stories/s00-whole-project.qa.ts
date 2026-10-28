@@ -961,7 +961,8 @@ async function journey(page: Page, context: Parameters<typeof goOffline>[0], qa:
   await qa.step(S_WRITING, async () => {
     await toPlace(page, id, "writing", "document");
     await expect(page.getByTestId("frame-doc")).toBeVisible();
-    await pickDoc(page, mainTitle);
+    // The document opens a moment after it is picked: typed before its text is there, the keys land while the editor swaps documents (CI, first try: the draft became headings).
+    await pickDoc(page, mainTitle, sentence);
     await typeInDoc(page, `\n# ${N.project}\n## Introduction\n${OWN_DRAFT}\n${COPIED}\n## Language check\n${RULES_TEXT}`);
     await qa.check("data", "my draft stands at the end of the document under its three headings, and the t-test sentence above it is untouched", async () => {
       await expect(editorOf(page).locator("h1")).toHaveText([N.project]);
