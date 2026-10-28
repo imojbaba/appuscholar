@@ -1,0 +1,8 @@
+{
+ "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=6&term=qwxzjv%20flurble%20nonexistentterm",
+ "status": 200,
+ "headers": {
+  "content-type": "application/json; charset=UTF-8"
+ },
+ "body": "{\"header\":{\"type\":\"esearch\",\"version\":\"0.3\"},\"esearchresult\":{\"count\":\"0\",\"retmax\":\"0\",\"retstart\":\"0\",\"idlist\":[],\"translationset\":[],\"querytranslation\":\"qwxzjv flurble nonexistentterm\",\"errorlist\":{\"phrasesnotfound\":[\"qwxzjv\",\"flurble\",\"nonexistentterm\"],\"fieldsnotfound\":[]},\"warninglist\":{\"phrasesignored\":[],\"quotedphrasesnotfound\":[],\"outputmessages\":[\"No items found.\"]}}}\n"
+}

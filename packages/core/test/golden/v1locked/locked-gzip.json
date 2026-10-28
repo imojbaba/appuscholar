@@ -1,0 +1,30 @@
+{
+ "engine": "v1locked",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "locked": {
+  "app": "appuscholar",
+  "v": 2,
+  "locked": true,
+  "enc": {
+   "alg": "AES-GCM-256",
+   "kdf": "PBKDF2-SHA256",
+   "iter": 600000,
+   "salt": "rCJb1avag/co5/FRCAZ5AQ==",
+   "iv": "cA69DcX6HqZm3HvB",
+   "z": 1,
+   "aad": "appuscholar-backup-v2"
+  },
+  "exported": "2026-10-12T09:30:00.000Z",
+  "ct": "UF7TuzSYqt5w7HG8o0cnDN5ZdBHv7U3GUUpX85n7kvMDhKz8oXNZtbXjq2qEkZxBj5cGspl9R7FKJ6zTiDYuKwaFve53aUZu/rDj5brJyN4qHn0NDn2JPcfDL1rXT+VTh9SZ2i3j8oLZka5+qUwzwp+J40dYKUtv393X8Hp6zm1jX5oijumIAnv7K2Uh8aoEFZuWnEYEAa5o6NRs7zTT1wj/th3T0j0XaeG4eAwunhc+nfUksThY154T9Yvo2r1SxH5bU9yyxfHj/pVDawv8V4PmzA54Njlq4YQyx9YrF74t+HTWuzk++wlCgDcszl+zcOFLZafwm5ft9f2ApzybJrpIgQodFtdGkaA/ic3cWmkVZr++G15l3kpcO0xpNbh/mQ5Oct+2cGpN65/cxonOvSqULaqUXkRufYVoIfmsr6yjHzw1Va45j344pA4Y01ULdG/0t56K5/P27UMFbi4vlD7jdPvNc5etfI6Xo7m3OIHACgoOktpkuDGy2bnpHAB0/IkpkB+4dqJMzRscE587A3NhD3Dq5SnLkotJvurYeKv5CUidnBGjixrnHgf3vrBdCQowT9fnnRFoBfspnXwV3n2WnXLPphcrQ85TBBrVjHmkbzhbvu5rDsVyX55rvOItETQJM7py+lhbCOMK94lXcIJJJ5nSCDOe0dL4bG5ay1x2K3/u/PcR0V70lnMQQ93C3i3Z9LKfmo4h48ul6x1lbS5T/m1zWqeywL2r7uYp3409maT2zMhduHpQf3bdb8PEu1Pe1tIJRnNbXuhceGJWL75SDPq5jZxURkhsH1b/SFSVSpmRE/x9MoQcZrWI6EzRy0j3314fMaolWu0Zj56cVuuY/QGMscH3uuD6RgVXmCQKztNcNBRJn1u4uxc0UyYTVZg4dkjkMwOqi0vtdggE+DhS1yxTLBITNIPQvg0Lg6QY2GS8fABlH30QYNKDAoHFF4ko3M3FxMCRfsbu25GZ809ESGqPhKN4HOub6aHHqvxY226hiwo19sIgYKF8qTtQ+ySg6M5N98sz893lXEjfj5VQc9is3MeWEKeBmnZyGoWtWYr6Z/8DXRuNCaz6s27P37T/FoJhIHmNgz9DdVYZnYaR72Yeargk/mw/SCRxObdYH7ceX++gFs9j/san/ZEzchOrqbJ/gDS3plUThfuRfwbpf2GTWZnjrFtObmUF1uLew9W/9p14cOtIgKi5X/+6Y9V0QzhoTr94awbBGkkdalngoxtOTidPn4rO3uh6siYKt46rpp6mn65IbU5D9JJzwORuaG4NHdp/+4j/SjT2JR5LsjHHupPbOhZiMTRWhjCH0NYifEbOXAL/4N428IVIA60guI7Ravznidy+NS9kqA/cVuIgO+QBQWrnAPfUnFZYlQDeCH+vH9fLrtuA+mxRYguWVjVpYohmVn8MDxKjBFOe/TirZw3D7brjCHmM3VmVglWSItPQ7WnxIXnas9z7Gm69EYuo9PpoA7aXDs6c6BGMTZG1RLAZd0Y3300irKD60Y3/Q4yqzZ0QOezUCXr1E1nU5KAy089lBDSTZjTh3Z/jNj7raevf3weI/ixtHy+y"
+ },
+ "plain": "{\"app\":\"appuscholar\",\"v\":1,\"exported\":\"2026-10-12T09:30:00.000Z\",\"data\":{\"appu_docs\":\"[{\\\"id\\\":\\\"d1760000000001\\\",\\\"title\\\":\\\"Literature review\\\",\\\"body\\\":\\\"<h2>Sleep and delay</h2><p>Attachment theory <b>matters</b> (Bowlby, 1969). Students who sleep less submit later <span class=\\\\\\\"ai-ins\\\\\\\" data-h=\\\\\\\"1q8pv1j\\\\\\\">and report lower motivation</span>.</p><ul><li>Steel (2007)</li><li>Rao et al. (2019)</li></ul>\\\",\\\"updated\\\":1760000000001},{\\\"id\\\":\\\"d1760000100002\\\",\\\"title\\\":\\\"शोध नोट्स\\\",\\\"body\\\":\\\"Notes from the viva\\\\nSupervisor: tighten the sample (n < 30 is too small) & cite Rao.\\\\n\\\\nप्रश्न: नमूना कितना बड़ा हो?\\\",\\\"updated\\\":1760000100002},{\\\"id\\\":\\\"d1760000200003\\\",\\\"title\\\":\\\"Figure notes\\\",\\\"body\\\":\\\"<p>Figure 1 shows the dose–response curve.</p><span class=\\\\\\\"img-wrap\\\\\\\" contenteditable=\\\\\\\"false\\\\\\\" style=\\\\\\\"width:360px\\\\\\\"><img src=\\\\\\\"appuimg:i7v184nnbncx3a\\\\\\\"><span class=\\\\\\\"img-handle\\\\\\\" title=\\\\\\\"Drag to resize\\\\\\\"></span></span><p>Caption: n = 24.</p>\\\",\\\"updated\\\":1760000200003},{\\\"id\\\":\\\"d1760000300004\\\",\\\"title\\\":\\\"Results, picture shown as text\\\",\\\"body\\\":\\\"Figure 2. &lt;span class=\\\\\\\"img-wrap\\\\\\\" contenteditable=\\\\\\\"false\\\\\\\" style=\\\\\\\"width:360px\\\\\\\"&gt;&lt;img src=\\\\\\\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\\\\\\\"&gt;&lt;span class=\\\\\\\"img-handle\\\\\\\" title=\\\\\\\"Drag to resize\\\\\\\"&gt;&lt;/span&gt;&lt;/span&gt;\\\",\\\"updated\\\":1760000300004},{\\\"id\\\":\\\"d1760000400005\\\",\\\"title\\\":\\\"Rao 2019 sleep and delay\\\",\\\"body\\\":\\\"<p>Rao, K., &amp; Iyer, S. (2019). Sleep and delay in undergraduates. Journal of Student Studies, 4(2), 11–24.</p><p>Abstract. Sleep loss predicted delay (r = .32) among 120 undergraduates. Students who slept under six hours handed in work later.</p>\\\",\\\"updated\\\":1760000400005,\\\"origin\\\":\\\"source\\\",\\\"src\\\":\\\"Rao 2019 sleep and delay.pdf\\\"}]\",\"appu_projects\":\"[{\\\"id\\\":\\\"proj_k9x1a2bc\\\",\\\"name\\\":\\\"Sleep and memory\\\",\\\"stage\\\":\\\"lit\\\",\\\"pack\\\":\\\"psychology\\\",\\\"status\\\":\\\"active\\\",\\\"createdAt\\\":1760000000000,\\\"updatedAt\\\":1760000500000},{\\\"id\\\":\\\"proj_k9y3d4ef\\\",\\\"name\\\":\\\"सामाजिक चिंता और नींद\\\",\\\"stage\\\":\\\"writing\\\",\\\"pack\\\":\\\"psychology\\\",\\\"status\\\":\\\"complete\\\",\\\"createdAt\\\":1759000000000,\\\"updatedAt\\\":1759900000000}]\",\"appu_theme\":\"dark\"}}",
+ "pass": "correct horse battery"
+}

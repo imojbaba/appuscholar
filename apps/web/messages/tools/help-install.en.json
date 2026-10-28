@@ -1,0 +1,11 @@
+{
+  "wc_offline_bar": "You are offline. Your last page is on screen, but saving, AI, paper search and new pages need a connection.",
+  "wc_install_btn": "Install Appuscholar on this device",
+  "wc_install_menu": "Use your browser menu: Install app, or Add to Home Screen.",
+  "wc_install_cleared": "Offline copy switched off and cleared on this device.",
+  "wc_offpage_tab": "Appuscholar is offline",
+  "wc_offpage_title": "You are offline",
+  "wc_offpage_body": "Appuscholar could not reach the internet. What you have saved is stored in your account. Saving, AI, paper search and new pages need a connection.",
+  "wc_offpage_check": "Check your connection, then try again.",
+  "wc_offpage_retry": "Try again"
+}

@@ -33,7 +33,7 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<{
       <section className="flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
           <h2 className="text-xl font-semibold">Sign in</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Your projects are stored under your account and kept across devices.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Your studies are stored under your account and kept across devices.</p>
           {error ? <p role="alert" data-testid="signin-error" className="mt-4 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">{error}</p> : null}
           <form action={async () => { "use server"; await signIn("google", { redirectTo: "/" }); }} className="mt-6">
             <Button type="submit" className="w-full" size="lg"><GoogleLogo size={20} weight="bold" /> Continue with Google</Button>

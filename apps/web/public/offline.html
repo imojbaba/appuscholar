@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Appuscholar is offline / Appuscholar ऑफ़लाइन है</title>
+<style>
+  body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #fbfaf9; color: #1f1b2e; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", "Noto Sans Devanagari", sans-serif; }
+  main { max-width: 30rem; padding: 2rem 1.5rem; text-align: center; }
+  img { width: 72px; height: 72px; border-radius: 16px; }
+  h1 { font-size: 1.4rem; margin: 1rem 0 0.5rem; color: #4c1d95; }
+  p { margin: 0 0 1rem; }
+  section + section { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e7e2ef; }
+  a { display: inline-block; margin-top: 1.5rem; padding: 0.55rem 1.1rem; border-radius: 8px; background: #4c1d95; color: #fff; text-decoration: none; }
+</style>
+</head>
+<body>
+<!-- No script here: the service worker serves this page as is. The words are the wc_offpage_* keys of messages/tools/help-install.{en,hi}.json (the Hindi is a draft). -->
+<main>
+  <img src="/icon-192.png" alt="" width="72" height="72">
+  <section lang="en">
+    <h1>You are offline</h1>
+    <p>Appuscholar could not reach the internet. What you have saved is stored in your account. Saving, AI, paper search and new pages need a connection.</p>
+    <p>Check your connection, then try again.</p>
+  </section>
+  <section lang="hi">
+    <h1>आप ऑफ़लाइन हैं</h1>
+    <p>Appuscholar इंटरनेट तक नहीं पहुँच सका। आपने जो सहेजा है, वह आपके खाते में रखा है। सहेजने, एआई, शोध-पत्र खोज और नए पन्नों के लिए कनेक्शन चाहिए।</p>
+    <p>अपना कनेक्शन जाँचें, फिर दोबारा कोशिश करें।</p>
+  </section>
+  <!-- An empty href is the address of this page, which is the address that was asked for: the worker answers that navigation with this page. -->
+  <a href=""><span lang="en">Try again</span> / <span lang="hi">दोबारा कोशिश करें</span></a>
+</main>
+</body>
+</html>

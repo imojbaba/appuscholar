@@ -1,0 +1,167 @@
+{
+  "set": "idea",
+  "builder": "buildIdeaPromptV2",
+  "note": "Five synthetic student ideas (written for this test set, not taken from anyone). The first is the idea the live walk types (apps/web/e2e/stage2-idea-literature.spec.ts, IDEA, and docs/walkthroughs/stage-2.md step 2); the other four were written to differ in what a good answer must notice: a vague topic, a school setting with minors, a sensitive topic, and a scale the student cannot reach.",
+  "items": [
+    {
+      "id": "idea-walk-bedtime",
+      "synthetic": true,
+      "input": {
+        "field": "psychology",
+        "idea": {
+          "topic": "Does a fixed bedtime routine for one week lower exam anxiety in first-year college students?",
+          "resources": "About sixty first-year volunteers from my own college and a short paper questionnaire.",
+          "timeframe": "One semester",
+          "constraints": "No sleep-tracking devices; the college ethics committee meets once a month."
+        }
+      },
+      "good": "Starts each of the five lines with the area's name and a colon (topic clarity and researchability, access to participants or data, time, resources and equipment, ethical complexity), rates it Low, Medium or High and gives one concrete sentence that could only be about this project, drawn from what the student wrote. Ends with one verdict: Proceed as planned, Proceed with these modifications (and names them) or Reconsider this topic (and says briefly why). Never says that approval is or is not required; says what to ask the supervisor or ethics committee. Here it should use the sixty volunteers, the paper questionnaire, the semester and the monthly committee in its sentences; it may rate the topic clarity High (one routine, one outcome, one group) and should note that exam weeks make recruiting hard.",
+      "expect": {
+        "areas": [
+          "Topic clarity and researchability",
+          "Access to participants or data",
+          "Time",
+          "Resources and equipment",
+          "Ethical complexity"
+        ],
+        "verdicts": [
+          "Proceed as planned",
+          "Proceed with these modifications",
+          "Reconsider this topic"
+        ],
+        "label": {
+          "k": "checking whether my project idea is realistic",
+          "g": "feedback"
+        }
+      }
+    },
+    {
+      "id": "idea-vague-social-media",
+      "synthetic": true,
+      "input": {
+        "field": "psychology",
+        "idea": {
+          "topic": "I want to study social media and mental health.",
+          "resources": "",
+          "timeframe": "",
+          "constraints": ""
+        }
+      },
+      "good": "Starts each of the five lines with the area's name and a colon (topic clarity and researchability, access to participants or data, time, resources and equipment, ethical complexity), rates it Low, Medium or High and gives one concrete sentence that could only be about this project, drawn from what the student wrote. Ends with one verdict: Proceed as planned, Proceed with these modifications (and names them) or Reconsider this topic (and says briefly why). Never says that approval is or is not required; says what to ask the supervisor or ethics committee. The topic is too vague to judge, so a good answer rates topic clarity Low and says exactly which details it needs (which people, which platform use, which outcome and how it would be measured) instead of guessing; the resources and the timeframe were not given, so it says so rather than inventing them. The verdict is Reconsider this topic or Proceed with these modifications, naming what to narrow.",
+      "expect": {
+        "areas": [
+          "Topic clarity and researchability",
+          "Access to participants or data",
+          "Time",
+          "Resources and equipment",
+          "Ethical complexity"
+        ],
+        "verdicts": [
+          "Proceed as planned",
+          "Proceed with these modifications",
+          "Reconsider this topic"
+        ],
+        "label": {
+          "k": "checking whether my project idea is realistic",
+          "g": "feedback"
+        }
+      }
+    },
+    {
+      "id": "idea-flashcards-class11",
+      "synthetic": true,
+      "input": {
+        "field": "education",
+        "idea": {
+          "topic": "Do students who use spaced-repetition flashcards for four weeks score higher in a Class 11 biology unit test than students who revise by re-reading?",
+          "resources": "Two sections of Class 11 (about 70 students) at the school where I do my teaching practicum; the class teacher has agreed.",
+          "timeframe": "Six weeks before the unit test",
+          "constraints": "I cannot change who is in which section. No budget for printed material."
+        }
+      },
+      "good": "Starts each of the five lines with the area's name and a colon (topic clarity and researchability, access to participants or data, time, resources and equipment, ethical complexity), rates it Low, Medium or High and gives one concrete sentence that could only be about this project, drawn from what the student wrote. Ends with one verdict: Proceed as planned, Proceed with these modifications (and names them) or Reconsider this topic (and says briefly why). Never says that approval is or is not required; says what to ask the supervisor or ethics committee. Here it should see that the two sections are fixed (not random groups), so differences between sections could be mistaken for an effect of the flashcards, and name that as a modification. It treats the students as minors: it asks what the school and the parents need to agree to, through the institution, and does not decide that for the student. Time is tight but possible.",
+      "expect": {
+        "areas": [
+          "Topic clarity and researchability",
+          "Access to participants or data",
+          "Time",
+          "Resources and equipment",
+          "Ethical complexity"
+        ],
+        "verdicts": [
+          "Proceed as planned",
+          "Proceed with these modifications",
+          "Reconsider this topic"
+        ],
+        "label": {
+          "k": "checking whether my project idea is realistic",
+          "g": "feedback"
+        }
+      }
+    },
+    {
+      "id": "idea-selfharm-interviews",
+      "synthetic": true,
+      "input": {
+        "field": "psychology",
+        "idea": {
+          "topic": "Interviews with students who have hurt themselves, about what support they got.",
+          "resources": "No access to a clinical group. I know a few classmates who might talk to me.",
+          "timeframe": "Three weeks",
+          "constraints": "My supervisor is not trained in clinical work."
+        }
+      },
+      "good": "Starts each of the five lines with the area's name and a colon (topic clarity and researchability, access to participants or data, time, resources and equipment, ethical complexity), rates it Low, Medium or High and gives one concrete sentence that could only be about this project, drawn from what the student wrote. Ends with one verdict: Proceed as planned, Proceed with these modifications (and names them) or Reconsider this topic (and says briefly why). Never says that approval is or is not required; says what to ask the supervisor or ethics committee. This is a sensitive topic with a vulnerable group, so a good answer rates ethical complexity High and says why in a sentence about this project (the risk to the people interviewed and to the interviewer, and no one trained to support them). It rates access and time Low or Medium for the reasons the student gave, and the verdict is Reconsider this topic or Proceed with these modifications that make it safer (for example a different design), saying what to ask the supervisor and the ethics committee. It is calm and plain, not alarming.",
+      "expect": {
+        "areas": [
+          "Topic clarity and researchability",
+          "Access to participants or data",
+          "Time",
+          "Resources and equipment",
+          "Ethical complexity"
+        ],
+        "verdicts": [
+          "Proceed as planned",
+          "Proceed with these modifications",
+          "Reconsider this topic"
+        ],
+        "label": {
+          "k": "checking whether my project idea is realistic",
+          "g": "feedback"
+        }
+      }
+    },
+    {
+      "id": "idea-national-survey",
+      "synthetic": true,
+      "input": {
+        "field": "sociology",
+        "idea": {
+          "topic": "A national survey of 10,000 working women across India on how remote work changes household income, finished in one month.",
+          "resources": "My own laptop. No funding and no list of people to contact.",
+          "timeframe": "One month",
+          "constraints": "I study in Pune. My supervisor meets me once a fortnight."
+        }
+      },
+      "good": "Starts each of the five lines with the area's name and a colon (topic clarity and researchability, access to participants or data, time, resources and equipment, ethical complexity), rates it Low, Medium or High and gives one concrete sentence that could only be about this project, drawn from what the student wrote. Ends with one verdict: Proceed as planned, Proceed with these modifications (and names them) or Reconsider this topic (and says briefly why). Never says that approval is or is not required; says what to ask the supervisor or ethics committee. The topic is clear but the plan cannot be done: access, time and resources should be rated Low with a sentence each about the 10,000 people, the one month and the missing funding and contact list. The student names India, so it may mention the institutional ethics committee and the ICMR guidelines. The verdict is Reconsider this topic, or Proceed with these modifications that shrink the scale (for example one city or one workplace).",
+      "expect": {
+        "areas": [
+          "Topic clarity and researchability",
+          "Access to participants or data",
+          "Time",
+          "Resources and equipment",
+          "Ethical complexity"
+        ],
+        "verdicts": [
+          "Proceed as planned",
+          "Proceed with these modifications",
+          "Reconsider this topic"
+        ],
+        "label": {
+          "k": "checking whether my project idea is realistic",
+          "g": "feedback"
+        }
+      }
+    }
+  ]
+}

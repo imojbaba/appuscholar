@@ -1,0 +1,102 @@
+[
+ {
+  "id": "wilcoxon-demo",
+  "csv": "before,after\n5,3\n6,4\n4,4\n5,3\n6,4\n5,3\n4,2\n6,4\n5,3\n4,3\n6,4\n5,4",
+  "test": "wilcoxon",
+  "values": {
+   "v1": "before",
+   "v2": "after"
+  },
+  "why": "TG_DEMO's wilcoxon: one zero difference and tied differences, so the normal approximation"
+ },
+ {
+  "id": "wilcoxon-decimal-ties",
+  "csv": "before,after\n1.1,1.0\n3.3,3.2\n5,3\n7,4\n6,10\n9,4\n8,2",
+  "test": "wilcoxon",
+  "values": {
+   "v1": "before",
+   "v2": "after"
+  },
+  "why": "pairs (1.1, 1.0) and (3.3, 3.2): both differences are 0.1 on paper, but in floating point 1.1-1.0 is 0.10000000000000009 and 3.3-3.2 is 0.09999999999999964, so they are not tied and v1 takes the exact branch (F15). The brief's pair (2.2, 2.1) gives 0.10000000000000009, the same double as 1.1-1.0, so it is tied: see wilcoxon-decimal-ties-same-double"
+ },
+ {
+  "id": "wilcoxon-decimal-ties-same-double",
+  "csv": "before,after\n1.1,1.0\n2.2,2.1\n5,3\n7,4\n6,10\n9,4\n8,2",
+  "test": "wilcoxon",
+  "values": {
+   "v1": "before",
+   "v2": "after"
+  },
+  "why": "the brief's pairs (1.1, 1.0) and (2.2, 2.1): both differences are the double 0.10000000000000009, so they tie and v1 takes the normal approximation (F15's other side)"
+ },
+ {
+  "id": "wilcoxon-zero-diffs",
+  "csv": "before,after\n10,10\n12,9\n15,11\n9,4\n14,8\n13,6\n11,3\n20,11",
+  "test": "wilcoxon",
+  "values": {
+   "v1": "before",
+   "v2": "after"
+  },
+  "why": "one pair equal: n counts the 7 non-zero differences (no ties among them), nZero is 1, so the normal approximation"
+ },
+ {
+  "id": "wilcoxon-one-diff",
+  "csv": "before,after\n5,5\n6,6\n7,4\n8,8",
+  "test": "wilcoxon",
+  "values": {
+   "v1": "before",
+   "v2": "after"
+  },
+  "why": "one non-zero difference: the toast"
+ },
+ {
+  "id": "wilcoxon-n50",
+  "csv": "before,after\n101,100\n102,100\n97,100\n104,100\n105,100\n94,100\n107,100\n108,100\n91,100\n110,100\n111,100\n88,100\n113,100\n114,100\n85,100\n116,100\n117,100\n82,100\n119,100\n120,100\n79,100\n122,100\n123,100\n76,100\n125,100\n126,100\n73,100\n128,100\n129,100\n70,100\n131,100\n132,100\n67,100\n134,100\n135,100\n64,100\n137,100\n138,100\n61,100\n140,100\n141,100\n58,100\n143,100\n144,100\n55,100\n146,100\n147,100\n52,100\n149,100\n150,100",
+  "test": "wilcoxon",
+  "values": {
+   "v1": "before",
+   "v2": "after"
+  },
+  "why": "50 non-zero differences, no ties, no zeros: n<50 fails, so the normal approximation"
+ },
+ {
+  "id": "wilcoxon-n49",
+  "csv": "before,after\n101,100\n102,100\n97,100\n104,100\n105,100\n94,100\n107,100\n108,100\n91,100\n110,100\n111,100\n88,100\n113,100\n114,100\n85,100\n116,100\n117,100\n82,100\n119,100\n120,100\n79,100\n122,100\n123,100\n76,100\n125,100\n126,100\n73,100\n128,100\n129,100\n70,100\n131,100\n132,100\n67,100\n134,100\n135,100\n64,100\n137,100\n138,100\n61,100\n140,100\n141,100\n58,100\n143,100\n144,100\n55,100\n146,100\n147,100\n52,100\n149,100",
+  "test": "wilcoxon",
+  "values": {
+   "v1": "before",
+   "v2": "after"
+  },
+  "why": "49 non-zero differences, no ties, no zeros: the exact p"
+ },
+ {
+  "id": "wilcoxon-exact-small",
+  "csv": "before,after\n12,10\n15,10\n9,10\n14,6\n20,13\n11,5\n13,4\n18,8",
+  "test": "wilcoxon",
+  "values": {
+   "v1": "before",
+   "v2": "after"
+  },
+  "why": "8 distinct non-zero differences, no zeros: the exact p, the z cell is —"
+ },
+ {
+  "id": "wilcoxon-text-in-numeric",
+  "csv": "before,after\n5,3\n6,4\n4,4\n5,3\n6,4\n5,3\n4,2\n6,4\n5,3\n4,3\n6,4\n5,4\n10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,3\n4,-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+  "test": "wilcoxon",
+  "values": {
+   "v1": "before",
+   "v2": "after"
+  },
+  "why": "A text cell makes its column categorical (F17), so v1's form never offers it as a numeric field; the entries dropped from a numeric column are digit strings that match the numeric pattern and overflow parseFloat to ±Infinity (a 401-digit 1 and a 400-digit negative). The pair filter counts each dropped pair once; wilcoxon has no assumption pass, so the note says 2."
+ },
+ {
+  "id": "wilcoxon-missing-cells",
+  "csv": "before,after\n5,3\n6,\n4,1\n,4\n7,2\n9,3\n8,1",
+  "test": "wilcoxon",
+  "values": {
+   "v1": "before",
+   "v2": "after"
+  },
+  "why": "rows with an empty cell are dropped without being counted"
+ }
+]

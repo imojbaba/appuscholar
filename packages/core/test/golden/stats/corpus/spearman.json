@@ -1,0 +1,92 @@
+[
+ {
+  "id": "spearman-demo",
+  "csv": "effort,result\n1,2\n2,1\n3,4\n4,3\n5,6\n6,6\n7,8\n8,7\n9,10\n10,9\n11,9\n12,13\n13,12",
+  "test": "spearman",
+  "values": {
+   "v1": "effort",
+   "v2": "result"
+  },
+  "why": "TG_DEMO's spearman"
+ },
+ {
+  "id": "spearman-tiny-p",
+  "csv": "x,y\n1,1\n2,2\n3,3\n4,4\n5,5\n6,6\n7,7\n8,8\n9,9\n10,10\n11,11\n12,13\n13,12",
+  "test": "spearman",
+  "values": {
+   "v1": "x",
+   "v2": "y"
+  },
+  "why": "13 pairs with rho near 1: the p cell is noLead(p.toFixed(3)), .000, while the sentence says p < .001 (F1)"
+ },
+ {
+  "id": "spearman-text-dropped-uncounted",
+  "csv": "effort,result\n1,2\n2,1\n3,4\n4,3\n5,6\n6,6\n7,8\n8,7\n9,10\n10,9\n11,9\n12,13\n13,12\n10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,3\n4,-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+  "test": "spearman",
+  "values": {
+   "v1": "effort",
+   "v2": "result"
+  },
+  "why": "A text cell makes its column categorical (F17), so v1's form never offers it as a numeric field; the entries dropped from a numeric column are digit strings that match the numeric pattern and overflow parseFloat to ±Infinity (a 401-digit 1 and a 400-digit negative). Spearman's pair filter drops both pairs without counting them, so no 'left out' line (F18)."
+ },
+ {
+  "id": "spearman-n4",
+  "csv": "x,y\n1,2\n2,3\n3,1\n4,4",
+  "test": "spearman",
+  "values": {
+   "v1": "x",
+   "v2": "y"
+  },
+  "why": "four pairs: the toast"
+ },
+ {
+  "id": "spearman-n9",
+  "csv": "x,y\n1,2\n2,1\n3,4\n4,3\n5,6\n6,5\n7,9\n8,7\n9,8",
+  "test": "spearman",
+  "values": {
+   "v1": "x",
+   "v2": "y"
+  },
+  "why": "nine pairs: the 'fewer than 10 pairs' note"
+ },
+ {
+  "id": "spearman-perfect-negative",
+  "csv": "x,y\n1,18\n2,16\n3,14\n4,12\n5,10\n6,8\n7,6\n8,4",
+  "test": "spearman",
+  "values": {
+   "v1": "x",
+   "v2": "y"
+  },
+  "why": "rho is exactly -1, so stkSpearman's p is 0; the interval clamps r to -0.999999"
+ },
+ {
+  "id": "spearman-no-spread",
+  "csv": "x,y\n1,4\n2,4\n3,4\n4,4\n5,4",
+  "test": "spearman",
+  "values": {
+   "v1": "x",
+   "v2": "y"
+  },
+  "why": "y has the same value in every row: rho is NaN, the toast"
+ },
+ {
+  "id": "spearman-weak",
+  "csv": "x,y\n1,5\n2,3\n3,6\n4,4\n5,5\n6,3\n7,6\n8,5\n9,2\n10,7",
+  "test": "spearman",
+  "values": {
+   "v1": "x",
+   "v2": "y"
+  },
+  "why": "a weak, non-significant association"
+ },
+ {
+  "id": "spearman-missing-cells",
+  "csv": "x,y\n1,2\n2,\n3,4\n,3\n5,6\n6,5\n7,8\n8,7\n9,10\n10,9\n11,12",
+  "test": "spearman",
+  "values": {
+   "v1": "x",
+   "v2": "y"
+  },
+  "why": "rows with an empty cell are dropped without being counted"
+ }
+]

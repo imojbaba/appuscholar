@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fitWithin, resizeImage } from "../lib/editor/image";
+import { fitWithin, resizeImage, shrinkDataUrl } from "../lib/editor/image";
 
 // jsdom has no canvas, so the pixel work is stubbed: the test checks the size maths and the JPEG/PNG choice.
 describe("fitWithin", () => {
@@ -40,5 +40,102 @@ describe("resizeImage", () => {
     const url = await resizeImage({ type: "image/webp" } as File);
     expect([canvas.width, canvas.height]).toEqual([300, 200]);
     expect(url).toMatch(/^data:image\/png;base64,/);
+  });
+});
+
+describe("resizeImage large PNG fallback", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  function stubPng(pngLength: number) {
+    const calls: unknown[][] = [];
+    const ctx = { fillStyle: "", fillRect: vi.fn(), drawImage: vi.fn() };
+    const canvas = {
+      width: 0,
+      height: 0,
+      getContext: vi.fn(() => ctx),
+      toDataURL: vi.fn((type: string, q?: number) => {
+        calls.push([type, q]);
+        return type === "image/png" ? "data:image/png;base64," + "A".repeat(pngLength) : "data:image/jpeg;base64,JJ";
+      }),
+    };
+    vi.stubGlobal("createImageBitmap", vi.fn(async () => ({ width: 800, height: 600, close: vi.fn() })));
+    vi.stubGlobal("document", { createElement: vi.fn(() => canvas) });
+    return { ctx, calls };
+  }
+
+  it("returns a JPEG (q0.85, on white) when the PNG is over 400000 characters", async () => {
+    const { ctx, calls } = stubPng(400001);
+    const url = await resizeImage({ type: "image/png" } as File);
+    expect(url).toBe("data:image/jpeg;base64,JJ");
+    expect(calls).toContainEqual(["image/jpeg", 0.85]);
+    expect(ctx.fillStyle).toBe("#fff");
+    expect(ctx.fillRect).toHaveBeenCalled();
+    // The picture is drawn again over the white, or the JPEG would be blank.
+    expect(ctx.drawImage).toHaveBeenCalledTimes(2);
+    expect(ctx.fillRect.mock.invocationCallOrder[0]!).toBeLessThan(ctx.drawImage.mock.invocationCallOrder[1]!);
+  });
+  it("keeps the PNG at 400000 characters or fewer", async () => {
+    stubPng(1000);
+    const url = await resizeImage({ type: "image/png" } as File);
+    expect(url).toMatch(/^data:image\/png;base64,/);
+  });
+});
+
+describe("shrinkDataUrl", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  function stubImage(w: number, h: number, fail = false) {
+    const ctx = { fillStyle: "", fillRect: vi.fn(), drawImage: vi.fn() };
+    const canvas = {
+      width: 0,
+      height: 0,
+      getContext: vi.fn(() => ctx),
+      toDataURL: vi.fn((type: string): string => (type === "image/png" ? "data:image/png;base64,PNG" : "data:image/jpeg;base64,JPG")),
+    };
+    vi.stubGlobal("document", { createElement: vi.fn(() => canvas) });
+    vi.stubGlobal(
+      "Image",
+      class {
+        naturalWidth = w;
+        naturalHeight = h;
+        onload: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        set src(_v: string) {
+          queueMicrotask(() => (fail ? this.onerror?.() : this.onload?.()));
+        }
+      },
+    );
+    return { canvas, ctx };
+  }
+
+  it("scales the long side to 1600 and fills white before drawing", async () => {
+    const { canvas, ctx } = stubImage(3200, 1600);
+    await shrinkDataUrl("data:image/jpeg;base64,xx");
+    expect([canvas.width, canvas.height]).toEqual([1600, 800]);
+    expect(ctx.fillStyle).toBe("#fff");
+    expect(ctx.fillRect).toHaveBeenCalledWith(0, 0, 1600, 800);
+  });
+  it("keeps a PNG source as PNG when the result is 400000 characters or fewer", async () => {
+    stubImage(100, 100);
+    expect(await shrinkDataUrl("data:image/png;base64,xx")).toBe("data:image/png;base64,PNG");
+  });
+  it("turns a PNG source into JPEG q0.85 when the PNG result is longer than 400000", async () => {
+    const { canvas } = stubImage(100, 100);
+    canvas.toDataURL.mockImplementation((type: string) => (type === "image/png" ? "data:image/png;base64," + "A".repeat(400001) : "data:image/jpeg;base64,JPG"));
+    expect(await shrinkDataUrl("data:image/png;base64,xx")).toBe("data:image/jpeg;base64,JPG");
+    expect(canvas.toDataURL).toHaveBeenCalledWith("image/jpeg", 0.85);
+  });
+  it("makes a JPEG of any non-PNG source", async () => {
+    stubImage(100, 100);
+    expect(await shrinkDataUrl("data:image/webp;base64,xx")).toBe("data:image/jpeg;base64,JPG");
+  });
+  it("leaves GIF and SVG data URLs untouched", async () => {
+    stubImage(100, 100);
+    expect(await shrinkDataUrl("data:image/gif;base64,xx")).toBe("data:image/gif;base64,xx");
+    expect(await shrinkDataUrl("data:image/svg+xml;base64,xx")).toBe("data:image/svg+xml;base64,xx");
+  });
+  it("returns the source when the picture cannot be read", async () => {
+    stubImage(100, 100, true);
+    expect(await shrinkDataUrl("data:image/png;base64,xx")).toBe("data:image/png;base64,xx");
   });
 });

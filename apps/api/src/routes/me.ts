@@ -18,7 +18,13 @@ export const SettingsSchema = z.object({
   dockW: z.number().int().min(320).max(760),
   sheetPct: z.number().int().min(40).max(85),
   aiLogOff: z.boolean(),
-  seenWelcome: z.boolean()
+  seenWelcome: z.boolean(),
+  // Whether the document is open beside the non-writing places, and its width there.
+  docBeside: z.boolean(),
+  docW: z.number().int().min(360).max(900),
+  // Wave D: the specialty pack (absent = psychology) and the opt-in writing-sample capture (absent = off).
+  pack: z.enum(["general", "psychology"]),
+  writingSampleCapture: z.boolean()
 }).partial().strict();
 
 const ActiveProject = z.object({ projectId: z.string().min(1).max(100).nullable() }).strict();
@@ -60,6 +66,20 @@ export function meRoutes(store: Store) {
     const body = ActiveProject.safeParse(await c.req.json().catch(() => null));
     if (!body.success) return c.json({ error: "invalid" }, 400);
     const ok = await store.setActiveProject(c.get("userId"), body.data.projectId);
+    return ok ? c.body(null, 204) : c.json({ error: "not-found" }, 404);
+  });
+
+  r.get("/audit", async (c) => c.json({ entries: await store.listAudit(c.get("userId")) }));
+
+  /** The browser calls this after it has built the export zip, so the log records that the data left. */
+  r.post("/export-audit", async (c) => {
+    await store.appendAudit(c.get("userId"), "export");
+    return c.body(null, 204);
+  });
+
+  /** Erases the account and everything under it. The store appends the "account-erased" audit row itself. */
+  r.delete("/", async (c) => {
+    const ok = await store.eraseUser(c.get("userId"));
     return ok ? c.body(null, 204) : c.json({ error: "not-found" }, 404);
   });
 

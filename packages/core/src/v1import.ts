@@ -2,7 +2,11 @@ import { z } from "zod";
 import { sanitizeHtml } from "./sanitize";
 import { isLockedV1Backup } from "./v1locked";
 
-export type V1Document = { id: string; title: string; bodyHtml: string; updated: number };
+/**
+ * `origin` and `src` are kept as v1 stored them (D-W0-4, approved by OJ 2026-10-19): v1 marks a paper the student imported to read with
+ * `origin: "source"` and keeps its file name in `src` (index.html 3230); every v1 reader tests `origin === "source"` (3152, 3155, 3428).
+ */
+export type V1Document = { id: string; title: string; bodyHtml: string; updated: number; origin?: string; src?: string };
 export type V1Project = { id: string; title: string; stage?: string };
 export type V1Backup = { exported: string; documents: V1Document[]; projects: V1Project[] };
 export type V1ParseResult = { ok: true; backup: V1Backup } | { ok: false; reason: "not-json" | "not-appuscholar" | "no-documents" | "locked" };
@@ -13,8 +17,13 @@ const Bundle = z.object({
   exported: z.string().optional(),
   data: z.record(z.string(), z.string())
 });
-const RawDoc = z.object({ id: z.string(), title: z.string().default("Untitled"), body: z.string().default(""), updated: z.number().default(0) });
-const RawProject = z.object({ id: z.string(), title: z.string().default("Untitled project"), stage: z.string().optional() });
+// A malformed origin or src is left out (`catch`), never the document it sits on.
+const RawDoc = z.object({
+  id: z.string(), title: z.string().default("Untitled"), body: z.string().default(""), updated: z.number().default(0),
+  origin: z.string().optional().catch(undefined), src: z.string().optional().catch(undefined)
+});
+// v1 saves a project as { id, name, stage, pack, status, createdAt, updatedAt } (index.html 2896): the name is `name`, and v1 never writes a `title`.
+const RawProject = z.object({ id: z.string(), name: z.string().default("Untitled project"), stage: z.string().optional() });
 
 const LOOKS_LIKE_HTML = /<(p|div|br|b|i|u|strong|em|ul|ol|li|h[1-6]|blockquote|span|img|table|thead|tbody|tr|td|th|svg|a|sup|sub|hr|pre|code|font|figure)[\s>\/]/i;
 
@@ -43,8 +52,11 @@ export function parseV1Backup(text: string): V1ParseResult {
   if (!bundle.success) return { ok: false, reason: isLockedV1Backup(text) ? "locked" : "not-appuscholar" };
   const rawDocs = parseJsonArray(bundle.data.data["appu_docs"], RawDoc);
   if (rawDocs.length === 0) return { ok: false, reason: "no-documents" };
-  const documents: V1Document[] = rawDocs.map((d) => ({ id: d.id, title: d.title.trim() || "Untitled", bodyHtml: v1BodyToHtml(d.body), updated: d.updated }));
-  const projects: V1Project[] = parseJsonArray(bundle.data.data["appu_projects"], RawProject).map((p) => ({ id: p.id, title: p.title, ...(p.stage ? { stage: p.stage } : {}) }));
+  const documents: V1Document[] = rawDocs.map((d) => ({
+    id: d.id, title: d.title.trim() || "Untitled", bodyHtml: v1BodyToHtml(d.body), updated: d.updated,
+    ...(d.origin !== undefined ? { origin: d.origin } : {}), ...(d.src !== undefined ? { src: d.src } : {})
+  }));
+  const projects: V1Project[] = parseJsonArray(bundle.data.data["appu_projects"], RawProject).map((p) => ({ id: p.id, title: p.name, ...(p.stage ? { stage: p.stage } : {}) }));
   return { ok: true, backup: { exported: bundle.data.exported ?? "", documents, projects } };
 }
 

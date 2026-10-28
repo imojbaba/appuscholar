@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 /** The AI tab of the dock: the suggestion (or Draft first feedback, or the error), its accuracy note, and Accept / Copy / Dismiss. */
 export function AiPane() {
   const t = useT();
-  const { text, note, status, accept, copy, clear } = useSuggestion();
+  const { text, note, status, statusLabel, accept, copy, clear } = useSuggestion();
   const busy = status !== "idle";
   const placeholder = t("ai_pane_placeholder");
-  const statusText = status === "thinking" ? "💜 Thinking…" : status === "polishing" ? "💜 Polishing…" : status === "expanding" ? "💜 Expanding…" : t("df_thinking");
+  // A request that gave its own sentence (a stage tool, "custom") shows it; the writing buttons and Draft first keep theirs.
+  const statusText = statusLabel ?? (status === "polishing" ? "💜 Polishing…" : status === "expanding" ? "💜 Expanding…" : status === "reading" ? t("df_thinking") : "💜 Thinking…");
   const empty = !busy && (!text || text === placeholder);
   return (
     <div className="panel" data-testid="ai-pane">

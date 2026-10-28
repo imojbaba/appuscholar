@@ -51,7 +51,8 @@ describe("locked v1 backups", () => {
 
   it("reports a tampered ciphertext as a wrong passphrase", async () => {
     const locked = JSON.parse(await v1Encrypt(plain, "pw-pw-pw-pw", 1)) as { ct: string };
-    locked.ct = "A" + locked.ct.slice(1);
+    // A character that differs from the one there: the ciphertext is random, so a fixed "A" was already in place one run in 64 (CI flake).
+    locked.ct = (locked.ct[0] === "A" ? "B" : "A") + locked.ct.slice(1);
     expect(await unlockV1Backup(JSON.stringify(locked), "pw-pw-pw-pw")).toEqual({ ok: false, reason: "wrong-passphrase" });
   });
 

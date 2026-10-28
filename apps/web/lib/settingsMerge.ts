@@ -3,6 +3,10 @@ export type Settings = {
   lang?: "en" | "hi"; provider?: string; draftFirst?: boolean; aiFallback?: boolean; field?: string;
   contentLang?: "en" | "hi"; orcid?: string; toolTab?: string; sidebarCollapsed?: boolean;
   stageGroupsCollapsed?: string[]; fmtMore?: boolean; dockW?: number; sheetPct?: number; aiLogOff?: boolean; seenWelcome?: boolean;
+  /** Task 11: the document is open beside the places other than Writing, and its width there (360 to 900 px, default 520). */
+  docBeside?: boolean; docW?: number;
+  /** Wave D: the specialty pack (absent = psychology: the Research helpers show) and the opt-in copy of the words the student typed (absent = off). */
+  pack?: "general" | "psychology"; writingSampleCapture?: boolean;
 };
 
 export type Me = {

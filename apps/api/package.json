@@ -7,7 +7,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsup",
     "start": "node dist/index.js",
-    "lint": "eslint src test",
+    "lint": "eslint src test scripts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
@@ -26,6 +26,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@appuscholar/quality": "workspace:*",
     "@electric-sql/pglite": "^0.5.9",
     "@types/node": "^22.20.5",
     "@types/pg": "^8.23.1",

@@ -1,0 +1,745 @@
+{
+ "engine": "stats",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "ttestInd-demo",
+   "test": "ttestInd",
+   "csv": "group,hours\nA,7.5\nA,8\nA,7\nA,8.5\nA,7.8\nA,8.2\nA,7.4\nA,8.1\nA,7.9\nA,8.4\nA,7.2\nA,8\nB,6.5\nB,7\nB,6.2\nB,7.1\nB,6.8\nB,6\nB,7.3\nB,6.6\nB,6.9\nB,6.4\nB,7\nB,6.7",
+   "values": {
+    "dv": "hours",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "An independent-samples Welch t-test showed that hours differed significantly between A (M = 7.83, SD = 0.47) and B (M = 6.71, SD = 0.38), t(21.18) = 6.42, p < .001, g = 2.53, 95% CI of the difference [0.76, 1.49].",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "A",
+       "12",
+       "7.83",
+       "0.47"
+      ],
+      [
+       "B",
+       "12",
+       "6.71",
+       "0.38"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Welch t(21.2) = 6.42, p &lt; .001, Hedges' g = 2.53, mean difference 1.13, 95% CI [0.76, 1.49]. Welch is the default because it stays accurate when the two groups have different spreads and loses almost nothing when they do not. For comparison, Student's t(22) = 6.42, p &lt; .001."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "A",
+       "12",
+       "0.958",
+       ".755"
+      ],
+      [
+       "B",
+       "12",
+       "0.977",
+       ".971"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(1, 22) = 0.30, p = .588."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsGroupNMSDA127.830.47B126.710.38Welch t(21.2) = 6.42, p < .001, Hedges' g = 2.53, mean difference 1.13, 95% CI [0.76, 1.49]. Welch is the default because it stays accurate when the two groups have different spreads and loses almost nothing when they do not. For comparison, Student's t(22) = 6.42, p < .001.Assumption checksGroupNShapiro-Wilk WpA120.958.755B120.977.971Equal spread (Brown-Forsythe): F(1, 22) = 0.30, p = .588.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.An independent-samples Welch t-test showed that hours differed significantly between A (M = 7.83, SD = 0.47) and B (M = 6.71, SD = 0.38), t(21.18) = 6.42, p < .001, g = 2.53, 95% CI of the difference [0.76, 1.49].Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>A</td><td>12</td><td>7.83</td><td>0.47</td></tr><tr><td>B</td><td>12</td><td>6.71</td><td>0.38</td></tr></tbody></table><p class=\"desc\">Welch t(21.2) = 6.42, p &lt; .001, Hedges' g = 2.53, mean difference 1.13, 95% CI [0.76, 1.49]. Welch is the default because it stays accurate when the two groups have different spreads and loses almost nothing when they do not. For comparison, Student's t(22) = 6.42, p &lt; .001.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>A</td><td>12</td><td>0.958</td><td>.755</td></tr><tr><td>B</td><td>12</td><td>0.977</td><td>.971</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(1, 22) = 0.30, p = .588.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">An independent-samples Welch t-test showed that hours differed significantly between A (M = 7.83, SD = 0.47) and B (M = 6.71, SD = 0.38), t(21.18) = 6.42, p &lt; .001, g = 2.53, 95% CI of the difference [0.76, 1.49].</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "ttestInd-text-in-numeric",
+   "test": "ttestInd",
+   "csv": "group,hours\nA,7.5\nA,8\nA,7\nA,8.5\nA,7.8\nA,8.2\nA,7.4\nA,8.1\nA,7.9\nA,8.4\nA,7.2\nA,8\nB,6.5\nB,7\nB,6.2\nB,7.1\nB,6.8\nB,6\nB,7.3\nB,6.6\nB,6.9\nB,6.4\nB,7\nB,6.7\nA,10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\nB,-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+   "values": {
+    "dv": "hours",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "An independent-samples Welch t-test showed that hours differed significantly between A (M = 7.83, SD = 0.47) and B (M = 6.71, SD = 0.38), t(21.18) = 6.42, p < .001, g = 2.53, 95% CI of the difference [0.76, 1.49].",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "A",
+       "12",
+       "7.83",
+       "0.47"
+      ],
+      [
+       "B",
+       "12",
+       "6.71",
+       "0.38"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Welch t(21.2) = 6.42, p &lt; .001, Hedges' g = 2.53, mean difference 1.13, 95% CI [0.76, 1.49]. Welch is the default because it stays accurate when the two groups have different spreads and loses almost nothing when they do not. For comparison, Student's t(22) = 6.42, p &lt; .001."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "A",
+       "12",
+       "0.958",
+       ".755"
+      ],
+      [
+       "B",
+       "12",
+       "0.977",
+       ".971"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(1, 22) = 0.30, p = .588."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    },
+    {
+     "kind": "note",
+     "html": "4 entries that are not a number were left out."
+    }
+   ],
+   "resultsText": "ResultsGroupNMSDA127.830.47B126.710.38Welch t(21.2) = 6.42, p < .001, Hedges' g = 2.53, mean difference 1.13, 95% CI [0.76, 1.49]. Welch is the default because it stays accurate when the two groups have different spreads and loses almost nothing when they do not. For comparison, Student's t(22) = 6.42, p < .001.Assumption checksGroupNShapiro-Wilk WpA120.958.755B120.977.971Equal spread (Brown-Forsythe): F(1, 22) = 0.30, p = .588.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.4 entries that are not a number were left out.An independent-samples Welch t-test showed that hours differed significantly between A (M = 7.83, SD = 0.47) and B (M = 6.71, SD = 0.38), t(21.18) = 6.42, p < .001, g = 2.53, 95% CI of the difference [0.76, 1.49].Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>A</td><td>12</td><td>7.83</td><td>0.47</td></tr><tr><td>B</td><td>12</td><td>6.71</td><td>0.38</td></tr></tbody></table><p class=\"desc\">Welch t(21.2) = 6.42, p &lt; .001, Hedges' g = 2.53, mean difference 1.13, 95% CI [0.76, 1.49]. Welch is the default because it stays accurate when the two groups have different spreads and loses almost nothing when they do not. For comparison, Student's t(22) = 6.42, p &lt; .001.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>A</td><td>12</td><td>0.958</td><td>.755</td></tr><tr><td>B</td><td>12</td><td>0.977</td><td>.971</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(1, 22) = 0.30, p = .588.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><p class=\"desc\">4 entries that are not a number were left out.</p><div id=\"statsSentence\">An independent-samples Welch t-test showed that hours differed significantly between A (M = 7.83, SD = 0.47) and B (M = 6.71, SD = 0.38), t(21.18) = 6.42, p &lt; .001, g = 2.53, 95% CI of the difference [0.76, 1.49].</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "ttestInd-integer-labels",
+   "test": "ttestInd",
+   "csv": "group,score\n3,4\n2,5\n10,6\nNA,7\n3,5\n2,6\n10,7\nNA,8",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "This grouping variable needs exactly 2 groups — it has 4"
+   ]
+  },
+  {
+   "id": "ttestInd-two-integer-labels",
+   "test": "ttestInd",
+   "csv": "group,score\n10,12\n10,14\n10,13\n10,15\n2,9\n2,11\n2,10\n2,8\nx,",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "An independent-samples Welch t-test showed that score differed significantly between 2 (M = 9.50, SD = 1.29) and 10 (M = 13.50, SD = 1.29), t(6.00) = -4.38, p = .005, g = -2.69, 95% CI of the difference [-6.23, -1.77].",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "2",
+       "4",
+       "9.50",
+       "1.29"
+      ],
+      [
+       "10",
+       "4",
+       "13.50",
+       "1.29"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Welch t(6.0) = -4.38, p = .005, Hedges' g = -2.69, mean difference -4.00, 95% CI [-6.23, -1.77]. Welch is the default because it stays accurate when the two groups have different spreads and loses almost nothing when they do not. For comparison, Student's t(6) = -4.38, p = .005."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "2",
+       "4",
+       "0.993",
+       ".972"
+      ],
+      [
+       "10",
+       "4",
+       "0.993",
+       ".972"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(1, 6) = 0.00, p = 1.000."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsGroupNMSD249.501.2910413.501.29Welch t(6.0) = -4.38, p = .005, Hedges' g = -2.69, mean difference -4.00, 95% CI [-6.23, -1.77]. Welch is the default because it stays accurate when the two groups have different spreads and loses almost nothing when they do not. For comparison, Student's t(6) = -4.38, p = .005.Assumption checksGroupNShapiro-Wilk Wp240.993.9721040.993.972Equal spread (Brown-Forsythe): F(1, 6) = 0.00, p = 1.000.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.An independent-samples Welch t-test showed that score differed significantly between 2 (M = 9.50, SD = 1.29) and 10 (M = 13.50, SD = 1.29), t(6.00) = -4.38, p = .005, g = -2.69, 95% CI of the difference [-6.23, -1.77].Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>2</td><td>4</td><td>9.50</td><td>1.29</td></tr><tr><td>10</td><td>4</td><td>13.50</td><td>1.29</td></tr></tbody></table><p class=\"desc\">Welch t(6.0) = -4.38, p = .005, Hedges' g = -2.69, mean difference -4.00, 95% CI [-6.23, -1.77]. Welch is the default because it stays accurate when the two groups have different spreads and loses almost nothing when they do not. For comparison, Student's t(6) = -4.38, p = .005.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>2</td><td>4</td><td>0.993</td><td>.972</td></tr><tr><td>10</td><td>4</td><td>0.993</td><td>.972</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(1, 6) = 0.00, p = 1.000.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">An independent-samples Welch t-test showed that score differed significantly between 2 (M = 9.50, SD = 1.29) and 10 (M = 13.50, SD = 1.29), t(6.00) = -4.38, p = .005, g = -2.69, 95% CI of the difference [-6.23, -1.77].</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "ttestInd-group-named-NaN",
+   "test": "ttestInd",
+   "csv": "group,score\nNaN,4\nNaN,6\nNaN,5\nB,7\nB,9\nB,8",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [
+    {
+     "kind": "note",
+     "html": "<b>This analysis produced a number that is undefined, so no result is shown.</b> It usually means a group has no spread (every value the same), a group is too small, or the data fit a line exactly. Look at the data and the groups, then try again."
+    }
+   ],
+   "resultsText": "ResultsThis analysis produced a number that is undefined, so no result is shown. It usually means a group has no spread (every value the same), a group is too small, or the data fit a line exactly. Look at the data and the groups, then try again.",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><p class=\"desc\"><b>This analysis produced a number that is undefined, so no result is shown.</b> It usually means a group has no spread (every value the same), a group is too small, or the data fit a line exactly. Look at the data and the groups, then try again.</p>",
+   "toasts": []
+  },
+  {
+   "id": "ttestInd-one-value-in-a-group",
+   "test": "ttestInd",
+   "csv": "group,score\nA,4\nA,6\nA,5\nB,7",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Each group needs at least 2 values"
+   ]
+  },
+  {
+   "id": "ttestInd-no-spread-both",
+   "test": "ttestInd",
+   "csv": "group,score\nA,5\nA,5\nA,5\nB,7\nB,7\nB,7",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Neither group has any spread (all values in each group are the same), so the t-test cannot be calculated."
+   ]
+  },
+  {
+   "id": "ttestInd-no-spread-one",
+   "test": "ttestInd",
+   "csv": "group,score\nA,5\nA,5\nA,5\nA,5\nB,7\nB,9\nB,8\nB,6",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "An independent-samples Welch t-test showed that score differed significantly between A (M = 5.00, SD = 0.00) and B (M = 7.50, SD = 1.29), t(3.00) = -3.87, p = .030, g = -2.38, 95% CI of the difference [-4.55, -0.45].",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "A",
+       "4",
+       "5.00",
+       "0.00"
+      ],
+      [
+       "B",
+       "4",
+       "7.50",
+       "1.29"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Welch t(3.0) = -3.87, p = .030, Hedges' g = -2.38, mean difference -2.50, 95% CI [-4.55, -0.45]. Welch is the default because it stays accurate when the two groups have different spreads and loses almost nothing when they do not. For comparison, Student's t(6) = -3.87, p = .008."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "A",
+       "4",
+       "all values the same"
+      ],
+      [
+       "B",
+       "4",
+       "0.993",
+       ".972"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(1, 6) = 12.00, p = .013."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. The spreads differ (p below .05). Welch t and Welch ANOVA with Games-Howell already allow for that; the classic Student t and one-way ANOVA do not. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsGroupNMSDA45.000.00B47.501.29Welch t(3.0) = -3.87, p = .030, Hedges' g = -2.38, mean difference -2.50, 95% CI [-4.55, -0.45]. Welch is the default because it stays accurate when the two groups have different spreads and loses almost nothing when they do not. For comparison, Student's t(6) = -3.87, p = .008.Assumption checksGroupNShapiro-Wilk WpA4all values the sameB40.993.972Equal spread (Brown-Forsythe): F(1, 6) = 12.00, p = .013.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. The spreads differ (p below .05). Welch t and Welch ANOVA with Games-Howell already allow for that; the classic Student t and one-way ANOVA do not. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.An independent-samples Welch t-test showed that score differed significantly between A (M = 5.00, SD = 0.00) and B (M = 7.50, SD = 1.29), t(3.00) = -3.87, p = .030, g = -2.38, 95% CI of the difference [-4.55, -0.45].Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>A</td><td>4</td><td>5.00</td><td>0.00</td></tr><tr><td>B</td><td>4</td><td>7.50</td><td>1.29</td></tr></tbody></table><p class=\"desc\">Welch t(3.0) = -3.87, p = .030, Hedges' g = -2.38, mean difference -2.50, 95% CI [-4.55, -0.45]. Welch is the default because it stays accurate when the two groups have different spreads and loses almost nothing when they do not. For comparison, Student's t(6) = -3.87, p = .008.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>A</td><td>4</td><td colspan=\"2\">all values the same</td></tr><tr><td>B</td><td>4</td><td>0.993</td><td>.972</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(1, 6) = 12.00, p = .013.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. The spreads differ (p below .05). Welch t and Welch ANOVA with Games-Howell already allow for that; the classic Student t and one-way ANOVA do not. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">An independent-samples Welch t-test showed that score differed significantly between A (M = 5.00, SD = 0.00) and B (M = 7.50, SD = 1.29), t(3.00) = -3.87, p = .030, g = -2.38, 95% CI of the difference [-4.55, -0.45].</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "ttestInd-unequal-n",
+   "test": "ttestInd",
+   "csv": "group,score\nA,12\nA,15\nA,11\nA,14\nA,13\nB,16\nB,18\nB,15\nB,19\nB,17\nB,20\nB,14\nB,18\nB,17",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "An independent-samples Welch t-test showed that score differed significantly between A (M = 13.00, SD = 1.58) and B (M = 17.11, SD = 1.90), t(9.83) = -4.33, p = .002, g = -2.14, 95% CI of the difference [-6.23, -1.99].",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "A",
+       "5",
+       "13.00",
+       "1.58"
+      ],
+      [
+       "B",
+       "9",
+       "17.11",
+       "1.90"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Welch t(9.8) = -4.33, p = .002, Hedges' g = -2.14, mean difference -4.11, 95% CI [-6.23, -1.99]. Welch is the default because it stays accurate when the two groups have different spreads and loses almost nothing when they do not. For comparison, Student's t(12) = -4.09, p = .001."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "A",
+       "5",
+       "0.987",
+       ".967"
+      ],
+      [
+       "B",
+       "9",
+       "0.980",
+       ".964"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(1, 12) = 0.18, p = .681."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsGroupNMSDA513.001.58B917.111.90Welch t(9.8) = -4.33, p = .002, Hedges' g = -2.14, mean difference -4.11, 95% CI [-6.23, -1.99]. Welch is the default because it stays accurate when the two groups have different spreads and loses almost nothing when they do not. For comparison, Student's t(12) = -4.09, p = .001.Assumption checksGroupNShapiro-Wilk WpA50.987.967B90.980.964Equal spread (Brown-Forsythe): F(1, 12) = 0.18, p = .681.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.An independent-samples Welch t-test showed that score differed significantly between A (M = 13.00, SD = 1.58) and B (M = 17.11, SD = 1.90), t(9.83) = -4.33, p = .002, g = -2.14, 95% CI of the difference [-6.23, -1.99].Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>A</td><td>5</td><td>13.00</td><td>1.58</td></tr><tr><td>B</td><td>9</td><td>17.11</td><td>1.90</td></tr></tbody></table><p class=\"desc\">Welch t(9.8) = -4.33, p = .002, Hedges' g = -2.14, mean difference -4.11, 95% CI [-6.23, -1.99]. Welch is the default because it stays accurate when the two groups have different spreads and loses almost nothing when they do not. For comparison, Student's t(12) = -4.09, p = .001.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>A</td><td>5</td><td>0.987</td><td>.967</td></tr><tr><td>B</td><td>9</td><td>0.980</td><td>.964</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(1, 12) = 0.18, p = .681.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">An independent-samples Welch t-test showed that score differed significantly between A (M = 13.00, SD = 1.58) and B (M = 17.11, SD = 1.90), t(9.83) = -4.33, p = .002, g = -2.14, 95% CI of the difference [-6.23, -1.99].</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "ttestInd-one-group",
+   "test": "ttestInd",
+   "csv": "group,score\nA,4\nA,6\nA,5",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "This grouping variable needs exactly 2 groups — it has 1"
+   ]
+  },
+  {
+   "id": "ttestInd-name-needs-escaping",
+   "test": "ttestInd",
+   "csv": "Tom's <score> & more,team\n3,<ctl>\n5,<ctl>\n4,<ctl>\n7,A&B\n6,A&B\n8,A&B",
+   "values": {
+    "dv": "Tom's <score> & more",
+    "iv": "team"
+   },
+   "form": {
+    "values": {
+     "dv": "0",
+     "iv": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "An independent-samples Welch t-test showed that Tom's <score> & more differed significantly between <ctl> (M = 4.00, SD = 1.00) and A&B (M = 7.00, SD = 1.00), t(4.00) = -3.67, p = .021, g = -2.40, 95% CI of the difference [-5.27, -0.73].",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "&lt;ctl&gt;",
+       "3",
+       "4.00",
+       "1.00"
+      ],
+      [
+       "A&amp;B",
+       "3",
+       "7.00",
+       "1.00"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Welch t(4.0) = -3.67, p = .021, Hedges' g = -2.40, mean difference -3.00, 95% CI [-5.27, -0.73]. Welch is the default because it stays accurate when the two groups have different spreads and loses almost nothing when they do not. For comparison, Student's t(4) = -3.67, p = .021."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "&lt;ctl&gt;",
+       "3",
+       "1.000",
+       "1.000"
+      ],
+      [
+       "A&amp;B",
+       "3",
+       "1.000",
+       "1.000"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(1, 4) = 0.00, p = 1.000."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsGroupNMSD<ctl>34.001.00A&B37.001.00Welch t(4.0) = -3.67, p = .021, Hedges' g = -2.40, mean difference -3.00, 95% CI [-5.27, -0.73]. Welch is the default because it stays accurate when the two groups have different spreads and loses almost nothing when they do not. For comparison, Student's t(4) = -3.67, p = .021.Assumption checksGroupNShapiro-Wilk Wp<ctl>31.0001.000A&B31.0001.000Equal spread (Brown-Forsythe): F(1, 4) = 0.00, p = 1.000.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.An independent-samples Welch t-test showed that Tom's <score> & more differed significantly between <ctl> (M = 4.00, SD = 1.00) and A&B (M = 7.00, SD = 1.00), t(4.00) = -3.67, p = .021, g = -2.40, 95% CI of the difference [-5.27, -0.73].Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>&lt;ctl&gt;</td><td>3</td><td>4.00</td><td>1.00</td></tr><tr><td>A&amp;B</td><td>3</td><td>7.00</td><td>1.00</td></tr></tbody></table><p class=\"desc\">Welch t(4.0) = -3.67, p = .021, Hedges' g = -2.40, mean difference -3.00, 95% CI [-5.27, -0.73]. Welch is the default because it stays accurate when the two groups have different spreads and loses almost nothing when they do not. For comparison, Student's t(4) = -3.67, p = .021.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>&lt;ctl&gt;</td><td>3</td><td>1.000</td><td>1.000</td></tr><tr><td>A&amp;B</td><td>3</td><td>1.000</td><td>1.000</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(1, 4) = 0.00, p = 1.000.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">An independent-samples Welch t-test showed that Tom's &lt;score&gt; &amp; more differed significantly between &lt;ctl&gt; (M = 4.00, SD = 1.00) and A&amp;B (M = 7.00, SD = 1.00), t(4.00) = -3.67, p = .021, g = -2.40, 95% CI of the difference [-5.27, -0.73].</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "ttestInd-nonsignificant",
+   "test": "ttestInd",
+   "csv": "group,score\nA,10\nA,12\nA,11\nA,13\nA,9\nA,12\nB,11\nB,12\nB,10\nB,13\nB,12\nB,11",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "An independent-samples Welch t-test showed that score did not differ significantly between A (M = 11.17, SD = 1.47) and B (M = 11.50, SD = 1.05), t(9.04) = -0.45, p = .662, g = -0.24, 95% CI of the difference [-2.00, 1.33].",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "A",
+       "6",
+       "11.17",
+       "1.47"
+      ],
+      [
+       "B",
+       "6",
+       "11.50",
+       "1.05"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Welch t(9.0) = -0.45, p = .662, Hedges' g = -0.24, mean difference -0.33, 95% CI [-2.00, 1.33]. Welch is the default because it stays accurate when the two groups have different spreads and loses almost nothing when they do not. For comparison, Student's t(10) = -0.45, p = .661."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "A",
+       "6",
+       "0.958",
+       ".804"
+      ],
+      [
+       "B",
+       "6",
+       "0.960",
+       ".820"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(1, 10) = 0.71, p = .418."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsGroupNMSDA611.171.47B611.501.05Welch t(9.0) = -0.45, p = .662, Hedges' g = -0.24, mean difference -0.33, 95% CI [-2.00, 1.33]. Welch is the default because it stays accurate when the two groups have different spreads and loses almost nothing when they do not. For comparison, Student's t(10) = -0.45, p = .661.Assumption checksGroupNShapiro-Wilk WpA60.958.804B60.960.820Equal spread (Brown-Forsythe): F(1, 10) = 0.71, p = .418.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.An independent-samples Welch t-test showed that score did not differ significantly between A (M = 11.17, SD = 1.47) and B (M = 11.50, SD = 1.05), t(9.04) = -0.45, p = .662, g = -0.24, 95% CI of the difference [-2.00, 1.33].Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>A</td><td>6</td><td>11.17</td><td>1.47</td></tr><tr><td>B</td><td>6</td><td>11.50</td><td>1.05</td></tr></tbody></table><p class=\"desc\">Welch t(9.0) = -0.45, p = .662, Hedges' g = -0.24, mean difference -0.33, 95% CI [-2.00, 1.33]. Welch is the default because it stays accurate when the two groups have different spreads and loses almost nothing when they do not. For comparison, Student's t(10) = -0.45, p = .661.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>A</td><td>6</td><td>0.958</td><td>.804</td></tr><tr><td>B</td><td>6</td><td>0.960</td><td>.820</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(1, 10) = 0.71, p = .418.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">An independent-samples Welch t-test showed that score did not differ significantly between A (M = 11.17, SD = 1.47) and B (M = 11.50, SD = 1.05), t(9.04) = -0.45, p = .662, g = -0.24, 95% CI of the difference [-2.00, 1.33].</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "ttestInd-no-categorical-column",
+   "test": "ttestInd",
+   "csv": "score\n4\n6\n5\n7",
+   "values": {
+    "dv": "score"
+   },
+   "form": {
+    "values": {
+     "dv": "0",
+     "iv": ""
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Could not run that test — check the columns you picked match what the test needs"
+   ]
+  }
+ ]
+}

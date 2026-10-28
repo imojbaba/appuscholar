@@ -1,0 +1,82 @@
+[
+ {
+  "id": "chisq-demo",
+  "csv": "counselling,passed\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no",
+  "test": "chisq",
+  "values": {
+   "v1": "counselling",
+   "v2": "passed"
+  },
+  "why": "TG_DEMO's chisq: a 2x2, not significant, with the Yates note and no small expected count"
+ },
+ {
+  "id": "chisq-integer-labels",
+  "csv": "year,passed\n10,yes\n10,yes\n10,yes\n10,yes\n10,yes\n10,yes\n10,yes\n10,yes\n10,yes\n10,yes\n10,yes\n10,yes\n10,no\n10,no\n10,no\n10,no\n10,no\n10,no\n10,no\n10,no\n2,yes\n2,yes\n2,yes\n2,yes\n2,yes\n2,yes\n2,no\n2,no\n2,no\n2,no\n2,no\n2,no\n2,no\n2,no\n2,no\n2,no\n2,no\n2,no\n2,no\n2,no\n3,yes\n3,yes\n3,yes\n3,yes\n3,yes\n3,yes\n3,yes\n3,yes\n3,yes\n3,yes\n3,no\n3,no\n3,no\n3,no\n3,no\n3,no\n3,no\n3,no\n3,no\n3,no\nx,",
+  "test": "chisq",
+  "values": {
+   "v1": "year",
+   "v2": "passed"
+  },
+  "why": "row labels 10, 2, 3 in data order: the Set keeps that order (F4's other branch), unlike statsGroupBy's object-key order; the row x with an empty second answer makes year categorical and is filtered out"
+ },
+ {
+  "id": "chisq-2x2-small-expected",
+  "csv": "group,outcome\nA,yes\nA,yes\nA,yes\nA,yes\nA,yes\nA,yes\nA,yes\nA,yes\nA,no\nA,no\nB,yes\nB,yes\nB,yes\nB,no\nB,no\nB,no\nB,no\nB,no\nB,no\nB,no",
+  "test": "chisq",
+  "values": {
+   "v1": "group",
+   "v2": "outcome"
+  },
+  "why": "a 2x2 with the smallest expected count 4.5: Fisher's exact test in the note and the sentence, sample odds ratio 8*7/(2*3) (F8)"
+ },
+ {
+  "id": "chisq-2x2-empty-cell",
+  "csv": "group,outcome\nA,yes\nA,yes\nA,yes\nA,yes\nA,yes\nA,yes\nB,yes\nB,yes\nB,yes\nB,no\nB,no\nB,no\nB,no\nB,no",
+  "test": "chisq",
+  "values": {
+   "v1": "group",
+   "v2": "outcome"
+  },
+  "why": "A never answered no, so b = 0 and the odds ratio is Infinity: 'undefined (an empty cell)', which the safety net lets through"
+ },
+ {
+  "id": "chisq-3x3-sparse",
+  "csv": "arm,response\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,y\nA,y\nA,z\nB,x\nB,x\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,z\nB,z\nB,z\nC,x\nC,y\nC,y\nC,y\nC,z\nC,z\nC,z\nC,z\nC,z\nC,z\nC,z\nC,z\nC,z",
+  "test": "chisq",
+  "values": {
+   "v1": "arm",
+   "v2": "response"
+  },
+  "why": "a 3x3 with N = 36 and every expected count below 5: the Fisher-Freeman-Halton test, its table count grouped by toLocaleString('en-US')"
+ },
+ {
+  "id": "chisq-3x4-sparse-large-N",
+  "csv": "site,choice\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,z\nA,z\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,z\nC,w\nC,w\nC,w\nC,x\nC,x\nC,y",
+  "test": "chisq",
+  "values": {
+   "v1": "site",
+   "v2": "choice"
+  },
+  "why": "a 3x4 with N = 294 and 6 of 12 expected counts below 5: N > 200, so 'too many possible tables'"
+ },
+ {
+  "id": "chisq-one-value-column",
+  "csv": "group,outcome\nA,yes\nA,yes\nA,yes\nA,yes\nA,yes\nB,yes\nB,yes\nB,yes\nB,yes\nB,yes",
+  "test": "chisq",
+  "values": {
+   "v1": "group",
+   "v2": "outcome"
+  },
+  "why": "the second variable has one value: the toast"
+ },
+ {
+  "id": "chisq-hindi-categories",
+  "csv": "लिंग,उत्तर\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,नहीं\nपुरुष,नहीं\nपुरुष,नहीं\nपुरुष,नहीं\nपुरुष,नहीं\nपुरुष,नहीं\nपुरुष,नहीं\nपुरुष,नहीं\nपुरुष,नहीं\nपुरुष,नहीं\nमहिला,हाँ\nमहिला,हाँ\nमहिला,हाँ\nमहिला,हाँ\nमहिला,हाँ\nमहिला,हाँ\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं",
+  "test": "chisq",
+  "values": {
+   "v1": "लिंग",
+   "v2": "उत्तर"
+  },
+  "why": "Devanagari column names and categories in the cells, the note and the sentence"
+ }
+]

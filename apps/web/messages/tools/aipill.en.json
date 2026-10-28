@@ -1,0 +1,7 @@
+{
+  "aipill_title": "Switch AI provider",
+  "aipill_now": "Now using {name}. Your next AI request goes to {short}.",
+  "aipill_paste": "Paste your {short} key to enable it",
+  "aipill_key_saved": "Key saved, click to use",
+  "aipill_no_key": "No key yet, click to add"
+}

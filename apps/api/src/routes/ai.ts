@@ -3,8 +3,9 @@ import { z } from "zod";
 import { classifyAiUse, contentLangInstruction, scanText } from "@appuscholar/core";
 import type { AiUseEntry, Store } from "../store/types";
 import type { AuthEnv } from "../auth";
-import { complete, type GatewayDeps } from "../ai/gateway";
+import { complete, testKey, type GatewayDeps } from "../ai/gateway";
 import { AiError, type AiErrorCode } from "../ai/types";
+import { AI_QUOTAS, quotaRules, type QuotaLimits } from "../ai/quota";
 
 const Provider = z.enum(["gemini", "groq", "deepseek", "openrouter", "openai", "claude"]);
 const Day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((s) => !Number.isNaN(Date.parse(s + "T00:00:00Z")) && new Date(s + "T00:00:00Z").toISOString().startsWith(s));
@@ -24,10 +25,12 @@ const CompleteBody = z.object({
 }).strict();
 const TestBody = z.object({ provider: Provider, apiKey: ApiKey }).strict();
 const Range = z.object({ from: Day.optional(), to: Day.optional() });
+/** GET /ai/log: the range, and optionally one project (the project export's AI-use statement); without it, the whole account's log. */
+const LogQuery = Range.extend({ projectId: z.string().min(1).max(100).optional() });
 
-const STATUS: Record<AiErrorCode, 400 | 401 | 404 | 429 | 502> = {
+const STATUS: Record<AiErrorCode, 400 | 401 | 404 | 429 | 502 | 504> = {
   "personal-data": 400, blocked: 400, truncated: 400, empty: 400, "no-key": 400,
-  "key-rejected": 401, "model-gone": 404, "rate-limit": 429, "provider-error": 502, network: 502
+  "key-rejected": 401, "model-gone": 404, "rate-limit": 429, "provider-error": 502, network: 502, slow: 504
 };
 
 /** v1 pdPreSend wording ("Found: 1 email address, 2 phone numbers."), with "addresses" spelled correctly where v1 wrote "addresss". */
@@ -44,7 +47,9 @@ export function summariseAiUse(rows: AiUseEntry[]): { byKind: Record<string, num
   return { byKind, byProvider, total: rows.length };
 }
 
-export function aiRoutes(store: Store, deps: GatewayDeps) {
+export function aiRoutes(store: Store, deps: GatewayDeps, quota: { now?: () => Date; limits?: QuotaLimits } = {}) {
+  const limits = quota.limits ?? AI_QUOTAS;
+  const clock = quota.now ?? (() => new Date());
   const r = new Hono<AuthEnv>();
   r.use("*", async (c, next) => {
     const userId = c.get("userId");
@@ -56,7 +61,7 @@ export function aiRoutes(store: Store, deps: GatewayDeps) {
   });
 
   // Never log the request body, the key or the prompt: only the error class is recorded.
-  async function guarded(c: { json: (b: unknown, s: 400 | 401 | 404 | 429 | 502) => Response }, run: () => Promise<Response>): Promise<Response> {
+  async function guarded(c: { json: (b: unknown, s: 400 | 401 | 404 | 429 | 502 | 504) => Response }, run: () => Promise<Response>): Promise<Response> {
     try {
       return await run();
     } catch (e) {
@@ -67,6 +72,16 @@ export function aiRoutes(store: Store, deps: GatewayDeps) {
     }
   }
 
+  /** Counts one call for this route; answers the 429 when a window is full (nothing reaches the provider), else null. Logs the bucket and the opaque user id only. */
+  async function overQuota(c: { get: (k: "userId") => string; header: (n: string, v: string) => void; json: (b: unknown, s: 429) => Response }, route: "complete" | "test"): Promise<Response | null> {
+    const userId = c.get("userId");
+    const res = await store.consumeQuota(userId, quotaRules(route, limits), clock());
+    if (res.ok) return null;
+    console.warn(JSON.stringify({ kind: "ai-quota", bucket: res.bucket, user: userId }));
+    c.header("Retry-After", String(res.retryAfterSec));
+    return c.json({ error: "quota", detail: `${res.bucket.split(":")[1]}:${res.retryAfterSec}` }, 429);
+  }
+
   r.post("/complete", async (c) => {
     const body = CompleteBody.safeParse(await c.req.json().catch(() => null));
     if (!body.success) return c.json({ error: "invalid" }, 400);
@@ -74,6 +89,8 @@ export function aiRoutes(store: Store, deps: GatewayDeps) {
     return guarded(c, async () => {
       const scan = scanText(b.prompt);
       if (scan.total > 0 && !b.pdAccepted) throw new AiError("personal-data", foundSentence(scan.counts));
+      const limited = await overQuota(c, "complete");
+      if (limited) return limited;
       const prompt = b.noLang ? b.prompt : b.prompt + contentLangInstruction(b.contentLang);
       const out = await complete({ provider: b.provider, apiKey: b.apiKey, prompt, temperature: b.temperature, maxTokens: b.maxTokens }, deps);
       const userId = c.get("userId");
@@ -91,15 +108,17 @@ export function aiRoutes(store: Store, deps: GatewayDeps) {
     const body = TestBody.safeParse(await c.req.json().catch(() => null));
     if (!body.success) return c.json({ error: "invalid" }, 400);
     return guarded(c, async () => {
-      const out = await complete({ provider: body.data.provider, apiKey: body.data.apiKey, prompt: "Reply with the single word OK.", temperature: 0, maxTokens: 20 }, deps);
-      return c.json({ ok: true, reply: out.text });
+      const limited = await overQuota(c, "test");
+      if (limited) return limited;
+      await testKey(body.data, deps);
+      return c.json({ ok: true, reply: "OK" });
     });
   });
 
   r.get("/log", async (c) => {
-    const q = Range.safeParse(c.req.query());
+    const q = LogQuery.safeParse(c.req.query());
     if (!q.success) return c.json({ error: "invalid" }, 400);
-    return c.json(await store.listAiUse(c.get("userId"), q.data.from, q.data.to));
+    return c.json(await store.listAiUse(c.get("userId"), q.data.from, q.data.to, q.data.projectId));
   });
 
   r.get("/log/summary", async (c) => {

@@ -1,0 +1,750 @@
+{
+ "engine": "guide",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "tables": {
+  "TG_Q": {
+   "goal": {
+    "q": "What do you want to find out?",
+    "o": [
+     [
+      "compare",
+      "Compare scores between groups, conditions or times"
+     ],
+     [
+      "relate",
+      "See how two variables move together"
+     ],
+     [
+      "predict",
+      "Predict one variable from others"
+     ],
+     [
+      "reliab",
+      "Check whether the items of a scale hang together"
+     ],
+     [
+      "counts",
+      "Compare counts in categories (yes/no, groups, types)"
+     ]
+    ]
+   },
+   "cmpOut": {
+    "q": "What kind of score are you comparing?",
+    "o": [
+     [
+      "scale",
+      "A number such as a total or mean score (for example a 0 to 40 anxiety total)"
+     ],
+     [
+      "ordinal",
+      "A single rating item or ranks (for example one question answered 1 to 5)"
+     ]
+    ]
+   },
+   "cmpDes": {
+    "q": "How many groups or conditions?",
+    "o": [
+     [
+      "one",
+      "One group, compared with a known value"
+     ],
+     [
+      "two",
+      "Two groups or two conditions"
+     ],
+     [
+      "three",
+      "Three or more groups or conditions"
+     ],
+     [
+      "factors",
+      "Two things varied at once (two factors, for example gender and treatment)"
+     ]
+    ]
+   },
+   "smp": {
+    "q": "Are they different people in each group, or the same people measured more than once (or matched pairs)?",
+    "o": [
+     [
+      "ind",
+      "Different people in each group"
+     ],
+     [
+      "rel",
+      "The same people repeatedly, or matched pairs"
+     ]
+    ]
+   },
+   "relOut": {
+    "q": "What kind of scores are the two variables?",
+    "o": [
+     [
+      "scale",
+      "Both are numbers (totals, means, ages)"
+     ],
+     [
+      "ordinal",
+      "At least one is a single rating item or a ranking"
+     ]
+    ]
+   },
+   "prdOut": {
+    "q": "What are you predicting?",
+    "o": [
+     [
+      "scale",
+      "A number (a total or mean score)"
+     ],
+     [
+      "binary",
+      "A yes/no outcome"
+     ]
+    ]
+   },
+   "prdN": {
+    "q": "How many predictors?",
+    "o": [
+     [
+      "one",
+      "One"
+     ],
+     [
+      "many",
+      "Two or more"
+     ]
+    ]
+   },
+   "cntDes": {
+    "q": "What is your design?",
+    "o": [
+     [
+      "gof",
+      "One variable, against counts you expected"
+     ],
+     [
+      "ind",
+      "Two categorical variables, different people"
+     ],
+     [
+      "rel2",
+      "Same people twice, a yes/no answer each time"
+     ],
+     [
+      "rel3",
+      "Same people three or more times, a yes/no answer each time"
+     ]
+    ]
+   }
+  },
+  "TG_RES": {
+   "alpha": {
+    "name": "McDonald's omega with Cronbach's alpha",
+    "keys": [
+     "alpha"
+    ],
+    "why": "Reliability of a multi-item scale. Report the value with its interval and do not hold it against a fixed pass mark.",
+    "alt": []
+   },
+   "pearson": {
+    "name": "Pearson correlation",
+    "keys": [
+     "pearson"
+    ],
+    "why": "Two numeric scores and a question about how they move together. Correlation does not show cause.",
+    "alt": [
+     [
+      "spearman",
+      "Spearman, if the plot is curved but still rising or falling, or if a few extreme values drive the result"
+     ]
+    ]
+   },
+   "spearman": {
+    "name": "Spearman correlation",
+    "keys": [
+     "spearman"
+    ],
+    "why": "A rating item or ranks are involved, so a rank-based correlation fits.",
+    "alt": []
+   },
+   "regression": {
+    "name": "Simple linear regression",
+    "keys": [
+     "regression"
+    ],
+    "why": "One numeric predictor and a numeric outcome.",
+    "alt": [
+     [
+      "pearson",
+      "Pearson, if you only need the strength of the relationship"
+     ]
+    ]
+   },
+   "multreg": {
+    "name": "Multiple regression",
+    "keys": [
+     "mregress"
+    ],
+    "why": "Two or more predictors of a numeric outcome. Plan on 10 to 20 cases per predictor.",
+    "alt": []
+   },
+   "logistic": {
+    "name": "Logistic regression",
+    "keys": [
+     "logistic"
+    ],
+    "why": "A yes/no outcome predicted from other variables.",
+    "alt": []
+   },
+   "gof": {
+    "name": "Chi-square goodness-of-fit",
+    "keys": [
+     "gof"
+    ],
+    "why": "One categorical variable against counts you expected. With two categories and a small sample the app switches to an exact binomial test.",
+    "alt": []
+   },
+   "chisq": {
+    "name": "Chi-square test of independence",
+    "keys": [
+     "chisq"
+    ],
+    "why": "Two categorical variables, different people.",
+    "alt": [],
+    "note": "On a 2 by 2 table where any expected count is below 5, the app reports Fisher's exact test instead. For a larger table with many small counts it warns you: merge sparse categories or ask a statistician about the Fisher-Freeman-Halton test."
+   },
+   "mcnemar": {
+    "name": "McNemar test",
+    "keys": [
+     "mcnemar"
+    ],
+    "why": "Same people, a yes/no answer at two times.",
+    "alt": []
+   },
+   "cochran": {
+    "name": "Cochran's Q",
+    "keys": [
+     "cochran"
+    ],
+    "why": "Same people, a yes/no answer at three or more times.",
+    "alt": []
+   },
+   "ttest1": {
+    "name": "One-sample t-test",
+    "keys": [
+     "ttest1"
+    ],
+    "why": "One group compared with a fixed value.",
+    "alt": []
+   },
+   "wilcox1": {
+    "name": "One-sample Wilcoxon signed-rank",
+    "keys": [],
+    "why": "One group of ratings or ranks compared with a fixed value.",
+    "alt": []
+   },
+   "ttestInd": {
+    "name": "Welch's independent-samples t-test",
+    "keys": [
+     "ttestInd"
+    ],
+    "why": "Different people in two groups. Welch's version does not need equal spread in the two groups and loses almost nothing when the spread is equal, so there is no need to test for equal variances first.",
+    "alt": [
+     [
+      "mannwhitney",
+      "Mann-Whitney U, if the groups are small and the scores skewed or have extreme values"
+     ]
+    ]
+   },
+   "mannwhitney": {
+    "name": "Mann-Whitney U",
+    "keys": [
+     "mannwhitney"
+    ],
+    "why": "Different people in two groups, with ratings or ranks. It shows whether one group tends to score higher.",
+    "alt": []
+   },
+   "ttestPaired": {
+    "name": "Paired-samples t-test",
+    "keys": [
+     "ttestPaired"
+    ],
+    "why": "The same people twice, or matched pairs. Each person is their own control.",
+    "alt": [
+     [
+      "wilcoxon",
+      "Wilcoxon signed-rank, if the differences are skewed or have extreme values"
+     ]
+    ]
+   },
+   "wilcoxon": {
+    "name": "Wilcoxon signed-rank",
+    "keys": [
+     "wilcoxon"
+    ],
+    "why": "The same people twice with ratings or ranks.",
+    "alt": []
+   },
+   "anova1": {
+    "name": "Welch's one-way ANOVA with Games-Howell follow-up",
+    "keys": [
+     "welchAnova"
+    ],
+    "why": "Three or more separate groups and a numeric score. Welch's version does not need equal spread, and Games-Howell shows which pairs differ without the same assumption.",
+    "alt": [
+     [
+      "kruskal",
+      "Kruskal-Wallis, if the groups are small and the scores skewed or have extreme values"
+     ],
+     [
+      "anova1",
+      "One-way ANOVA, classic version, if you must match a course or journal that expects it"
+     ]
+    ]
+   },
+   "kruskal": {
+    "name": "Kruskal-Wallis with Dunn follow-up",
+    "keys": [
+     "kruskal"
+    ],
+    "why": "Three or more separate groups with ratings or ranks.",
+    "alt": []
+   },
+   "rmanova": {
+    "name": "Repeated-measures ANOVA",
+    "keys": [],
+    "why": "The same people measured three or more times. Apply the Greenhouse-Geisser correction.",
+    "alt": []
+   },
+   "mixed": {
+    "name": "Mixed ANOVA",
+    "keys": [
+     "mixed"
+    ],
+    "why": "Separate groups, each measured two or more times: it tests the group difference, the change over time, and whether groups change differently.",
+    "alt": []
+   },
+   "friedman": {
+    "name": "Friedman test",
+    "keys": [],
+    "why": "The same people three or more times with ratings or ranks.",
+    "alt": []
+   },
+   "twoway": {
+    "name": "Two-way ANOVA or a mixed design",
+    "keys": [],
+    "why": "Two factors at once. Which version applies depends on whether either factor is repeated on the same people.",
+    "alt": []
+   }
+  },
+  "TG_IMP": {
+   "goal": {
+    "compare": "You want to know whether scores differ between groups, conditions or times.",
+    "relate": "You want to know whether two variables rise and fall together.",
+    "predict": "You want to predict one variable from others.",
+    "reliab": "You want to know whether the items of a scale measure the same thing.",
+    "counts": "You are working with counts in categories, not with scores."
+   },
+   "cmpOut": {
+    "scale": "A numeric total or mean can be averaged, so tests on means are possible.",
+    "ordinal": "A single rating item has an order but unequal steps (the gap from 1 to 2 may not equal the gap from 4 to 5), so rank-based tests are the safer match."
+   },
+   "cmpDes": {
+    "one": "With one group the only comparison available is against a known value.",
+    "two": "Two groups means one comparison.",
+    "three": "Three or more groups are compared all at once first, and only then pair by pair. Running many t-tests instead would inflate the chance of a false positive.",
+    "factors": "Two things varied at once means each factor, and how they combine, has to be examined together."
+   },
+   "smp": {
+    "ind": "Different people in each group means each score is independent of the others.",
+    "rel": "The same people measured again means each person's scores belong together as pairs. Ignoring that throws information away."
+   },
+   "relOut": {
+    "scale": "Both variables are numbers, so the strength of a straight-line link can be measured.",
+    "ordinal": "A rating item or ranking is involved, so a rank-based link (Spearman) fits."
+   },
+   "prdOut": {
+    "scale": "A numeric outcome can be predicted with a line.",
+    "binary": "A yes/no outcome needs a model for probabilities, not a straight line."
+   },
+   "prdN": {
+    "one": "One predictor means a simple line.",
+    "many": "Several predictors have to be estimated together."
+   },
+   "cntDes": {
+    "gof": "One variable against expected counts asks whether the pattern departs from what you expected.",
+    "ind": "Two categorical variables ask whether the categories go together more than chance would produce.",
+    "rel2": "The same people answering yes or no twice need a test that respects the pairing.",
+    "rel3": "The same people answering yes or no three or more times need a test that respects the repeated measures."
+   }
+  },
+  "TG_EXTRA": {
+   "ttest1": {
+    "assume": "The scores are independent and not wildly skewed. With very small samples, extreme values distort the mean.",
+    "watch": "Many tied or ordinal scores, or a handful of extreme values in a small group."
+   },
+   "ttestInd": {
+    "assume": "Each person appears in one group only and the scores are independent. Welch's version does not need equal spread, and it copes with groups of different sizes.",
+    "watch": "Groups under about 20 with strong skew or extreme values (use Mann-Whitney), or the same people in both groups (use the paired test)."
+   },
+   "mannwhitney": {
+    "assume": "Each person appears in one group only. The test compares ranks, so it does not care about the exact size of the gaps between scores.",
+    "watch": "The same people in both groups, or many ties in a tiny sample."
+   },
+   "friedman": {
+    "assume": "The same people were scored under every condition, and the scores can at least be put in order within each person. It needs no normal distribution.",
+    "watch": "Fewer than about 10 people, many tied scores (a short rating scale), people missing a time point (they are left out), or conditions that were not counterbalanced."
+   },
+   "moderate": {
+    "assume": "Each row is a different person, Y is numeric, and the relationship between X and Y changes in a straight-line way as W changes. The residuals are roughly normal with similar spread.",
+    "watch": "Fewer than about 50 people (interactions need large samples), a moderator or predictor with extreme outliers, a moderator that is a category with very uneven groups (use a 0/1 column and check each group is large), and reading a significant interaction as proof that W causes the change."
+   },
+   "mediate": {
+    "assume": "Each row is a different person, all three variables are numeric, and the paths are straight lines. The order X, then M, then Y must come from theory or design, because the numbers cannot tell the order.",
+    "watch": "Fewer than about 100 people (the bootstrap interval is unstable), all three variables measured at one time (the result then describes an association pattern, not proof of a causal chain), a mediator that is nearly a copy of X or Y, and other variables that affect both M and Y but are not in the model."
+   },
+   "logistic": {
+    "assume": "Each row is a different person, the outcome has two answers, and the log odds of the event rise or fall in a straight line with each numeric predictor. The predictors should not nearly copy one another.",
+    "watch": "Fewer than about 10 events (or 10 non-events) per predictor, a predictor that predicts the outcome perfectly (the model then cannot be fitted), one person counted twice, and a curved relationship that a straight line on the log-odds scale misses."
+   },
+   "mixed": {
+    "assume": "People in each group are independent of one another, the scores are roughly normal within each group and time, the spread is similar across groups, and the differences between each pair of times have equal spread (sphericity, tested and corrected below).",
+    "watch": "Groups with fewer than about 10 people, very unequal group sizes (the time effect then gives each group equal weight, as SPSS does), people missing a time point (they are left out), and no check of equal covariance matrices across groups (Box's M is not run here)."
+   },
+   "rmanova": {
+    "assume": "The same people were measured under every condition or at every time, and the differences between each pair of conditions have roughly equal spread (sphericity, tested and corrected below).",
+    "watch": "Fewer than about 10 people, strongly skewed scores, people missing a time point (they are left out), or conditions that were not counterbalanced, so that order and practice effects mix with the condition."
+   },
+   "ttestPaired": {
+    "assume": "Each person has two scores that belong together, and the differences between them are not wildly skewed.",
+    "watch": "Strongly skewed or ordinal differences (use Wilcoxon), or people with only one of the two scores."
+   },
+   "wilcoxon": {
+    "assume": "Each person has two scores that belong together. The test works on the ranks of the differences.",
+    "watch": "Most people having exactly the same score at both times, which leaves few differences to rank."
+   },
+   "anova1": {
+    "assume": "Each person appears in one group only and the scores are independent. Welch's version tolerates different spreads.",
+    "watch": "Tiny groups with skew or extreme values (use Kruskal-Wallis), or the same people in every group (repeated-measures design)."
+   },
+   "kruskal": {
+    "assume": "Each person appears in one group only. The test works on ranks.",
+    "watch": "The same people in every group."
+   },
+   "pearson": {
+    "assume": "Both variables are numbers and the link looks like a straight line on a scatterplot. A few extreme points can create or hide a correlation.",
+    "watch": "A curved pattern or clear outliers (look at the plot, and consider Spearman)."
+   },
+   "spearman": {
+    "assume": "The link rises or falls steadily, though not necessarily in a straight line. Ties are handled.",
+    "watch": "A pattern that rises and then falls, which no rank correlation can describe."
+   },
+   "regression": {
+    "assume": "The link is roughly a straight line, the scatter around the line is similar all along it, and each person appears once.",
+    "watch": "A curved pattern, a fan-shaped scatter, or one point pulling the whole line."
+   },
+   "mcnemar": {
+    "assume": "The same people answered yes or no both times, and only the people whose answer changed carry information.",
+    "watch": "Fewer than about 10 people whose answer changed (the exact version is used then), different people at the two times, or answers other than two kinds."
+   },
+   "cochran": {
+    "assume": "The same people answered yes or no under every condition, with no one missing from any column.",
+    "watch": "Very few people whose answers differ across times, or more than two kinds of answer."
+   },
+   "chisq": {
+    "assume": "Each person is counted once, and the expected count in each cell is about 5 or more.",
+    "watch": "Small counts (the app then switches to Fisher's exact test for a 2 by 2 table) or the same people counted twice."
+   },
+   "gof": {
+    "assume": "Each person is counted once and the expected count for each category is about 5 or more.",
+    "watch": "Small expected counts (two categories get an exact binomial test) or expected shares chosen after seeing the data."
+   },
+   "alpha": {
+    "assume": "All the items point the same way (reverse-score the negatively worded ones first) and measure one thing. Run each subscale separately.",
+    "watch": "Fewer than about 30 people, or items that measure different things."
+   }
+  },
+  "TG_DEMO": {
+   "ttest1": {
+    "title": "Test scores against a known value",
+    "note": "Twelve students' scores on a screening test. The published average is 50.",
+    "test": "ttest1",
+    "csv": "score\n52\n48\n55\n51\n49\n53\n50\n47\n54\n52\n51\n49",
+    "sel": {
+     "dv": "score"
+    },
+    "extra": {
+     "mu": "50"
+    },
+    "read": "The group mean sits close to 50 and the test finds no clear difference. A non-significant result means the data give no evidence of a difference. It does not prove the two are equal."
+   },
+   "ttestInd": {
+    "title": "Two separate groups",
+    "note": "Hours of sleep for 12 students on a new bedtime routine (A) and 12 on their usual routine (B).",
+    "test": "ttestInd",
+    "csv": "group,hours\nA,7.5\nA,8\nA,7\nA,8.5\nA,7.8\nA,8.2\nA,7.4\nA,8.1\nA,7.9\nA,8.4\nA,7.2\nA,8\nB,6.5\nB,7\nB,6.2\nB,7.1\nB,6.8\nB,6\nB,7.3\nB,6.6\nB,6.9\nB,6.4\nB,7\nB,6.7",
+    "sel": {
+     "dv": "hours",
+     "iv": "group"
+    },
+    "read": "Look at the two means first, then at t, df and p. The CI of the difference shows how large the gap plausibly is. g is the size of the gap in standard-deviation units, which is what you report beside the p-value."
+   },
+   "mannwhitney": {
+    "title": "Two groups, a single rating item",
+    "note": "A 1 to 5 rating of \"I feel supported\" from ten students in group A and ten in group B.",
+    "test": "mannwhitney",
+    "csv": "group,rating\nA,4\nA,5\nA,4\nA,3\nA,5\nA,4\nA,5\nA,4\nA,3\nA,5\nB,2\nB,3\nB,3\nB,2\nB,4\nB,3\nB,2\nB,3\nB,1\nB,3",
+    "sel": {
+     "dv": "rating",
+     "iv": "group"
+    },
+    "read": "The test says one group tends to score higher, not that the medians differ by a set amount. The rank-biserial r is the effect size: the nearer to 1, the more completely one group outranks the other."
+   },
+   "ttestPaired": {
+    "title": "The same people twice",
+    "note": "Anxiety totals for 12 people before and after a four-week course.",
+    "test": "ttestPaired",
+    "csv": "before,after\n28,24\n31,27\n25,24\n35,30\n30,25\n27,26\n33,28\n29,25\n26,22\n32,29\n34,30\n28,24",
+    "sel": {
+     "v1": "before",
+     "v2": "after"
+    },
+    "read": "Everyone's score fell, and the test works on those within-person drops. That is why it can detect a change that a comparison of two separate groups with the same numbers might miss."
+   },
+   "wilcoxon": {
+    "title": "The same people twice, ratings",
+    "note": "A 1 to 7 stress rating from 12 people before and after a course.",
+    "test": "wilcoxon",
+    "csv": "before,after\n5,3\n6,4\n4,4\n5,3\n6,4\n5,3\n4,2\n6,4\n5,3\n4,3\n6,4\n5,4",
+    "sel": {
+     "v1": "before",
+     "v2": "after"
+    },
+    "read": "Only people whose rating changed are ranked. The one person who stayed at 4 drops out, which is normal."
+   },
+   "anova1": {
+    "title": "Three separate groups",
+    "note": "Scores for 8 people in each of three arms: cognitive therapy, mindfulness and a waiting list.",
+    "test": "welchAnova",
+    "csv": "arm,score\nCBT,12\nCBT,14\nCBT,11\nCBT,13\nCBT,15\nCBT,12\nCBT,14\nCBT,13\nMindful,16\nMindful,18\nMindful,17\nMindful,15\nMindful,19\nMindful,17\nMindful,18\nMindful,16\nWaitlist,22\nWaitlist,25\nWaitlist,21\nWaitlist,27\nWaitlist,23\nWaitlist,24\nWaitlist,26\nWaitlist,20",
+    "sel": {
+     "dv": "score",
+     "iv": "arm"
+    },
+    "read": "The overall test says only that the groups are not all alike. The Games-Howell table then shows which pairs differ, with a confidence interval for each gap. Notice the waiting list is more spread out, which is why the Welch version is the safer choice."
+   },
+   "kruskal": {
+    "title": "Three groups, a single rating item",
+    "note": "A 1 to 5 rating from seven people in each of three groups.",
+    "test": "kruskal",
+    "csv": "group,rating\nA,2\nA,3\nA,2\nA,3\nA,4\nA,2\nA,3\nB,4\nB,5\nB,4\nB,5\nB,4\nB,3\nB,5\nC,1\nC,1\nC,2\nC,2\nC,1\nC,2\nC,3",
+    "sel": {
+     "dv": "rating",
+     "iv": "group"
+    },
+    "read": "H is the overall test on ranks. The Dunn table with Holm adjustment shows which pairs differ. Epsilon-squared is the effect size."
+   },
+   "pearson": {
+    "title": "Two numbers that move together",
+    "note": "Weekly study hours and exam marks for 14 students.",
+    "test": "pearson",
+    "csv": "hours,marks\n2,45\n3,50\n4,52\n5,58\n6,60\n7,66\n8,70\n1,40\n9,74\n10,80\n3,48\n6,63\n5,55\n8,72",
+    "sel": {
+     "v1": "hours",
+     "v2": "marks"
+    },
+    "read": "r is the strength and direction, from -1 to 1. Look at the scatterplot beside it: the dots should follow a rough straight line. A strong r says the two move together. It does not say that studying causes the marks."
+   },
+   "spearman": {
+    "title": "A rank-based link",
+    "note": "Thirteen students ranked on effort and on result.",
+    "test": "spearman",
+    "csv": "effort,result\n1,2\n2,1\n3,4\n4,3\n5,6\n6,6\n7,8\n8,7\n9,10\n10,9\n11,9\n12,13\n13,12",
+    "sel": {
+     "v1": "effort",
+     "v2": "result"
+    },
+    "read": "Spearman's rho uses ranks, so it is not thrown by a few extreme values. The interval around it shows how precisely it was estimated."
+   },
+   "regression": {
+    "title": "Predict one number from another",
+    "note": "The same 14 students: predict exam marks from weekly study hours.",
+    "test": "regression",
+    "csv": "hours,marks\n2,45\n3,50\n4,52\n5,58\n6,60\n7,66\n8,70\n1,40\n9,74\n10,80\n3,48\n6,63\n5,55\n8,72",
+    "sel": {
+     "iv": "hours",
+     "dv": "marks"
+    },
+    "read": "The slope says how many marks each extra hour is worth on average. R-squared says how much of the spread in marks the line accounts for."
+   },
+   "chisq": {
+    "title": "Two categories against each other",
+    "note": "Thirty students who used the counselling service and thirty who did not, and whether each passed.",
+    "test": "chisq",
+    "csv": "counselling,passed\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no",
+    "sel": {
+     "v1": "counselling",
+     "v2": "passed"
+    },
+    "read": "Pass rates of 60% and 50% look different, but with 30 people per group the test cannot tell that gap from chance. A non-significant result here means the evidence is too thin, not that counselling does nothing."
+   },
+   "gof": {
+    "title": "One category against what you expected",
+    "note": "Sixty students picked their favourite study method. If there were no preference, each method would get 20.",
+    "test": "gof",
+    "csv": "method\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading",
+    "sel": {
+     "v1": "method"
+    },
+    "read": "Compare the observed and expected columns. A standardised residual beyond plus or minus 2 marks the category that departs from equal shares, here flashcards."
+   },
+   "alpha": {
+    "title": "Do the items of a scale hang together?",
+    "note": "Fifteen people answered a six-item scale. Item q6 is worded in the opposite direction, so it is reversed here (1 to 5). Run it again without reversing and watch the alpha fall.",
+    "test": "alpha",
+    "csv": "q1,q2,q3,q4,q5,q6\n2,3,2,1,2,4\n3,3,4,4,5,3\n3,5,3,2,2,3\n3,3,3,4,4,3\n2,1,2,1,2,4\n5,3,4,2,3,3\n3,3,2,3,2,4\n3,3,3,2,3,3\n5,4,3,5,4,3\n3,3,3,3,3,3\n2,3,3,3,3,4\n4,4,5,3,3,4\n4,4,2,5,4,3\n4,3,3,4,4,3\n4,3,4,4,3,2",
+    "sel": {},
+    "tick": [
+     "q1",
+     "q2",
+     "q3",
+     "q4",
+     "q5",
+     "q6"
+    ],
+    "rev": "q6",
+    "rrange": "1-5",
+    "read": "Alpha and omega are reported with their intervals, not against a pass mark. The item table shows which item pulls the scale down (a low corrected item-total r)."
+   }
+  },
+  "GEN_DESIGNS": {
+   "desc": {
+    "label": "I only want to describe one variable",
+    "ok": [
+     "desc"
+    ],
+    "alt": [],
+    "why": "Descriptive statistics summarise a variable with N, M, SD and the range. No inference is involved."
+   },
+   "one": {
+    "label": "One group against a known value",
+    "ok": [
+     "ttest1"
+    ],
+    "alt": [],
+    "why": "A one-sample t-test compares one group mean with a fixed value."
+   },
+   "ind": {
+    "label": "Two separate groups of different people",
+    "ok": [
+     "ttestInd"
+    ],
+    "alt": [
+     "mannwhitney"
+    ],
+    "why": "Different people in each group means independent samples. The independent t-test (Welch's version, which does not need equal spread) fits numeric scores. Mann-Whitney U is the fallback for ordinal scores, or for very small groups with skewed scores or extreme values."
+   },
+   "paired": {
+    "label": "The same people measured twice (or matched pairs)",
+    "ok": [
+     "ttestPaired"
+    ],
+    "alt": [
+     "wilcoxon"
+    ],
+    "why": "The same people twice means paired scores, so each person is their own control. The paired t-test fits roughly normal differences. Wilcoxon signed-rank is the fallback for skewed differences or ordinal scores."
+   },
+   "three": {
+    "label": "Three or more separate groups",
+    "ok": [
+     "welchAnova",
+     "anova1"
+    ],
+    "alt": [
+     "tukey",
+     "kruskal"
+    ],
+    "why": "Three or more independent groups call for one-way ANOVA. Tukey HSD is not a first test: it comes after a significant ANOVA to show which pairs differ."
+   },
+   "corr": {
+    "label": "How two numeric variables move together",
+    "ok": [
+     "pearson"
+    ],
+    "alt": [
+     "spearman"
+    ],
+    "why": "Two numeric variables and a question about association call for Pearson correlation. Correlation does not show cause."
+   },
+   "pred": {
+    "label": "Predict one numeric variable from another",
+    "ok": [
+     "regression"
+    ],
+    "alt": [
+     "pearson"
+    ],
+    "why": "Prediction of one numeric score from another calls for simple linear regression."
+   },
+   "rel": {
+    "label": "How well the items of a scale hang together (reliability)",
+    "ok": [
+     "alpha"
+    ],
+    "alt": [],
+    "why": "Reliability of a multi-item scale calls for Cronbach's alpha, ideally with McDonald's omega beside it. Report the value with its interval, not against a pass mark."
+   },
+   "gof": {
+    "label": "One categorical variable against expected counts",
+    "ok": [
+     "gof"
+    ],
+    "alt": [],
+    "why": "One categorical variable compared with the counts you expected, equal or set by theory, calls for the chi-square goodness-of-fit test."
+   },
+   "cat": {
+    "label": "Whether two categorical variables are related",
+    "ok": [
+     "chisq"
+    ],
+    "alt": [],
+    "why": "Two categorical variables (counts in categories) call for the chi-square test of independence."
+   }
+  },
+  "STATS_TEST_OPTIONS": {
+   "desc": "Descriptive statistics",
+   "ttest1": "One-sample t-test",
+   "ttestInd": "Independent-samples t-test",
+   "ttestPaired": "Paired-samples t-test",
+   "welchAnova": "One-way ANOVA, Welch (recommended)",
+   "anova1": "One-way ANOVA, classic (equal spreads)",
+   "tukey": "Tukey HSD post-hoc (after ANOVA)",
+   "anova2": "Two-way ANOVA (two grouping variables)",
+   "mregress": "Multiple linear regression",
+   "logistic": "Logistic regression (yes/no outcome)",
+   "moderate": "Moderation (does W change the effect of X on Y?)",
+   "mediate": "Mediation (does M carry the effect of X on Y?)",
+   "rmanova": "Repeated-measures ANOVA (same people, 3+ times)",
+   "friedman": "Friedman test (same people, 3+ times, rank-based)",
+   "mixed": "Mixed ANOVA (groups, each measured 2+ times)",
+   "mannwhitney": "Mann-Whitney U",
+   "wilcoxon": "Wilcoxon signed-rank",
+   "kruskal": "Kruskal-Wallis (3+ groups, with Dunn post-hoc)",
+   "pearson": "Pearson correlation",
+   "spearman": "Spearman correlation (ranks)",
+   "regression": "Simple linear regression",
+   "chisq": "Chi-square test of independence (Fisher's exact for small 2x2 tables)",
+   "gof": "Chi-square goodness-of-fit",
+   "mcnemar": "McNemar test (same people, yes/no, two times)",
+   "cochran": "Cochran's Q (same people, yes/no, 3+ times)",
+   "alpha": "Cronbach's alpha and McDonald's omega"
+  }
+ }
+}

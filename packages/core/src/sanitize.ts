@@ -1,7 +1,14 @@
 import DOMPurify from "isomorphic-dompurify";
 
 const ALLOWED_TAGS = ["p","div","br","b","i","u","s","strong","em","ul","ol","li","h1","h2","h3","h4","h5","h6","blockquote","span","img","table","thead","tbody","tr","td","th","a","sup","sub","hr","pre","code","figure","figcaption","mark"];
-const ALLOWED_ATTR = ["href","src","alt","title","colspan","rowspan","class","data-origin","data-h","style"];
+/**
+ * `data-run` and `data-qcode` are the tool tags' own (Task G4): v1's `<span class="stat-tag" data-run="…">` (insertIntoEditor 4204, the stats
+ * run behind an APA sentence) and `<span class="qual-tag" data-qcode="…">` (qualTagSelection 6254, a passage's code). `data-cap`,
+ * `data-cap-title`, `data-cap-note` and `data-edits` (wave D) are v1's numbered captions (capBlocksHTML 4501, capNoteHTML 4505) and the picture
+ * editor's audit trail (picApplyResult 4574). DOMPurify's default ALLOW_DATA_ATTR already lets any `data-*` through; they are named here so the
+ * list says what a document is meant to keep.
+ */
+const ALLOWED_ATTR = ["href","src","alt","title","colspan","rowspan","class","data-origin","data-h","data-run","data-qcode","data-cap","data-cap-title","data-cap-note","data-edits","style"];
 const ALLOWED_URI = /^(?:https?:|mailto:|data:image\/(?:png|jpe?g|gif|webp);base64,)/i;
 
 export function sanitizeHtml(html: string): string {

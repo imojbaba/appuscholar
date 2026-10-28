@@ -1,0 +1,94 @@
+[
+ {
+  "id": "mcnemar-yes-no",
+  "csv": "before,after\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,no\nyes,no\nyes,no\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,no\nno,no\nno,no\nno,no\nno,no",
+  "test": "mcnemar",
+  "values": {
+   "v1": "before",
+   "v2": "after"
+  },
+  "why": "15 changers: the exact binomial branch; yes is the default positive answer"
+ },
+ {
+  "id": "mcnemar-pos-given",
+  "csv": "before,after\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,no\nyes,no\nyes,no\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,no\nno,no\nno,no\nno,no\nno,no",
+  "test": "mcnemar",
+  "values": {
+   "v1": "before",
+   "v2": "after",
+   "pos": "no"
+  },
+  "why": "pos: no, so a and dd and b and c swap"
+ },
+ {
+  "id": "mcnemar-pos-unknown",
+  "csv": "before,after\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,no\nyes,no\nyes,no\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,no\nno,no\nno,no\nno,no\nno,no",
+  "test": "mcnemar",
+  "values": {
+   "v1": "before",
+   "v2": "after",
+   "pos": "maybe"
+  },
+  "why": "pos names no answer: stkBinData's toast with the curly quotes"
+ },
+ {
+  "id": "mcnemar-no-changers",
+  "csv": "before,after\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nno,no\nno,no\nno,no\nno,no",
+  "test": "mcnemar",
+  "values": {
+   "v1": "before",
+   "v2": "after"
+  },
+  "why": "nobody changed: the toast"
+ },
+ {
+  "id": "mcnemar-nd25",
+  "csv": "before,after\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no",
+  "test": "mcnemar",
+  "values": {
+   "v1": "before",
+   "v2": "after"
+  },
+  "why": "30 changers: the chi-square branch with the continuity correction"
+ },
+ {
+  "id": "mcnemar-three-answers",
+  "csv": "before,after\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nno,maybe\nno,maybe\nno,maybe\nyes,maybe\nyes,maybe",
+  "test": "mcnemar",
+  "values": {
+   "v1": "before",
+   "v2": "after"
+  },
+  "why": "each column has two answers, together three: stkBinData's toast"
+ },
+ {
+  "id": "mcnemar-same-column",
+  "csv": "before,after\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,no\nyes,no\nyes,no\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,no\nno,no\nno,no\nno,no\nno,no",
+  "test": "mcnemar",
+  "values": {
+   "v1": "before",
+   "v2": "before"
+  },
+  "why": "the same column twice: the toast"
+ },
+ {
+  "id": "mcnemar-one-person",
+  "csv": "before,after\nyes,yes\nno,\n,no",
+  "test": "mcnemar",
+  "values": {
+   "v1": "before",
+   "v2": "after"
+  },
+  "why": "one person answered at both times: the n < 2 toast"
+ },
+ {
+  "id": "mcnemar-missing-answer",
+  "csv": "before,after\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,no\nyes,no\nyes,no\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,no\nno,no\nno,no\nno,no\nno,no\nyes,\n,no",
+  "test": "mcnemar",
+  "values": {
+   "v1": "before",
+   "v2": "after"
+  },
+  "why": "two people without an answer at one time: B.skipped adds 2 to the left-out count"
+ }
+]

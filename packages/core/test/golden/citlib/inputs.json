@@ -1,0 +1,80 @@
+{
+ "lib": [
+  { "author": "Smith, John", "year": "2020", "title": "Sleep and memory consolidation", "source": "Journal of Sleep Research", "volume": "29", "issue": "4", "pages": "e13012", "doi": "10.5555/jsr.2020.13012", "url": "", "month": "", "day": "", "accessed": "", "container": "", "editors": "", "number": "", "degree": "", "type": "Journal article", "style": "apa", "lang": "en" },
+  { "author": "Smith, Jane; Lee, Kim", "year": "2020", "title": "Exam stress in first-year students", "source": "Stress and Health", "volume": "36", "issue": "2", "pages": "101-110", "doi": "", "url": "", "month": "", "day": "", "accessed": "", "container": "", "editors": "", "number": "", "degree": "", "type": "Journal article", "style": "apa", "lang": "en" },
+  { "author": "World Health Organization", "year": "2022", "title": "World mental health report", "source": "World Health Organization", "volume": "", "issue": "", "pages": "", "doi": "", "url": "https://www.who.int/publications/world-mental-health-report", "month": "6", "day": "16", "accessed": "2026-10-01", "container": "", "editors": "", "number": "", "degree": "", "type": "Report", "style": "apa", "lang": "en" },
+  { "author": "Rao, Kavita", "year": "", "title": "Attention in large classes", "source": "Teaching Notes", "volume": "4", "issue": "", "pages": "", "doi": "", "url": "", "month": "", "day": "", "accessed": "", "container": "", "editors": "", "number": "", "degree": "", "type": "Journal article", "style": "mla", "lang": "en" },
+  { "author": "", "year": "2019", "title": "Study habits survey", "source": "Student Wellbeing Bulletin", "volume": "", "issue": "", "pages": "", "doi": "", "url": "https://example.org/study-habits", "month": "", "day": "", "accessed": "", "container": "", "editors": "", "number": "", "degree": "", "type": "Website", "style": "apa", "lang": "en" },
+  { "type": "पुस्तक", "author": "Premchand", "year": "1936", "title": "Godaan", "source": "Saraswati Press", "lang": "hi" },
+  { "author": "Lee, Kim", "year": "2018", "title": "Does homework improve learning?", "source": "Educational Research Review", "volume": "24", "issue": "", "pages": "1-14", "doi": "10.5555/err.2018.0001", "url": "", "type": "Journal article", "style": "apa", "lang": "en" },
+  { "author": "Müller, Hans", "year": "2018", "title": "Arbeitsgedächtnis und Lesen", "source": "Zeitschrift für Pädagogische Psychologie", "volume": "32", "issue": "1", "pages": "5-17", "doi": "", "url": "", "type": "Journal article", "style": "apa", "lang": "en" },
+  { "author": "St. Clair, Ann", "year": "2019", "title": "Reading on screens", "source": "Reading Research Quarterly", "volume": "54", "issue": "3", "pages": "301-320", "doi": "", "url": "", "type": "Journal article", "style": "apa", "lang": "en" },
+  { "author": "Bandura, Albert", "year": "1977a", "title": "Social learning theory", "source": "Prentice Hall", "volume": "", "issue": "", "pages": "", "doi": "", "url": "", "type": "Book", "style": "apa", "lang": "en" },
+  { "type": "Book", "author": "Bowlby, John", "year": " 1969 ", "title": "Attachment and loss", "source": "Basic Books" },
+  { "type": "Journal article", "author": ", Anonymous", "year": "2015", "title": "Folk remedies for exam nerves", "source": "Campus Health" },
+  { "author": "Smith, J.", "year": "2020", "title": "  SLEEP and Memory Consolidation ", "source": "Journal of Sleep Research", "volume": "29", "issue": "4", "pages": "", "doi": "", "url": "", "month": "", "day": "", "accessed": "", "container": "", "editors": "", "number": "", "degree": "", "type": "Journal article", "style": "apa", "lang": "en" },
+  { "type": "Journal article", "author": "Muller, Anna", "year": "2007", "title": "Reading fluency in two scripts", "source": "Reading and Writing", "volume": "20", "issue": "1", "pages": "65-94", "doi": "10.5555/rw.2007.0065" }
+ ],
+ "probes": [
+  { "author": "Nobody, Ann", "year": "2021", "title": "An unknown source" },
+  { "author": "Smith, John", "year": "2021", "title": "Sleep and memory consolidation" },
+  { "author": "Smith, Johnny", "year": " 2020", "title": "sleep and memory consolidation  " },
+  {}
+ ],
+ "docs": [
+  { "id": "d1760000000001", "title": "Literature review", "html": "<h2>Sleep and stress</h2><p>Sleep consolidates memory (Smith, 2020). Exam stress rises in the first year (Smith &amp; Lee, 2020), and it lingers (Smith et al., 2020). Smith (2020) found the same in a second sample, and the World Health Organization (2022) agrees (World Health Organization, 2022).</p><p>Homework helps little (Lee, 2018). Muller (2007) compared two scripts; see also (Muller, 2007; Bandura, 1977a).</p><ul><li><p>Premchand (1936) wrote of it.</p></li><li><p>Bowlby (1969) and (Bowlby,&nbsp;1969) on attachment.</p></li></ul>" },
+  { "id": "d1760000100002", "title": "Methods", "html": "<p>Numbered citations: one [1], a list [2,5-7], reversed [300-1], spaced [ 3 ], an en dash [1–3], by reference [2&#8211;4], zero [0], wide [2-200], too wide [1-201], four digits [1000], [1000,3] and [3,1000], a pair [4, 4], letters [3a], nested [[5]].</p>" },
+  { "id": "d1760000200003", "title": "Superscripts", "html": "<p>Plain<sup>3</sup> and<span style=\"vertical-align: super\">4</span>, also<span style=\"vertical-align:super\">5,6</span>; the 20<sup>th</sup> one<sup>1–2</sup>, styled<span style=\"font-size: 10px; vertical-align: super;\">7</span>, subscript<span style=\"vertical-align: sub\">8</span>, upper case<span style=\"VERTICAL-ALIGN: SUPER\">9</span>, coloured<span style=\"color: red\">10</span>, nested<sup>1<sup>2</sup></sup>, a span in a sup<sup><span style=\"vertical-align: super\">11</span></sup>, by reference<span style=\"vertical-align:&#32;super\">12</span>, single quotes<span style='color: blue; vertical-align: super'>13</span>, a capitalised attribute<span STYLE=\"vertical-align: super\">15</span>, a repeated attribute<span style=\"color: red\" style=\"vertical-align: super\">14</span>, a capital tag<SUP>2,4</SUP>, letters<sup>a</sup>, a range<sup>3-5</sup>.</p>" },
+  { "id": "d1760000300004", "title": "", "html": "<div>Mixed: Smith (2020) and [1] in one place, a superscript<sup>[3]</sup> in brackets, Lee (2018)<sup>14</sup>, and Muller (2007)<sup>14</sup>.</div><p><br></p><p>The end [14].</p>" },
+  { "id": "d1760000400005", "title": "Notes", "html": "<p>Plain notes with no sources at all: a year, 2020, and a name, Smith, far apart from each other in this sentence, which runs on.</p>" },
+  { "id": "d1760000500006", "title": "Boundaries", "html": "<p>GoldSmith (2020) is not a citation of Smith; Smithson (2020) is not either; Müllerová (2018) is not Müller; but (Müller, 2018) is, and Müller&nbsp;(2018) too; St. Clair (2019) counts; StX Clair (2019) does not.</p><p>A long gap: Smith and a great many other colleagues of hers, 2020; a short gap: Smith and colleagues, 2020; a cut: Smith; 2020; a letter: Smith (2020a); five digits: Smith (20201); and (Rao, n.d.), (Author, 2019) and (Anonymous, 2015).</p>" }
+ ],
+ "nums": [ "3", "2,5-7,9-9", "5–7", " 2 , 4 - 6 , 9 ", "7-3", "300-1", "2-200", "1-201", "0,007,1000,1000-1001,999-1001,0005-7", "3a,b,,4", "1-3-5,2—4", "" ],
+ "imports": [
+  { "id": "v1-export", "export": [
+   { "author": "Smith, John", "year": "2020", "title": "Sleep and memory consolidation", "source": "Journal of Sleep Research", "volume": "29", "issue": "4", "pages": "e13012", "doi": "10.5555/jsr.2020.13012", "url": "", "month": "", "day": "", "accessed": "", "container": "", "editors": "", "number": "", "degree": "", "type": "Journal article", "style": "apa", "lang": "en" },
+   { "author": "Lee, Kim", "year": "2019", "title": "Does homework improve learning?", "source": "Review of Educational Research", "volume": "25", "issue": "", "pages": "", "doi": "", "url": "", "month": "", "day": "", "accessed": "", "container": "", "editors": "", "number": "", "degree": "", "type": "Journal article", "style": "apa", "lang": "en" },
+   { "author": "Iyer, Karthik; Joshi, Meera", "year": "2023", "title": "Measuring attention with mobile games", "source": "Cognitive Science Society", "volume": "", "issue": "", "pages": "1201-1207", "doi": "", "url": "", "month": "7", "day": "", "accessed": "", "container": "Proceedings of the 45th Annual Conference of the Cognitive Science Society", "editors": "", "number": "", "degree": "", "type": "Conference paper", "style": "apa", "lang": "en" },
+   { "author": "Banerjee, R.K.", "year": "2018", "title": "Attention in the digital classroom", "source": "Sage", "volume": "", "issue": "", "pages": "112-130", "doi": "", "url": "", "month": "", "day": "", "accessed": "", "container": "Handbook of classroom attention", "editors": "Mehta, S.; Rao, V.", "number": "", "degree": "", "type": "Book chapter", "style": "mla", "lang": "en" },
+   { "author": "Mishra, Anjali", "year": "2018", "title": "Reading habits of rural adolescents", "source": "Banaras Hindu University", "volume": "", "issue": "", "pages": "", "doi": "", "url": "", "month": "", "day": "", "accessed": "", "container": "", "editors": "", "number": "", "degree": "Doctoral dissertation", "type": "Thesis", "style": "chicago", "lang": "hi" }
+  ] },
+  { "id": "two-thousand-and-one", "generate": { "head": [ { "author": "Smith, John", "title": "Sleep and memory consolidation" } ], "count": 2001, "entry": { "author": "Generated, A. {i}", "year": "2001", "title": "Generated source {i}" } } },
+  { "id": "object-root", "json": { "library": [ { "author": "Iyer, Karthik", "title": "Measuring attention with mobile games" } ] } },
+  { "id": "missing-title", "json": [
+   { "author": "Lee, Kim", "year": "2019" },
+   { "author": "Lee, Kim", "title": "" },
+   { "author": "Lee, Kim", "title": null },
+   { "author": "Lee, Kim", "title": 0 },
+   { "author": "Lee, Kim", "title": false },
+   { "author": "Okafor, Chinedu", "year": "2022", "title": "Music and mood regulation among students", "source": "Ashoka University", "type": "Thesis" }
+  ] },
+  { "id": "normalise", "json": [
+   { "author": "Kumar, Sunil", "year": 2019, "title": "Teaching statistics in Hindi-medium colleges", "source": "Indian Psychological Association", "volume": 12, "issue": 3, "pages": 45 },
+   { "author": "Verma, Kavita", "year": 0, "title": "Language and identity in North India", "type": "", "style": "", "lang": "" },
+   { "author": "Das, Amit", "year": "2024", "title": "Attention restoration in green campuses", "source": "Journal of Environmental Psychology", "month": "6", "day": "1", "accessed": "2026-01-01", "container": "Green campuses", "editors": "Rao, V.", "number": "7", "degree": "PhD", "note": "not a field", "type": "Book", "style": "mla", "lang": "hi" },
+   { "author": 42, "title": 7 },
+   { "author": "42", "title": "7" },
+   { "author": "Null, Fields", "title": "Every field null", "year": null, "source": null, "volume": null, "issue": null, "pages": null, "doi": null, "url": null, "type": null, "style": null, "lang": null },
+   { "author": "Bool, True", "title": true, "year": true, "doi": false },
+   { "author": [ "Array, A.", "Second, B." ], "title": { "a": 1 } }
+  ] },
+  { "id": "skip-rules", "json": [
+   null,
+   0,
+   "a string",
+   [],
+   {},
+   true,
+   { "author": "", "title": "An empty author" },
+   { "title": "No author at all" },
+   { "author": "Twice, Ann", "title": "The same source twice" },
+   { "author": "Twice, Ann", "title": "The same source twice" },
+   { "author": "Smith, John", "title": "sleep and memory consolidation" },
+   { "author": "Smith, John ", "title": "Sleep and memory consolidation" },
+   { "author": "Smith, John", "title": "Sleep and memory consolidation " },
+   { "author": "Smith, John", "title": "Sleep and memory consolidation" },
+   { "author": "Smith, Jane; Lee, Kim", "year": "1999", "title": "Exam stress in first-year students" }
+  ] },
+  { "id": "not-json", "text": "author,title\nIyer K.,Measuring attention\n" }
+ ]
+}

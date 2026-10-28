@@ -1,0 +1,83 @@
+[
+ {
+  "id": "desc-demo-score",
+  "csv": "score\n52\n48\n55\n51\n49\n53\n50\n47\n54\n52\n51\n49",
+  "test": "desc",
+  "values": {
+   "dv": "score"
+  },
+  "why": "the ttest1 demo of TG_DEMO under desc"
+ },
+ {
+  "id": "desc-one-value",
+  "csv": "score\n5",
+  "test": "desc",
+  "values": {
+   "dv": "score"
+  },
+  "why": "one value: the toast"
+ },
+ {
+  "id": "desc-text-in-numeric",
+  "csv": "score\n52\n48\n10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\n55\n51\n-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999\n49",
+  "test": "desc",
+  "values": {
+   "dv": "score"
+  },
+  "why": "A text cell makes its column categorical (F17), so v1's form never offers it as a numeric field; the only entries statsColVals drops from a numeric column are digit strings that match the numeric pattern and overflow parseFloat to Infinity, as these two do (a 401-digit 1 and a 400-digit negative). desc has no assumption pass, so the note says 2."
+ },
+ {
+  "id": "desc-hindi-column-name",
+  "csv": "परीक्षा अंक\n62\n71\n58\n80\n66",
+  "test": "desc",
+  "values": {
+   "dv": "परीक्षा अंक"
+  },
+  "why": "a Devanagari column name in the sentence"
+ },
+ {
+  "id": "desc-column-named-undefined",
+  "csv": "undefined\n3\n4\n5\n6",
+  "test": "desc",
+  "values": {
+   "dv": "undefined"
+  },
+  "why": "F22: the word undefined in the sentence trips the safety net"
+ },
+ {
+  "id": "desc-negative-decimals",
+  "csv": "change\n-1.25\n0.5\n-3.75\n2.0\n-0.125\n1.5",
+  "test": "desc",
+  "values": {
+   "dv": "change"
+  },
+  "why": "negative and decimal values, an even count (median of two)"
+ },
+ {
+  "id": "desc-second-column",
+  "csv": "id,grp,time\n1,a,12.5\n2,b,9\n3,a,10.25\n4,b,14",
+  "test": "desc",
+  "values": {
+   "dv": "time"
+  },
+  "why": "the field resolves to the third column (index 2), not the default"
+ },
+ {
+  "id": "desc-empty-cells",
+  "csv": "score,grp\n4,a\n,b\n7,a\n,b\n9,b",
+  "test": "desc",
+  "values": {
+   "dv": "score"
+  },
+  "why": "empty cells are dropped before parsing and are not counted as left out"
+ },
+ {
+  "id": "desc-one-left-out",
+  "csv": "score\n12\n15\n10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\n11\n14",
+  "test": "desc",
+  "values": {
+   "dv": "score"
+  },
+  "why": "exactly one entry dropped (a 401-digit number that parseFloat overflows to Infinity): the singular note, 1 entry that is not a number was left out"
+ }
+]

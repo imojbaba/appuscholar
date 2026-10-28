@@ -1,0 +1,14 @@
+{
+ "blocks": [
+  { "id": "parenthetical", "html": "<p>Sleep consolidates memory (Smith, 2020). Exam stress rises (Smith &amp; Lee, 2020), and homework helps little (Lee, 2018).</p>", "at": 0 },
+  { "id": "narrative-marks", "html": "<p>As <b>Müller</b> (2018) and St. Clair (2019) argued, and <i>Bowlby</i> (1969) agreed; Muller (2007) did not.</p>", "at": 0 },
+  { "id": "heading", "html": "<h2>Premchand (1936)</h2><p>Body text.</p>", "at": 0 },
+  { "id": "none", "html": "<p>No sources here: a year, 2020, and a name, Smith, far apart from each other in this sentence.</p>", "at": 0 },
+  { "id": "other-block", "html": "<p>The first block cites (Muller, 2007).</p><p>The second does not.</p>", "at": 1 },
+  { "id": "list-item", "html": "<ul><li><p>Premchand (1936) in a list, then (Bandura, 1977).</p></li></ul>", "at": 0 },
+  { "id": "boundaries", "html": "<p>GoldSmith (2020) is not Smith; (Rao, n.d.) and (Anonymous, 2015); Smith (2020a) is.</p>", "at": 0 }
+ ],
+ "rangeWidth": 3,
+ "rangeStep": 5,
+ "libLens": [0, 1, 2, 3, 4, 5, 13, 14, 15, 199, 200, 1000]
+}

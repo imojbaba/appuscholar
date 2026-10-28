@@ -1,0 +1,240 @@
+{
+ "engine": "doctext",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "chromium": "156.0.8078.4",
+ "playwright": "1.64.0",
+ "css": {
+  "normal": "default UA",
+  "preWrap": "white-space:pre-wrap"
+ },
+ "cases": [
+  {
+   "id": "two-paragraphs",
+   "normal": "First.\n\nSecond.",
+   "preWrap": "First.\n\nSecond."
+  },
+  {
+   "id": "headings",
+   "normal": "Title\n\nBody\n\nMethod\n\nText\n\nSub\n\nMore",
+   "preWrap": "Title\n\nBody\n\nMethod\n\nText\n\nSub\n\nMore"
+  },
+  {
+   "id": "empty-paragraphs",
+   "normal": "a\n\nb",
+   "preWrap": "a\n\nb"
+  },
+  {
+   "id": "trailing-br",
+   "normal": "line\n\n\nnext",
+   "preWrap": "line\n\n\nnext"
+  },
+  {
+   "id": "hard-breaks",
+   "normal": "one\ntwo\n\nthree",
+   "preWrap": "one\ntwo\n\nthree"
+  },
+  {
+   "id": "list-tiptap",
+   "normal": "alpha\n\nbeta\n\none\n\ntwo",
+   "preWrap": "alpha\n\nbeta\n\none\n\ntwo"
+  },
+  {
+   "id": "list-v1",
+   "normal": "alpha\nbeta",
+   "preWrap": "alpha\nbeta"
+  },
+  {
+   "id": "nested-list",
+   "normal": "outer\n\ninner\n\nlast",
+   "preWrap": "outer\n\ninner\n\nlast"
+  },
+  {
+   "id": "blockquote-code",
+   "normal": "quoted\n\nx = 1\ny = 2\n\nafter",
+   "preWrap": "quoted\n\nx = 1\ny = 2\n\nafter"
+  },
+  {
+   "id": "inline-marks",
+   "normal": "a b c d e f g H2O x2 link",
+   "preWrap": "a b c d e f g H2O x2 link"
+  },
+  {
+   "id": "ai-ins-span",
+   "normal": "mine theirs\nmore tail",
+   "preWrap": "mine theirs\nmore tail"
+  },
+  {
+   "id": "styled-span",
+   "normal": "a1 b red",
+   "preWrap": "a1 b red"
+  },
+  {
+   "id": "table",
+   "normal": "H1\n\n\t\n\nH2\n\n\n\n\nc1\n\n\t\n\nc2\n\nafter",
+   "preWrap": "H1\n\n\t\n\nH2\n\n\n\n\nc1\n\n\t\n\nc2\n\nafter"
+  },
+  {
+   "id": "table-in-li",
+   "normal": "item\n\nc",
+   "preWrap": "item\n\nc"
+  },
+  {
+   "id": "image-in-p",
+   "normal": "before  after",
+   "preWrap": "before  after"
+  },
+  {
+   "id": "hr-and-pagebreak",
+   "normal": "a\n\nb\n\nc",
+   "preWrap": "a\n\nb\n\nc"
+  },
+  {
+   "id": "nbsp-citation",
+   "normal": "Sleep loss predicted delay (Smith, 2020) and (Rao et al., 2019).",
+   "preWrap": "Sleep loss predicted delay (Smith, 2020) and (Rao et al., 2019)."
+  },
+  {
+   "id": "double-spaces",
+   "normal": "two spaces and three",
+   "preWrap": "two  spaces   and three"
+  },
+  {
+   "id": "leading-trailing-space",
+   "normal": "lead\n\ntrail",
+   "preWrap": " lead\n\ntrail "
+  },
+  {
+   "id": "refs-english",
+   "normal": "Body (Smith, 2020).\n\nReferences\n\nSmith, J. (2020). Title. Journal, 1(2), 3-4.",
+   "preWrap": "Body (Smith, 2020).\n\nReferences\n\nSmith, J. (2020). Title. Journal, 1(2), 3-4."
+  },
+  {
+   "id": "refs-hindi-heading",
+   "normal": "अध्ययन (Sharma, 2021) ने दिखाया।\n\nसंदर्भ सूची\n\nSharma, R. (2021). शोध-प्रबंध. University of Delhi.",
+   "preWrap": "अध्ययन (Sharma, 2021) ने दिखाया।\n\nसंदर्भ सूची\n\nSharma, R. (2021). शोध-प्रबंध. University of Delhi."
+  },
+  {
+   "id": "refs-last-heading-wins",
+   "normal": "References are listed below.\n\nReferences\n\nA, B. (2001). X.\n\nBibliography\n\nC, D. (2002). Y.",
+   "preWrap": "References are listed below.\n\nReferences\n\nA, B. (2001). X.\n\nBibliography\n\nC, D. (2002). Y."
+  },
+  {
+   "id": "v1-divs",
+   "normal": "line one\nline two\n\n\n\nline four",
+   "preWrap": "line one\nline two\n\n\n\nline four"
+  },
+  {
+   "id": "v1-plain-br",
+   "normal": "line one\nline two\nline three",
+   "preWrap": "line one\nline two\nline three"
+  },
+  {
+   "id": "v1-font-span",
+   "normal": "big plain",
+   "preWrap": "big plain"
+  },
+  {
+   "id": "align-and-highlight",
+   "normal": "centred\n\nhi",
+   "preWrap": "centred\n\nhi"
+  },
+  {
+   "id": "devanagari-body",
+   "normal": "यह एक वाक्य है।\n\nदूसरा वाक्य, with English.",
+   "preWrap": "यह एक वाक्य है।\n\nदूसरा वाक्य, with English."
+  },
+  {
+   "id": "empty",
+   "normal": "",
+   "preWrap": ""
+  },
+  {
+   "id": "text-only",
+   "normal": "plain text with no tags",
+   "preWrap": "plain text with no tags"
+  },
+  {
+   "id": "entities",
+   "normal": "a & b < c > d \"e\" 'f'",
+   "preWrap": "a & b < c > d \"e\" 'f'"
+  },
+  {
+   "id": "sup-and-super-span",
+   "normal": "Smith3 and Lee4.",
+   "preWrap": "Smith3 and Lee4."
+  },
+  {
+   "id": "numbered-citations",
+   "normal": "Sleep matters [1] and [2,5-7].",
+   "preWrap": "Sleep matters [1] and [2,5-7]."
+  },
+  {
+   "id": "stat-split-across-paragraphs",
+   "normal": "t(58) = 2.36, p\n\n= .022",
+   "preWrap": "t(58) = 2.36, p\n\n= .022"
+  },
+  {
+   "id": "pre-wrap-newlines-in-text",
+   "normal": "line one line two",
+   "preWrap": "line one\nline two"
+  },
+  {
+   "id": "hindi-mixed-marks",
+   "normal": "परिणाम: t(21) = 2.15, p = .043।",
+   "preWrap": "परिणाम: t(21) = 2.15, p = .043।"
+  },
+  {
+   "id": "numeric-entities",
+   "normal": "em—dash en–dash En–dash nbsp dec hex 'q'",
+   "preWrap": "em—dash en–dash En–dash nbsp dec hex 'q'"
+  },
+  {
+   "id": "attr-gt",
+   "normal": "a  d",
+   "preWrap": "a  d"
+  },
+  {
+   "id": "attr-gt-title",
+   "normal": "link tail",
+   "preWrap": "link tail"
+  },
+  {
+   "id": "table-pretty-printed",
+   "normal": "a\tb",
+   "preWrap": "a\tb"
+  },
+  {
+   "id": "table-v1-cells",
+   "normal": "a\tb\nc\td",
+   "preWrap": "a\tb\nc\td"
+  },
+  {
+   "id": "pre-between-headings",
+   "normal": "x\ny\nz\nw",
+   "preWrap": "x\ny\nz\nw"
+  },
+  {
+   "id": "hr-between-divs",
+   "normal": "a\nb",
+   "preWrap": "a\nb"
+  },
+  {
+   "id": "pagebreak-between-headings",
+   "normal": "a\nb",
+   "preWrap": "a\nb"
+  },
+  {
+   "id": "table-nested",
+   "normal": "x\t\ni1\ti2\n\ny\tz",
+   "preWrap": "x\t\ni1\ti2\n\ny\tz"
+  },
+  {
+   "id": "table-tiptap",
+   "normal": "Group\n\n\t\n\n\n\n\nControl\n\n\t\n\n12",
+   "preWrap": "Group\n\n\t\n\n\n\n\nControl\n\n\t\n\n12"
+  }
+ ]
+}

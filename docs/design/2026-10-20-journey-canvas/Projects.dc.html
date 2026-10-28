@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Your projects</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&amp;family=Source+Serif+4:opsz,wght@8..60,600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#4c1d95}a:hover{color:#3b0764}
+</style>
+</helmet>
+<div style="min-height: 860px; background: #fbfaf9; color: #2a2438; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.5">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 14px 32px; background: #ffffff; border-bottom: 1px solid #ece8f2">
+<div style="font-family: 'Source Serif 4', serif; font-size: 22px; font-weight: 600; color: #4c1d95">Appuscholar</div>
+<div style="flex: 1 1 0"></div>
+<div style="display: flex; align-items: center; height: 32px; padding: 0 12px; border-radius: 999px; background: #ecfdf3; color: #166534; font-size: 13px; font-weight: 600">Unlocked. Titles are locked to you.</div>
+<button aria-label="Account" style="width: 40px; height: 40px; border-radius: 999px; border: 1px solid #ddd9e4; background: #ede9fe; color: #4c1d95; font: inherit; font-weight: 700">PS</button>
+</header>
+
+<div style="max-width: 1240px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between">
+<h1 style="margin: 0; font-size: 26px">Your projects</h1>
+<a href="Start.dc.html" style="display: inline-flex; align-items: center; height: 44px; padding: 0 18px; border-radius: 8px; background: #4c1d95; color: #ffffff; font-weight: 700; text-decoration: none">New project</a>
+</div>
+
+<div role="list" style="display: flex; flex-direction: column; gap: 12px">
+<sc-for list="{{projects}}" as="p" hint-placeholder-count="3">
+<a role="listitem" href="Main.dc.html" style="display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: center; padding: 18px 22px; background: #ffffff; border: 1px solid #ece8f2; border-radius: 12px; color: #2a2438; text-decoration: none">
+<div style="flex: 1 1 320px; min-width: 0">
+<div style="font-weight: 700; font-size: 17px">{{p.title}}</div>
+<div style="font-size: 13px; color: #6b6579">{{p.meta}}</div>
+</div>
+<div aria-label="{{p.summary}}" style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; flex: 1 1 520px">
+<sc-for list="{{p.stages}}" as="s" hint-placeholder-count="6">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="{{s.bar}}"></div>
+<div style="font-size: 12px; color: #6b6579">{{s.label}}</div>
+</div>
+</sc-for>
+</div>
+</a>
+</sc-for>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: #6b6579">
+<span><span style="display: inline-block; width: 22px; height: 6px; border-radius: 3px; background: #166534; vertical-align: middle"></span> Ready</span>
+<span><span style="display: inline-block; width: 22px; height: 6px; border-radius: 3px; background: #4c1d95; vertical-align: middle"></span> In progress</span>
+<span><span style="display: inline-block; width: 22px; height: 6px; border-radius: 3px; background: #d97706; vertical-align: middle"></span> Started early or reopened</span>
+<span><span style="display: inline-block; width: 22px; height: 6px; border-radius: 3px; background: #e5e1ec; vertical-align: middle"></span> Not started</span>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":860}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const bar = (c) => 'height:8px;border-radius:4px;background:' + c;
+    const R = '#166534', P = '#4c1d95', E = '#d97706', N = '#e5e1ec';
+    const names = ['Idea', 'Literature', 'Design', 'Analysis', 'Writing', 'Review'];
+    const mk = (cols) => cols.map((c, i) => ({ bar: bar(c), label: names[i] }));
+    return {
+      projects: [
+        { title: 'Sleep and exam anxiety', meta: 'Psychology. Edited today.', summary: 'Idea ready; literature and writing in progress; design started early', stages: mk([R, P, E, N, P, N]) },
+        { title: '[Second project title]', meta: 'Psychology. Edited [date].', summary: 'Example of a project further along', stages: mk([R, R, R, P, P, N]) },
+        { title: '[Third project title]', meta: 'Psychology. Edited [date].', summary: 'Example of a reopened stage', stages: mk([R, E, N, N, N, N]) }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

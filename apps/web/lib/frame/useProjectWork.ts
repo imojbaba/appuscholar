@@ -1,0 +1,36 @@
+"use client";
+import { useCallback, useEffect, useState } from "react";
+import { apiFetch } from "@/lib/api";
+import { heldBlobs } from "@/lib/blobs/held";
+import type { WrappedDek } from "@/lib/vault/useVault";
+import type { StageKey } from "@/lib/tools";
+import type { StudyType } from "./studyTypes";
+
+/** One project of `GET /projects?include=work` (apps/api store's ProjectWork) as the web receives it: times are ISO strings. */
+export type ProjectWork = {
+  id: string; userId: string; title: string; titleKeyVersion: number; deks: WrappedDek[]; field: string | null; type: StudyType | null; stage: string; status: string; contentLang: string; kind: string;
+  createdAt: string; stageMarks: Partial<Record<StageKey, { readyAt: string }>>; documentCount: number; lastEditedAt: string | null;
+  blobs: Array<{ kind: string; updatedAt: string; version: number }>; draftWords: number; draftEditedAt: string | null;
+};
+
+/** The list, once the saves still running have settled: a panel just left sends its last edit as it goes, and a list read meanwhile would miss it. */
+async function readWork(): Promise<ProjectWork[]> {
+  await heldBlobs.settled();
+  return apiFetch<ProjectWork[]>("/projects?include=work");
+}
+
+/**
+ * Every project with its work, from one request (the home and the list read their stage states from it; no blob is read). Null until it answers;
+ * `error` once it failed (signed out or the API down), until reload() answers.
+ */
+export function useProjectWork(): { work: ProjectWork[] | null; error: boolean; reload(): Promise<void> } {
+  const [work, setWork] = useState<ProjectWork[] | null>(null);
+  const [error, setError] = useState(false);
+  const reload = useCallback(async () => { setWork(await readWork()); setError(false); }, []);
+  useEffect(() => {
+    let live = true;
+    readWork().then((w) => { if (live) setWork(w); }, () => { if (live) setError(true); });
+    return () => { live = false; };
+  }, []);
+  return { work, error, reload };
+}

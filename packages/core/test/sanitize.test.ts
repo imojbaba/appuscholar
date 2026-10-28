@@ -33,9 +33,28 @@ describe("sanitizeHtml provenance mark", () => {
   });
 });
 
+describe("sanitizeHtml tool tags", () => {
+  it("sanitizer keeps data-run and data-qcode and still strips onclick", () => {
+    // v1's stat-tag (insertIntoEditor 4204) and qual-tag (qualTagSelection 6254), the tags the statistics and coding tools write into a document.
+    const html = '<p><span class="stat-tag" data-run="rk2x9" onclick="steal()">t(28) = 2.10</span> <span class="qual-tag" data-qcode="c1" title="Coping" onmouseover="x()">kept going</span></p>';
+    expect(sanitizeHtml(html)).toBe('<p><span class="stat-tag" data-run="rk2x9">t(28) = 2.10</span> <span class="qual-tag" data-qcode="c1" title="Coping">kept going</span></p>');
+  });
+});
+
 describe("wordCount", () => {
   it("counts words of text content only", () => {
     expect(wordCount("<p>one two</p><p>three</p>")).toBe(3);
     expect(wordCount("")).toBe(0);
+  });
+});
+
+describe("sanitizeHtml captions and picture edits", () => {
+  // v1's caption blocks (capBlocksHTML 4501, capNoteHTML 4505) and the picture editor's audit trail (ieApply 4517-4537).
+  const HTML = '<p data-cap="figure"><strong>Figure 1</strong></p><p data-cap-title="1"><em>T</em></p><p><img src="data:image/png;base64,AAAA" data-edits="cropped, bar"></p><p data-cap-note="1"><em>Note.</em> n</p>';
+  it("keeps data-cap, data-cap-title, data-cap-note and data-edits", () => {
+    expect(sanitizeHtml(HTML)).toBe(HTML);
+  });
+  it("still strips what is not allowed beside them", () => {
+    expect(sanitizeHtml('<p data-cap="figure" onclick="x()">a</p>')).toBe('<p data-cap="figure">a</p>');
   });
 });

@@ -1,0 +1,100 @@
+[
+ {
+  "id": "cochran-four-conditions",
+  "csv": "t1,t2,t3,t4\n0,0,1,1\n0,0,0,1\n0,0,1,1\n0,0,0,1\n0,0,1,1\n0,0,0,1\n0,0,1,1\n0,0,1,1\n1,1,1,1\n0,1,0,1\n1,0,1,1\n0,0,0,0\n0,0,1,1\n0,1,1,1\n0,0,1,1\n0,0,1,1\n1,1,0,1\n0,0,1,1\n0,0,1,1\n1,1,1,1",
+  "test": "cochran",
+  "ticked": {
+   "items": [
+    "t1",
+    "t2",
+    "t3",
+    "t4"
+   ]
+  },
+  "why": "four 0/1 columns, 20 people, significant: the pairwise exact McNemar table with the Bonferroni factor 6"
+ },
+ {
+  "id": "cochran-non-significant",
+  "csv": "a,b,c\n0,0,0\n0,0,0\n1,1,0\n0,0,1\n1,1,0\n0,1,1\n1,0,0\n1,0,1\n0,1,1\n0,1,1\n0,0,1\n0,1,0",
+  "test": "cochran",
+  "ticked": {
+   "items": [
+    "a",
+    "b",
+    "c"
+   ]
+  },
+  "why": "three similar columns, 12 people: not significant, and the fewer-than-20 note"
+ },
+ {
+  "id": "cochran-two-columns",
+  "csv": "t1,t2,t3,t4\n0,0,1,1\n0,0,0,1\n0,0,1,1\n0,0,0,1\n0,0,1,1\n0,0,0,1\n0,0,1,1\n0,0,1,1\n1,1,1,1\n0,1,0,1\n1,0,1,1\n0,0,0,0\n0,0,1,1\n0,1,1,1\n0,0,1,1\n0,0,1,1\n1,1,0,1\n0,0,1,1\n0,0,1,1\n1,1,1,1",
+  "test": "cochran",
+  "ticked": {
+   "items": [
+    "t1",
+    "t2"
+   ]
+  },
+  "why": "two ticked: the toast"
+ },
+ {
+  "id": "cochran-all-same",
+  "csv": "a,b,c\nyes,yes,yes\nyes,yes,yes\nyes,yes,yes\nyes,yes,yes\nno,no,no\nno,no,no\nno,no,no",
+  "test": "cochran",
+  "ticked": {
+   "items": [
+    "a",
+    "b",
+    "c"
+   ]
+  },
+  "why": "each person the same answer in every column: den = 0, the toast"
+ },
+ {
+  "id": "cochran-nine-columns",
+  "csv": "c1,c2,c3,c4,c5,c6,c7,c8,c9\n1,0,1,0,0,1,1,0,1\n1,0,1,0,1,0,1,0,0\n0,0,0,1,0,0,1,1,0\n1,0,0,0,0,1,0,1,0\n0,1,1,1,0,1,0,1,0\n1,1,0,0,0,0,0,0,0\n0,1,0,0,0,0,0,1,0\n0,1,1,0,0,1,0,1,1\n1,0,0,1,0,1,0,1,0\n0,0,0,1,1,0,1,1,1",
+  "test": "cochran",
+  "ticked": {
+   "items": [
+    "c1",
+    "c2",
+    "c3",
+    "c4",
+    "c5",
+    "c6",
+    "c7",
+    "c8",
+    "c9"
+   ]
+  },
+  "why": "nine ticked: the up-to-8 toast"
+ },
+ {
+  "id": "cochran-n2",
+  "csv": "a,b,c\n1,0,1\n0,1,0",
+  "test": "cochran",
+  "ticked": {
+   "items": [
+    "a",
+    "b",
+    "c"
+   ]
+  },
+  "why": "two people: the n < 3 toast"
+ },
+ {
+  "id": "cochran-missing-answer",
+  "csv": "t1,t2,t3,t4\n0,0,1,1\n0,0,0,1\n0,0,1,1\n0,0,0,1\n0,0,1,1\n0,0,0,1\n0,0,1,1\n0,0,1,1\n1,1,1,1\n0,1,0,1\n1,0,1,1\n0,0,0,0\n0,0,1,1\n0,1,1,1\n0,0,1,1\n0,0,1,1\n1,1,0,1\n0,0,1,1\n0,0,1,1\n1,1,1,1\n1,,0,1",
+  "test": "cochran",
+  "ticked": {
+   "items": [
+    "t1",
+    "t2",
+    "t3",
+    "t4"
+   ]
+  },
+  "why": "one person with an empty answer: B.skipped adds 1 to the left-out count"
+ }
+]

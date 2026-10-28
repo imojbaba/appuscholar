@@ -6,12 +6,22 @@
  *   pnpm --filter @appuscholar/web exec playwright test e2e/phase2-walkthrough.spec.ts
  *
  * /ai/test and /ai/complete are answered in the browser (page.route), so no provider is called and no key leaves the page.
+ * Wave B1: a new account starts at first run; the project is saved from it (no check needed) and opens on its home, and the writing steps run
+ * in the Writing place, which the home's row opens. The Pop out button gave way to "Open in a new window" on any place but Writing.
  */
 import path from "node:path";
+import { readFileSync } from "node:fs";
 import { test, expect, type Page, type Route } from "@playwright/test";
+import { e2eEmail, signIn } from "./support/signin";
+import { recordToasts } from "./support/toasts";
+import { connectAI } from "./support/connect";
+import { makeStudy } from "./support/study";
+import { WEB_ORIGIN } from "./support/origins";
+import * as editorAt from "./support/editor";
 
-const API_ORIGIN = "http://localhost:8788";
-const PASS = "secret1";
+/** The vault passphrase (at least 10 characters). Since Phase 3A "Protect with a passphrase" locks the key under the vault, so this one passphrase opens both. */
+const PASS = "secret passphrase 1";
+const RECOVERY_CODE = /^[A-HJ-NP-Z2-9]{5}(-[A-HJ-NP-Z2-9]{5}){3}$/;
 const SENTENCE_1 = "Procrastination delays important work.";
 const SENTENCE_2 = "Students often start essays late.";
 /** One number the student's sentence does not have, so the accuracy note is amber. */
@@ -19,17 +29,13 @@ const IMPROVED = "Procrastination delays important work, and a delay of 3 weeks 
 const CONTINUATION = "Deadlines that feel far away are the easiest to postpone.";
 const CHAT_REPLY = "Name the habit you study, then say who it affects and why that matters.";
 const EMAIL_LINE = "Write to asha@uni.ac.in about the survey.";
+const PROJECT = "Thesis on academic procrastination";
+const TOPIC = "Does a weekly planning session reduce essay procrastination in second-year students?";
 const fixture = (name: string) => path.join(__dirname, "fixtures", name);
+const HI = JSON.parse(readFileSync(path.join(__dirname, "../messages/hi.json"), "utf8")) as Record<string, string>;
 
-const CORS = { "access-control-allow-origin": "http://localhost:3000", "access-control-allow-headers": "authorization, content-type", "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS" };
+const CORS = { "access-control-allow-origin": WEB_ORIGIN, "access-control-allow-headers": "authorization, content-type", "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS" };
 const json = (route: Route, body: unknown) => route.fulfill({ status: 200, contentType: "application/json", headers: CORS, body: JSON.stringify(body) });
-
-async function signIn(page: Page) {
-  await page.goto("/signin");
-  await page.getByTestId("e2e-email").fill(`w${Date.now()}${Math.random().toString(36).slice(2, 7)}@e2e.local`);
-  await page.getByTestId("e2e-submit").click();
-  await expect(page).toHaveURL(/localhost:3000\/$/);
-}
 
 /** Selects `text` inside the editor the way a drag would (the browser selection, which ProseMirror then adopts). */
 async function selectInEditor(page: Page, text: string) {
@@ -50,35 +56,11 @@ async function selectInEditor(page: Page, text: string) {
   }, text);
 }
 
-/** Puts the cursor at the very end of the document (the same on every platform, unlike an End key chord). */
-async function cursorToEnd(page: Page) {
-  await page.locator(".ProseMirror").focus();
-  await page.evaluate(() => {
-    const last = document.querySelector(".ProseMirror")!.lastElementChild!;
-    last.scrollIntoView({ block: "center" });
-    const range = document.createRange();
-    range.selectNodeContents(last);
-    range.collapse(false);
-    const sel = window.getSelection()!;
-    sel.removeAllRanges();
-    sel.addRange(range);
-  });
-}
-
-/** Selects the whole block of the editor that contains `text`. */
-async function selectBlockWith(page: Page, text: string) {
-  await page.locator(".ProseMirror").focus();
-  await page.evaluate((needle) => {
-    const block = [...document.querySelectorAll(".ProseMirror p")].find((p) => p.textContent?.includes(needle));
-    if (!block) throw new Error("block not found in the editor: " + needle);
-    block.scrollIntoView({ block: "center" });
-    const range = document.createRange();
-    range.selectNodeContents(block);
-    const sel = window.getSelection()!;
-    sel.removeAllRanges();
-    sel.addRange(range);
-  }, text);
-}
+// Set in the editor's own state (support/editor.ts says why a DOM range placed after focus can be lost).
+/** Puts the cursor at the very end of the document. */
+const cursorToEnd = (page: Page) => editorAt.cursorToEnd(page.locator(".ProseMirror"));
+/** Selects the whole block of the editor that contains `text`, and waits for the selection bubble (again after a Cancel: R45). */
+const selectBlockWith = (page: Page, text: string) => editorAt.selectBlockForBubble(page.locator(".ProseMirror"), text);
 
 // A stuck step fails in seconds with its own message instead of eating the whole test timeout.
 test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
@@ -100,7 +82,7 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
   });
 
   await test.step("1. sign in: the terms block the workspace; Escape asks for both ticks", async () => {
-    await signIn(page);
+    await signIn(page, { prefix: "w" });
     await expect(page.getByTestId("terms-dialog")).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page.getByTestId("terms-dialog")).toBeVisible();
@@ -109,58 +91,78 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     await page.getByTestId("terms-agree").check();
     await page.getByTestId("terms-continue").click();
     await expect(page.getByTestId("terms-dialog")).toBeHidden();
+    // After the terms the dashboard (start-a-study spec, OJ 2026-10-27), with nothing over it; AI is connected when it is first needed.
+    await expect(page).toHaveURL(/\/projects$/);
+    await expect(page.getByTestId("project-list")).toBeVisible();
+    await expect(page.getByTestId("connect-dialog")).toBeHidden();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 
-  await test.step("2. Welcome, then Set up my key: Groq, a passphrase, Save, Test", async () => {
-    await expect(page.getByTestId("welcome-dialog")).toBeVisible();
-    await page.getByTestId("welcome-setup").click();
-    await expect(page.getByTestId("provider-dialog")).toBeVisible();
-    await page.getByTestId("prov-select").selectOption("groq");
-    await page.getByTestId("key-input").fill("gsk_test");
-    await page.getByTestId("key-mode-pass").check();
-    await page.getByTestId("key-save").click();
-    await expect(page.getByTestId("pass-dialog")).toBeVisible();
-    await page.getByTestId("pass-input").fill(PASS);
-    await page.getByTestId("pass-ok").click();
-    await expect(page.getByTestId("pass-message")).toContainText("once more");
-    await page.getByTestId("pass-input").fill(PASS);
-    await page.getByTestId("pass-ok").click();
-    await expect(page.getByTestId("toast")).toHaveText("Groq connected ✓ and encrypted 🔒");
-    await expect(page.getByTestId("provider-dialog")).toBeHidden();
+  await test.step("2. Connect AI from the AI pill: Groq, a passphrase (chosen and confirmed in the window, then its recovery sheet); the AI connection's Test", async () => {
+    await expect(page.getByTestId("ai-pill")).toHaveText("Connect AI");
+    await expect(page.getByTestId("vault-pill")).toHaveText("🔓 Protect my work");
+    const toasts = await recordToasts(page);
+    // The key is saved under the vault. First run has no document yet, so nothing is migrated (phase3a-vault.spec.ts step 3 migrates a written one).
+    const code = await connectAI(page, { keep: "pass", passphrase: PASS });
+    expect(code).toMatch(RECOVERY_CODE);
+    await expect.poll(toasts).toEqual(expect.arrayContaining(["AI connected.", "All your work is now locked with your passphrase ✓"]));
+    await expect(page.getByTestId("vault-pill")).toHaveText("🔓 Unlocked");
 
-    await page.getByTestId("provider-key-btn").click();
-    await page.getByTestId("key-test").click();
-    await expect(page.getByTestId("key-test-out")).toContainText("Working ✓ Provider: Groq. The AI replied: OK");
+    // The AI pill names the company; it opens the AI connection, whose Test asks the provider.
+    await expect(page.getByTestId("ai-pill")).toHaveText("AI: Groq");
+    await page.getByTestId("ai-pill").click();
+    await expect(page.getByTestId("connect-dialog")).toHaveAttribute("data-screen", "manage");
+    await page.getByTestId("connect-test").click();
+    await expect(page.getByTestId("connect-status")).toHaveText("Groq answered. Your key works.");
     await page.keyboard.press("Escape");
-    await expect(page.getByTestId("provider-dialog")).toBeHidden();
+    await expect(page.getByTestId("connect-dialog")).toBeHidden();
   });
 
-  await test.step("3. New project, the stage intro, Start with Idea & Feasibility", async () => {
+  await test.step("3. Start a new study, its question in Shape your study (no check needed), Finish later; the home's six stages; Writing opens the study's empty document", async () => {
+    await page.getByTestId("help-btn").click();
     await expect(page.getByTestId("app-version")).toHaveText(/^Version \S+$/);
-    await page.getByTestId("new-project").click();
-    await page.getByTestId("sap-name").fill("Thesis on academic procrastination");
-    await page.getByTestId("sap-save").click();
-    await expect(page.getByTestId("stage-intro")).toBeVisible();
-    await page.getByTestId("stage-intro-start").click();
-    await expect(page.getByTestId("stage-intro")).toBeHidden();
-    await expect(page.getByTestId("stage-idea")).toHaveClass(/current/);
-    await expect(page.getByTestId("stage-counter")).toContainText("Stage 1 of 6");
-    await expect(page.getByTestId("stage-counter")).toContainText("Idea & Feasibility");
+    await page.keyboard.press("Escape");
+    await makeStudy(page, { name: PROJECT, question: TOPIC });
+    await expect(page).toHaveURL(/\/p\/[0-9a-f-]+$/);
+    await expect(page.getByTestId("project-switcher")).toContainText(PROJECT);
+    await expect(page.getByTestId("home-q-text")).toHaveText(TOPIC);
+    await expect(page.getByTestId("home-shape-count")).toHaveText("Shape your study: 1 of 6 parts answered.");
+    // The feasibility check is optional: the card shows no verdict and asks for none.
+    await expect(page.getByTestId("home-q-verdict")).toHaveCount(0);
+    for (const [s, state] of [["idea", "In progress"], ["lit", "Not started"], ["design", "Not started"], ["collect", "Not started"], ["writing", "Not started"], ["review", "Not started"]]) {
+      await expect(page.getByTestId("home-state-" + s)).toHaveText(state);
+    }
+    await page.getByTestId("home-open-writing").click();
+    await expect(page).toHaveURL(/\/p\/[0-9a-f-]+\/writing$/);
+    await expect(page.getByTestId("place-name")).toHaveText("Writing");
+    await expect(page.getByTestId("word-count")).toHaveText("0 words");
   });
 
-  await test.step("4. write two sentences, autosave, reload: the text, the project bar and the badge are back", async () => {
+  await test.step("4. write two sentences, autosave (encrypted: the vault is on), reload: the passphrase opens the document, the text, the place and the project's name are back", async () => {
     await expect(page.getByTestId("save-status")).toHaveText("Auto-save on");
     const editor = page.locator(".ProseMirror");
     await editor.click();
     const saved = page.waitForResponse((r) => r.request().method() === "PUT" && /\/documents\/[0-9a-f-]+$/.test(r.url()) && r.ok());
     await editor.pressSequentially(`${SENTENCE_1} ${SENTENCE_2}`);
-    await saved;
+    const sent = (await saved).request().postDataJSON() as { bodyHtml: string; keyVersion: number; wordCount: number };
+    // The server receives ciphertext and the counts, never the text.
+    expect(sent.keyVersion).toBeGreaterThanOrEqual(1);
+    expect(sent.bodyHtml).not.toContain("<p>");
+    expect(sent.wordCount).toBeGreaterThan(0);
     await expect(page.getByTestId("save-status")).toHaveText("Auto-save on");
+    const at = page.url();
     await page.reload();
+    // After a reload the vault is locked: the document asks for its passphrase before the editor opens.
+    await expect(page.getByTestId("pass-dialog")).toBeVisible();
+    await expect(page.getByTestId("pass-message")).toHaveText("Type the passphrase that protects your documents.");
+    await page.getByTestId("pass-input").fill(PASS);
+    await page.getByTestId("pass-ok").click();
     await expect(page.locator(".ProseMirror")).toContainText(SENTENCE_1);
     await expect(page.locator(".ProseMirror")).toContainText(SENTENCE_2);
-    await expect(page.getByTestId("project-bar-label")).toContainText("Thesis on academic procrastination");
-    await expect(page.getByTestId("project-bar-label")).toContainText("Idea & Feasibility");
+    expect(page.url()).toBe(at);
+    await expect(page.getByTestId("project-switcher")).toContainText(PROJECT);
+    await expect(page.getByTestId("place-home")).toHaveText(PROJECT);
+    await expect(page.getByTestId("place-name")).toHaveText("Writing");
   });
 
   await test.step("5. Template: Essay inserts its headings", async () => {
@@ -175,14 +177,11 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     await expect(headings.filter({ hasText: "References" })).toHaveCount(1);
   });
 
-  await test.step("6. select a sentence, Improve from the bubble: polishing, result, amber note (the key is locked after the reload, so the passphrase is asked once)", async () => {
+  await test.step("6. select a sentence, Improve from the bubble: polishing, result, amber note (the vault opened with the document, so the key needs no second passphrase)", async () => {
     await selectInEditor(page, SENTENCE_1);
     await expect(page.getByTestId("sel-bubble")).toBeVisible();
     await page.getByTestId("sel-improve").click();
-    await expect(page.getByTestId("pass-dialog")).toBeVisible();
-    await expect(page.getByTestId("pass-message")).toContainText("Passphrase to unlock your Groq key");
-    await page.getByTestId("pass-input").fill(PASS);
-    await page.getByTestId("pass-ok").click();
+    await expect(page.getByTestId("pass-dialog")).toBeHidden();
     await expect(page.getByTestId("ai-status")).toHaveText("💜 Polishing…");
     await expect(page.getByTestId("ai-out")).toHaveText(IMPROVED);
     const note = page.getByTestId("ai-note");
@@ -242,7 +241,10 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     const stem = title.replace(/[^\w\- ]+/g, "").trim() || "appuscholar-document";
     const [word] = await Promise.all([page.waitForEvent("download"), page.getByTestId("download-word").click()]);
     expect(word.suggestedFilename()).toBe(stem + ".doc");
-    const [tex] = await Promise.all([page.waitForEvent("download"), page.getByTestId("download-latex").click()]);
+    // No ORCID iD is set: the LaTeX export asks for one here, optional (first-run build spec: it waits until it is needed); Export goes on without it.
+    await page.getByTestId("download-latex").click();
+    await expect(page.getByTestId("latex-orcid-dialog")).toBeVisible();
+    const [tex] = await Promise.all([page.waitForEvent("download"), page.getByTestId("latex-orcid-go").click()]);
     expect(tex.suggestedFilename()).toBe(stem + ".tex");
   });
 
@@ -327,7 +329,8 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
   });
 
   await test.step("16. Ask Appuscholar: a question, a reply, + Insert into document puts it at the end as AI text", async () => {
-    await page.getByTestId("tool-chat").click();
+    // Chat is folded above the document in Writing.
+    await page.getByTestId("writing-aside").locator("summary").first().click();
     await expect(page.getByTestId("chat-panel")).toBeVisible();
     await page.getByTestId("chat-input").fill("Give me a way to start my introduction");
     await page.getByTestId("chat-send").click();
@@ -339,57 +342,83 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     await expect(last.locator("span.ai-ins")).toHaveText(CHAT_REPLY);
   });
 
-  await test.step("17. Pop out says it comes later (Citations), and keeps the old notice for the other tools", async () => {
-    await page.getByTestId("pop-out").click();
-    await expect(page.getByTestId("toast")).toHaveText("Only Citations and Research can open in their own window.");
-    await expect(page.getByTestId("toast")).toBeHidden({ timeout: 15_000 });
-    await page.getByTestId("tool-cite").click();
-    await expect(page.getByTestId("dock-tab-tools")).toContainText("Citation Manager");
-    await page.getByTestId("pop-out").click();
-    await expect(page.getByTestId("toast")).toHaveText("Pop out arrives in a later phase.");
+  await test.step("17. Open in a new window: not in Writing; Literature's Citations opens in a window of its own; the old /popout?tool=cite link leads there too", async () => {
+    await expect(page.getByTestId("place-new-window")).toHaveCount(0);
+    await page.getByTestId("place-home").click();
+    await page.getByTestId("home-open-lit").click();
+    await page.getByTestId("place-tab-citations").click();
+    await expect(page.getByTestId("panel-cite")).toBeVisible();
+    const projectPath = new URL(page.url()).pathname;
+    expect(projectPath).toMatch(/^\/p\/[0-9a-f-]+\/lit\/citations$/);
+    const opened = page.waitForEvent("popup");
+    await page.getByTestId("place-new-window").click();
+    const popup = await opened;
+    // The window shows Citations (an empty library, so nothing to unlock there), with no document and no switcher.
+    await expect(popup.getByTestId("panel-cite")).toBeVisible();
+    await expect(popup.getByTestId("cite-count")).toHaveText("0");
+    expect(new URL(popup.url()).pathname + new URL(popup.url()).search).toBe(projectPath + "?window=1");
+    // Nothing in the window needed the vault yet, so it is locked there: the project's name reads "Locked title" until its pill opens it.
+    await expect(popup.getByTestId("window-where")).toHaveText("Locked title / Literature");
+    await expect(popup.getByTestId("vault-pill")).toHaveText("🔒 Locked");
+    await popup.getByTestId("vault-pill").click();
+    await popup.getByTestId("pass-input").fill(PASS);
+    await popup.getByTestId("pass-ok").click();
+    await expect(popup.getByTestId("window-where")).toHaveText(PROJECT + " / Literature");
+    await expect(popup.getByTestId("project-switcher")).toHaveCount(0);
+    await expect(popup.locator(".ProseMirror")).toHaveCount(0);
+    // A link to the old pop-out page opens the active project's Citations in a window of its own.
+    await popup.goto("/popout?tool=cite");
+    await expect(popup).toHaveURL(new RegExp(projectPath.replace(/\//g, "\\/") + "\\?window=1$"));
+    await popup.close();
+    await page.getByTestId("place-home").click();
+    await page.getByTestId("home-open-writing").click();
+    await expect(page.locator(".ProseMirror")).toContainText(SENTENCE_2);
   });
 
   await test.step("18. Hindi chrome and back", async () => {
     await page.getByTestId("lang-toggle").click();
-    await expect(page.getByTestId("tool-idea")).toContainText("विचार और व्यवहार्यता");
+    await expect(page.getByTestId("place-name")).toHaveText(HI.stage_name_writing!);
+    await expect(page.getByTestId("help-btn")).toContainText(HI.hdr_help!);
     await page.getByTestId("lang-toggle").click();
-    await expect(page.getByTestId("tool-idea")).toContainText("Idea & Feasibility");
+    await expect(page.getByTestId("place-name")).toHaveText("Writing");
   });
 
-  await test.step("19. reload, then a wrong passphrase on the first AI use: refused, nothing sent", async () => {
-    await page.reload();
-    await expect(page.locator(".ProseMirror")).toContainText(SENTENCE_2);
-    await expect(page.getByTestId("act-continue")).toBeVisible();
+  await test.step("19. reload, then a wrong passphrase when the document opens: refused and asked again, then cancelled: the document stays locked, the Doc list works, nothing sent; the pill opens it", async () => {
     const before = completeCalls;
-    await page.getByTestId("act-continue").click();
+    await page.reload();
     await expect(page.getByTestId("pass-dialog")).toBeVisible();
     await page.getByTestId("pass-input").fill("not-the-passphrase");
     await page.getByTestId("pass-ok").click();
-    await expect(page.getByTestId("ai-out")).toHaveText("Wrong passphrase — nothing was unlocked. Try again.");
+    await expect(page.getByTestId("toast")).toHaveText("Wrong passphrase — nothing was unlocked. Try again.");
+    await expect(page.getByTestId("pass-dialog")).toBeVisible();
+    await page.getByTestId("pass-cancel").click();
+    await expect(page.getByTestId("pass-dialog")).toBeHidden();
+    // Never an empty editor in place of the text: the card says the document is locked, and no AI action is offered on it.
+    await expect(page.getByTestId("doc-unreadable")).toHaveText("This document is locked. Unlock your vault to read it.");
+    await expect(page.locator(".ProseMirror")).toHaveCount(0);
+    await expect(page.getByTestId("act-continue")).toHaveCount(0);
+    await expect(page.getByTestId("doc-select")).toBeEnabled();
     expect(completeCalls).toBe(before);
+    // The vault pill opens the vault, and the document with it.
+    await page.getByTestId("vault-pill").click();
+    await expect(page.getByTestId("pass-dialog")).toBeVisible();
+    await page.getByTestId("pass-input").fill(PASS);
+    await page.getByTestId("pass-ok").click();
+    await expect(page.locator(".ProseMirror")).toContainText(SENTENCE_2);
+    await expect(page.getByTestId("doc-unreadable")).toHaveCount(0);
   });
 });
 
 test("sign-out asks whether to forget the AI keys remembered on this computer (kept per account)", async ({ page }) => {
   test.setTimeout(120_000);
-  const email = `k${Date.now()}${Math.random().toString(36).slice(2, 7)}@e2e.local`;
+  const email = e2eEmail("k");
   const remembered = () => page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("appu_key_")));
-  async function signInAs() {
-    await page.goto("/signin");
-    await page.getByTestId("e2e-email").fill(email);
-    await page.getByTestId("e2e-submit").click();
-    await expect(page).toHaveURL(/localhost:3000\/$/);
-  }
+  const signInAs = () => signIn(page, { email });
   await signInAs();
   await page.getByTestId("terms-age").check();
   await page.getByTestId("terms-agree").check();
   await page.getByTestId("terms-continue").click();
-  await page.getByTestId("welcome-setup").click();
-  await page.getByTestId("prov-select").selectOption("groq");
-  await page.getByTestId("key-input").fill("gsk_remembered");
-  await page.getByTestId("key-mode-plain").check();
-  await page.getByTestId("key-save").click();
-  await expect(page.getByTestId("provider-dialog")).toBeHidden();
+  await connectAI(page, { key: "gsk_remembered", keep: "plain" });
   // The key is filed under this account, never under the bare provider name.
   const keys = await remembered();
   expect(keys).toHaveLength(1);

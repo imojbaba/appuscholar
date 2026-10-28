@@ -30,7 +30,7 @@ function Form({ onCancel, onInsert }: { onCancel(): void; onInsert(rows: number,
   return (
     <form onSubmit={(e) => { e.preventDefault(); submit(); }} className="grid gap-3">
       <DialogHeader>
-        <DialogTitle className="text-xl font-semibold text-purple-800">Insert table</DialogTitle>
+        <DialogTitle className="text-xl font-semibold text-purple-800">{t("fb_table")}</DialogTitle>
       </DialogHeader>
       <Label htmlFor="tableSize">Table size — rows x columns (e.g. 3x4):</Label>
       <Input id="tableSize" value={value} onChange={(e) => setValue(e.target.value)} autoFocus onFocus={(e) => e.currentTarget.select()} data-testid="table-size-input" />

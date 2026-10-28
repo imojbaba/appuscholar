@@ -1,0 +1,324 @@
+[
+  {
+    "match": "Reply with the single word OK.",
+    "feature": "Test my key",
+    "reply": "OK"
+  },
+  {
+    "match": "Continue this writing in the same register",
+    "feature": "Continue writing",
+    "reply": "The next step is to write down what each paper says about the question, in a sentence of my own."
+  },
+  {
+    "match": "Improve this text",
+    "feature": "Improve",
+    "reply": "Procrastination delays important work, and students often start their essays late."
+  },
+  {
+    "match": "Expand this text",
+    "feature": "Extend",
+    "reply": "Procrastination delays important work because the reward for finishing feels far away while the comfort of waiting is felt at once. Students who start an essay late have less time to revise it, so the version they hand in is often weaker than the one they could have written. Writing a short plan on the first day makes the task smaller and easier to begin [add source]."
+  },
+  {
+    "match": "You are a thesis supervisor reading",
+    "feature": "Draft-first questions",
+    "reply": "1. You call the effect \"important\": important to whom, and how would a reader be able to see it?\n2. What supports the claim in your second sentence, and what would a sceptical reader say to it?\n3. What does your key term mean in this study, and is that the meaning your reader will take?"
+  },
+  {
+    "match": "You are Appuscholar, a scholarly writing coach",
+    "feature": "Ask Appuscholar (writing coach)",
+    "reply": "Name the habit you study, then say who it affects and why that matters."
+  },
+  {
+    "match": "You are an experienced research-methods advisor",
+    "feature": "Is my idea realistic",
+    "reply": "Topic clarity and researchability: High. The question names one routine, one outcome (exam anxiety) and one group (first-year students), so it can be tested.\nAccess to participants or data: Medium. Sixty volunteers from your own college is realistic, but recruiting them in exam weeks may be slow.\nTime: Medium. One semester fits a one-week routine, if the ethics approval is in place before the exam period starts.\nResources and equipment: High. A paper questionnaire and a routine sheet are all the study needs.\nEthical complexity: Low. Asking students to keep a bedtime is low risk; ask your supervisor what the monthly ethics committee needs from you.\nVerdict: Proceed with these modifications: book the ethics committee date now and plan the recruitment before the exam weeks."
+  },
+  {
+    "match": "You are a research-methods coach for a student who is shaping their study",
+    "feature": "Shape your study: Help me think",
+    "reply": "Questions to ask yourself:\nWhich exams matter most to you: the end-of-semester ones, or weekly tests?\nHow would you know the routine was followed for the whole week?\nOptions to consider:\nA short daily sleep diary next to the questionnaire.\nAsking two classes rather than volunteers, so the groups are similar.\nStill missing:\nHow you will measure exam anxiety, and when."
+  },
+  {
+    "match": "You help a student of *search research databases",
+    "feature": "Suggest search terms",
+    "reply": {
+      "terms": [
+        "test anxiety",
+        "evaluation anxiety"
+      ]
+    }
+  },
+  {
+    "match": "You are reading the abstract of one research paper*279 senior students",
+    "feature": "Quick read of an abstract (recorded abstract: English script activities)",
+    "reply": {
+      "summary": "English psychological script activities eased the psychological pressure and anxiety of college students.",
+      "design": {
+        "type": "non-randomised experiment",
+        "quote": "This study conducted an experiment of English script activities on 279 senior students"
+      },
+      "sample": {
+        "n": 279,
+        "quote": "279 senior students from two universities"
+      }
+    }
+  },
+  {
+    "match": "You are reading the abstract of one research paper*questionnaire of Sarason",
+    "feature": "Quick read of an abstract (recorded abstract: test anxiety and performance)",
+    "reply": {
+      "summary": "Test anxiety had a negative effect on the academic performance of medical university students.",
+      "design": {
+        "type": "cross-sectional survey",
+        "quote": "the valid and reliable questionnaire of Sarason was administered to 150 female and male students"
+      },
+      "sample": {
+        "n": 150,
+        "quote": "administered to 150 female and male students"
+      }
+    }
+  },
+  {
+    "match": "You are reading the abstract of one research paper",
+    "feature": "Quick read of an abstract (any other)",
+    "reply": {
+      "summary": "The paper reports a study of students and what it found on the topic of the search.",
+      "design": {
+        "type": "not stated",
+        "quote": ""
+      },
+      "sample": {
+        "n": null,
+        "quote": ""
+      }
+    }
+  },
+  {
+    "match": "You are screening search results for a student of",
+    "feature": "Rank search results by fit",
+    "reply": {
+      "scores": [
+        {
+          "id": 1,
+          "score": 3,
+          "reason": "Title and abstract address the question directly."
+        },
+        {
+          "id": 2,
+          "score": 2,
+          "reason": "Clearly related: same topic, different group or setting."
+        },
+        {
+          "id": 3,
+          "score": 2,
+          "reason": "Clearly related: same topic, different group or setting."
+        },
+        {
+          "id": 4,
+          "score": 1,
+          "reason": "Loosely related: mentions the topic in passing."
+        },
+        {
+          "id": 5,
+          "score": 1,
+          "reason": "Loosely related: mentions the topic in passing."
+        },
+        {
+          "id": 6,
+          "score": 1,
+          "reason": "Loosely related: mentions the topic in passing."
+        },
+        {
+          "id": 7,
+          "score": 1,
+          "reason": "Loosely related: mentions the topic in passing."
+        },
+        {
+          "id": 8,
+          "score": 0,
+          "reason": "Off topic for this question."
+        },
+        {
+          "id": 9,
+          "score": 0,
+          "reason": "Off topic for this question."
+        },
+        {
+          "id": 10,
+          "score": 0,
+          "reason": "Off topic for this question."
+        },
+        {
+          "id": 11,
+          "score": 0,
+          "reason": "Off topic for this question."
+        },
+        {
+          "id": 12,
+          "score": 0,
+          "reason": "Off topic for this question."
+        }
+      ]
+    }
+  },
+  {
+    "match": "You are an academic writing assistant for students of",
+    "feature": "Draft a literature review paragraph",
+    "reply": "Studies of college students link test anxiety with weaker results: in one medical university, anxiety measured with Sarason's questionnaire went with lower academic performance, and an experiment with English psychological script activities lowered students' pressure and anxiety. Together they suggest that anxiety around tests is common and can be changed, but neither study tested a routine students could keep on their own."
+  },
+  {
+    "match": "You are a research advisor helping a student of *find a research gap",
+    "feature": "Find a research gap",
+    "reply": "Both papers measure anxiety at one point in time and in one setting. Neither asks whether a simple daily habit, such as a fixed bedtime, changes anxiety before an exam. A short controlled trial of such a habit would address that gap."
+  },
+  {
+    "match": "You are helping a student of *Summarise the paper text below",
+    "feature": "Shelf: summarise a paper",
+    "reply": "Aim: to see whether ten minutes of morning daylight helps students keep their focus.\nMethod: students were placed in a light group or an indoor group by drawing lots and rated their focus.\nKey findings: students who went outside rated their focus higher.\nLimitations: a small sample from one college, and focus was self-rated."
+  },
+  {
+    "match": "You are a research assistant for students of *Summarize the research text below",
+    "feature": "Helpers: summarise a paper",
+    "reply": "Aim: to see whether ten minutes of morning daylight helps students keep their focus.\nMethod: students were placed in a light group or an indoor group by drawing lots and rated their focus.\nKey findings: students who went outside rated their focus higher.\nLimitations: not reported."
+  },
+  {
+    "match": "You are a tutor helping a student of",
+    "feature": "Helpers: study a case",
+    "reply": "Main issues: the student's worry grows before every exam and begins to affect sleep and concentration. Concepts that apply: test anxiety as a form of evaluation anxiety, the relation between arousal and performance, and avoidance as a way of coping. Points for discussion: how far the pressure comes from family expectations, and whether the school rewards marks more than learning. Culture and family matter here, since in many households an exam result carries the hopes of the whole family. This reading is a study aid and is never a diagnosis of the person described."
+  },
+  {
+    "match": "You are an academic writing coach for students of",
+    "feature": "Helpers: advice on a literature review",
+    "reply": "Organise the paragraph around one theme: what observational studies can and cannot show about sleep and anxiety. Contrast them with the trial you propose, and say what a random allocation adds."
+  },
+  {
+    "match": "Explain the *concept in the text below",
+    "feature": "Helpers: explain a concept",
+    "reply": "A sample is the small group of people you actually study, taken from the larger group you want to understand. Think of tasting one spoonful of dal to judge the whole pot: the spoonful tells you something only if the pot was stirred first. Key point to remember: a sample should resemble the larger group, which is why random selection is preferred."
+  },
+  {
+    "match": "You are an APA 7th edition formatting expert",
+    "feature": "Helpers: statistics output to APA sentences",
+    "reply": "The routine group (M = 72.40, SD = 8.10) scored higher than the waiting group (M = 65.20, SD = 9.30), t(58) = 3.20, p = .002, which is below .05."
+  },
+  {
+    "match": "You are a sharp, fair peer reviewer.",
+    "feature": "Devil's advocate",
+    "reply": "1. You write that observing students \"cannot show that poor sleep causes worry\", but a trial of one routine shows only that this routine helps, not that sleep was the cause.\n2. \"Cheap\" is asserted without saying what the routine costs students in time."
+  },
+  {
+    "match": "You are an external examiner at the student's viva",
+    "feature": "Viva question (examiner)",
+    "reply": "Why did you balance the two groups by age, course and gender, and what would an unbalanced sample have done to your result?"
+  },
+  {
+    "match": "You are a member of the panel at a conference session",
+    "feature": "Viva question (conference panel)",
+    "reply": "If the routine group improved only because its students knew they were being watched, how would your design tell that apart from a real effect of the routine?"
+  },
+  {
+    "match": "You are a careful teacher helping an undergraduate student",
+    "feature": "Analyse: ask a question about the paper",
+    "reply": {
+      "in_paper": true,
+      "answer": "The participants were sixty first-year students from one college who volunteered after seeing posters. They were placed in the routine group or the waiting group at random.",
+      "quotes": [
+        "Sixty first-year students from one college were randomly placed in a routine group or a waiting group."
+      ]
+    }
+  },
+  {
+    "match": "You are a patient teacher walking an undergraduate student",
+    "feature": "Analyse: walk through a paper",
+    "reply": {
+      "reading": "You are right that earlier work only observed students. The authors say very few studies changed sleep habits on purpose, and they set out to test whether a one-week bedtime routine lowers exam anxiety.",
+      "quotes": [
+        "The gap this study addresses is the lack of a controlled test of a short bedtime routine."
+      ],
+      "not_stated": [
+        "why one week was chosen"
+      ],
+      "watch_for": "Whether one college is enough to support the aim as it is stated.",
+      "check_question": "What did the authors say was missing in earlier work?",
+      "check_answer": "A controlled test of a short bedtime routine; earlier studies were mostly observational."
+    }
+  },
+  {
+    "match": "You are *an AI teaching character",
+    "feature": "Analyse: ask a teaching character",
+    "reply": "The lesson notes say a student must be told what the study asks of them before they agree. So look in the method section for who explained the study, and whether anyone could say no without a penalty. If the paper does not say, note that as missing."
+  },
+  {
+    "match": "Analyze the writing style of the text below.",
+    "feature": "My style: describe a text",
+    "reply": "- Plain, first-person tone that states what it will do.\n- Short sentences for hard ideas, longer ones for method steps.\n- Ordinary words, with a technical term only when the field needs one.\n- Admits doubt openly and marks claims to check."
+  },
+  {
+    "match": "You are studying the writing style of ONE author",
+    "feature": "My style: learn from many documents",
+    "reply": "- Plain, first-person tone that states what the author will do next.\n- Short sentences when the idea is hard, longer ones when a method is described step by step.\n- Ordinary words, with a technical term used only when the field needs it.\n- Admits doubt openly and marks claims that need checking.\n- Opens a section with a question or a plain statement of purpose.\n- Ends a paragraph on a concrete point."
+  },
+  {
+    "match": "Paraphrase the passage below in the voice",
+    "feature": "My style: try it on a practice passage",
+    "reply": "I begin by asking a plain question and writing it down before I read anything else. Then I gather the papers that bear on it and note where they agree and where they differ."
+  },
+  {
+    "match": "You are a careful English grammar and usage checker*The students was happy",
+    "feature": "Grammar: one real slip, and one edit whose words are not in the text (the app must drop it)",
+    "reply": {
+      "edits": [
+        {
+          "original": "The students was happy",
+          "fix": "The students were happy",
+          "rule": "Subject and verb agree",
+          "why": "Students is plural, so the verb is were.",
+          "kind": "error"
+        },
+        {
+          "original": "This sentence is nowhere in the text",
+          "fix": "This sentence is somewhere else",
+          "rule": "Invented",
+          "why": "Not in the text.",
+          "kind": "style"
+        }
+      ]
+    }
+  },
+  {
+    "match": "You are a careful English grammar and usage checker",
+    "feature": "Grammar: nothing found",
+    "reply": {
+      "edits": []
+    }
+  },
+  {
+    "match": "You are a bilingual English and Hindi dictionary helper*<<<\nstudy\n>>>",
+    "feature": "Dictionary: study (recorded)",
+    "reply": {
+      "simple": "to learn about a subject by reading and thinking",
+      "hindi": "अध्ययन करना",
+      "example": "Students study the effects of sleep on memory."
+    }
+  },
+  {
+    "match": "You are a bilingual English and Hindi dictionary helper",
+    "feature": "Dictionary: a word with no recorded entry (the provider is unsure)",
+    "reply": {
+      "simple": "unsure",
+      "hindi": "unsure",
+      "example": "unsure"
+    }
+  },
+  {
+    "match": "You are a statistics tutor for students of",
+    "feature": "Statistics: explain in plain language",
+    "reply": "The two villages' reading scores differ by more than chance would usually produce, so the result is statistically significant at .05. That says nothing yet about whether the gap matters in practice."
+  },
+  {
+    "match": "Translate the following English academic quotation",
+    "feature": "Citations: translate a quotation into Hindi",
+    "reply": "नींद स्मृति को मज़बूत करती है, और जो विद्यार्थी पर्याप्त सोते हैं वे पढ़ी हुई सामग्री को अधिक याद रख पाते हैं।"
+  }
+]

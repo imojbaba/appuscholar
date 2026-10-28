@@ -76,7 +76,7 @@ describe("v2 terms wording overrides", () => {
     expect(h.terms_ver).toContain("{version}");
     expect(h.terms_ver).toContain("{date}");
     expect(tFormat(en, hi, "terms_ver", "hi", { version: 2, date: "16 अक्टूबर 2026" })).toBe("संस्करण 2, 16 अक्टूबर 2026।");
-    expect(h.faq_a_key).toContain("<b>⚙ AI प्रदाता / कुंजी</b>");
+    expect(h.faq_a_key).toContain("<b>" + h.ai_pill_nokey + "</b>");
   });
   it("applyHindiDrafts writes exactly the nine drafts and leaves other keys alone", () => {
     const out = applyHindiDrafts({ ...hi, terms_d1: "v1", other: "x" } as Record<string, string>);

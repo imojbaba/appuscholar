@@ -1,0 +1,104 @@
+{
+ "engine": "citation",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "tables": {
+  "CIT_MONTHS": [
+   "January",
+   "February",
+   "March",
+   "April",
+   "May",
+   "June",
+   "July",
+   "August",
+   "September",
+   "October",
+   "November",
+   "December"
+  ],
+  "CIT_MON_MLA": [
+   "Jan.",
+   "Feb.",
+   "Mar.",
+   "Apr.",
+   "May",
+   "June",
+   "July",
+   "Aug.",
+   "Sept.",
+   "Oct.",
+   "Nov.",
+   "Dec."
+  ],
+  "CIT_MON_ABB": [
+   "Jan",
+   "Feb",
+   "Mar",
+   "Apr",
+   "May",
+   "Jun",
+   "Jul",
+   "Aug",
+   "Sep",
+   "Oct",
+   "Nov",
+   "Dec"
+  ],
+  "CIT_MON_IEEE": [
+   "Jan.",
+   "Feb.",
+   "Mar.",
+   "Apr.",
+   "May",
+   "Jun.",
+   "Jul.",
+   "Aug.",
+   "Sep.",
+   "Oct.",
+   "Nov.",
+   "Dec."
+  ],
+  "CIT_STYLES": {
+   "apa": {
+    "numbered": false,
+    "head": "References"
+   },
+   "apa6": {
+    "numbered": false,
+    "head": "References"
+   },
+   "mla": {
+    "numbered": false,
+    "head": "Works Cited"
+   },
+   "chicago": {
+    "numbered": false,
+    "head": "References"
+   },
+   "harvard": {
+    "numbered": false,
+    "head": "Reference list"
+   },
+   "vancouver": {
+    "numbered": true,
+    "head": "References"
+   },
+   "ieee": {
+    "numbered": true,
+    "head": "References"
+   },
+   "ama": {
+    "numbered": true,
+    "head": "References"
+   }
+  }
+ }
+}

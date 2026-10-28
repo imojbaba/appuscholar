@@ -22,6 +22,48 @@
       "when": 1792075708564,
       "tag": "0002_phase2",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792131100920,
+      "tag": "0003_vault",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792425766933,
+      "tag": "0004_project_blobs",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792507005318,
+      "tag": "0005_blob_version",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792545898909,
+      "tag": "0006_frame",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792860177742,
+      "tag": "0007_rate_counters",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793109702107,
+      "tag": "0008_study_type",
+      "breakpoints": true
     }
   ]
 }

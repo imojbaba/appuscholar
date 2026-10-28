@@ -1,0 +1,26 @@
+{
+ "engine": "qual",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "tables": {
+  "QUAL_PALETTE": [
+   "#f59e0b",
+   "#10b981",
+   "#3b82f6",
+   "#ef4444",
+   "#8b5cf6",
+   "#ec4899",
+   "#14b8a6",
+   "#f97316",
+   "#6366f1",
+   "#84cc16"
+  ]
+ }
+}

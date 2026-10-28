@@ -3,5 +3,16 @@
   "framework": null,
   "buildCommand": "pnpm run build",
   "outputDirectory": "public",
-  "rewrites": [{ "source": "/(.*)", "destination": "/api" }]
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/api"
+    }
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "**": false,
+      "phase-3a-vault": true
+    }
+  }
 }

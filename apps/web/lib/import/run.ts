@@ -1,6 +1,8 @@
 import { ApiError, apiFetch } from "@/lib/api";
 import { toast } from "@/components/ui/toast";
 import { ImportError, extensionOf, parseImportFile, TOO_LARGE_MESSAGE } from "./parse";
+import { newDocumentBody, sealBody } from "@/lib/useAutosave";
+import type { VaultValue, WrappedDek } from "@/lib/vault/useVault";
 
 type T = (key: string, vars?: Record<string, string | number>) => string;
 
@@ -10,8 +12,10 @@ export function allPdf(files: File[]): boolean { return files.length > 0 && file
 /**
  * v1 `docImportFiles`: each file becomes its own document in the project. `origin` is the answer to "Whose writing is this?" for the
  * non-PDF files; PDFs are always sources. Returns the id of the last document created, or null when none was.
+ * With a vault each document is created encrypted (its first key with it) and its body is sent as ciphertext; with the vault off, plaintext
+ * as before. A cancelled unlock stops the batch: nothing more is created.
  */
-export async function importFiles(files: File[], origin: "draft" | "source", projectId: string, t: T): Promise<string | null> {
+export async function importFiles(files: File[], origin: "draft" | "source", projectId: string, t: T, vault: Pick<VaultValue, "known" | "ensureUnlocked" | "encryptBody">): Promise<string | null> {
   const batch = files.length > 1;
   let lastId: string | null = null;
   // One toast host shows one toast at a time, so a batch reports once, after the loop.
@@ -23,9 +27,13 @@ export async function importFiles(files: File[], origin: "draft" | "source", pro
       const parsed = await parseImportFile(file);
       const kind = parsed.isPdf ? "source" : origin;
       const title = parsed.title.trim().slice(0, 200) || "Untitled";
-      const made = await apiFetch<{ id: string }>(`/projects/${projectId}/documents`, { method: "POST", body: JSON.stringify({ title, kind }) });
+      // The title is sealed with the empty first body, under the document's first key.
+      const first = await newDocumentBody(vault, title);
+      if (!first) { toast(t("vault_save_locked")); return lastId; }
+      const made = await apiFetch<{ id: string; deks?: WrappedDek[] }>(`/projects/${projectId}/documents`, { method: "POST", body: JSON.stringify({ kind, ...first }) });
       madeId = made.id;
-      await apiFetch<unknown>(`/documents/${made.id}`, { method: "PUT", body: JSON.stringify({ bodyHtml: parsed.html }) });
+      // The body goes in its own PUT, as before, so the server's size limit still refuses a file too large to autosave later.
+      await apiFetch<unknown>(`/documents/${made.id}`, { method: "PUT", body: JSON.stringify(await sealBody(vault, { id: made.id, deks: made.deks ?? [] }, parsed.html)) });
       lastId = made.id;
       imported++; dropped += parsed.droppedImages; if (parsed.isPdf) pdfs++;
       if (!batch) {

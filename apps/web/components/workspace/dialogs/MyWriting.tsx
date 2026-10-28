@@ -7,10 +7,12 @@ import { useSettings } from "@/lib/settings";
 import { useSuggestion } from "@/lib/ai/suggestion";
 import { APP_VERSION } from "@/lib/version";
 import { downloadBlob } from "@/lib/export/download";
-import { buildRecordText, type WritingRecord } from "@/lib/writingRecord";
+import { buildRecordText, openRecordTitles, type WritingRecord } from "@/lib/writingRecord";
+import { useVault } from "@/lib/vault/useVault";
+import { openTitle, UNTITLED, useTitle } from "@/lib/vault/titles";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useWorkspace } from "../WorkspaceContext";
+import { useProject } from "@/components/frame/ProjectContext";
 
 const pct = (part: number, whole: number) => (whole ? Math.round((100 * part) / whole) : 0);
 const localDay = () => { const d = new Date(), z = (n: number) => String(n).padStart(2, "0"); return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}`; };
@@ -19,9 +21,10 @@ const localDay = () => { const d = new Date(), z = (n: number) => String(n).padS
 export function MyWriting() {
   const t = useT();
   const { me } = useSettings();
-  const { dialog, closeDialog, project, currentDoc } = useWorkspace();
+  const { dialog, closeDialog, project, currentDoc } = useProject();
   const docId = currentDoc?.id;
   const { editor } = useSuggestion();
+  const vault = useVault();
   const open = dialog === "myWriting";
   const projectId = project?.id ?? me?.scratchProjectId;
   const [rec, setRec] = useState<WritingRecord | null>(null);
@@ -41,9 +44,11 @@ export function MyWriting() {
 
   const docs = rec?.docs ?? [];
   const typed = docs.reduce((a, d) => a + d.stats.typed, 0), ai = docs.reduce((a, d) => a + d.stats.ai, 0), total = typed + ai;
-  const download = () => {
+  const download = async () => {
     if (!rec) return;
-    downloadBlob("writing-process-record.txt", new Blob([buildRecordText(rec, APP_VERSION, localDay())], { type: "text/plain;charset=utf-8" }));
+    // The titles are opened here: the record names each document as the student does.
+    const opened = await openRecordTitles(rec, (x, k) => openTitle(vault, x, k), UNTITLED);
+    downloadBlob("writing-process-record.txt", new Blob([buildRecordText(opened, APP_VERSION, localDay())], { type: "text/plain;charset=utf-8" }));
   };
 
   return (
@@ -65,7 +70,7 @@ export function MyWriting() {
                       const s = d.stats, n = s.typed + s.ai;
                       return (
                         <li key={d.id}>
-                          <b>{d.title}</b>{" "}
+                          <b><DocTitle doc={d} /></b>{" "}
                           <span className="text-muted-foreground">
                             {s.passages > 0
                               ? t("prov_doc_fmt", { n, t: pct(s.typed, n), p: s.passages, k: s.kept, e: s.edited, u: s.unknown > 0 ? t("prov_unknown", { u: s.unknown }) : "" })
@@ -98,9 +103,13 @@ export function MyWriting() {
             </div>
           )}
         <DialogFooter>
-          <Button variant="primary" data-testid="record-download" disabled={!rec} onClick={download}>⬇ Download my writing-process record (.txt)</Button>
+          <Button variant="primary" data-testid="record-download" disabled={!rec} onClick={() => { void download(); }}>⬇ Download my writing-process record (.txt)</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
+}
+
+function DocTitle({ doc }: { doc: WritingRecord["docs"][number] }) {
+  return <>{useTitle(doc, "document").text}</>;
 }

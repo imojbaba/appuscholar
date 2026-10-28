@@ -15,12 +15,12 @@ export async function fetchRetry5xx(
   return r;
 }
 
-/** POST with the 5xx retry. A thrown fetch is a network failure; its message is dropped. */
+/** POST with the 5xx retry. A thrown fetch is a network failure (its message is dropped), or "slow" when the call's time ran out. */
 export async function postWithRetry(fetchImpl: typeof fetch, url: string, init: RequestInit): Promise<Response> {
   try {
     return await fetchRetry5xx(() => fetchImpl(url, init));
   } catch {
-    throw new AiError("network");
+    throw new AiError(init.signal?.aborted ? "slow" : "network");
   }
 }
 

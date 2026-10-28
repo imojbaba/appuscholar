@@ -1,6 +1,9 @@
+// @vitest-environment jsdom
 import { describe, it, expect } from "vitest";
+import { Editor } from "@tiptap/core";
 import { generateJSON, generateHTML } from "@tiptap/html";
 import { sanitizeHtml } from "@appuscholar/core";
+import { JSDOM } from "jsdom";
 import { editorExtensions } from "../lib/editorExtensions";
 
 const PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
@@ -60,5 +63,108 @@ describe("editor schema keeps v1 content", () => {
   });
   it("is stable: a second round trip through the sanitiser and schema changes nothing", () => {
     expect(roundTrip(sanitizeHtml(out))).toBe(out);
+  });
+});
+
+describe("editor schema keeps the Citation Manager's markup (Task 8b)", () => {
+  // v1's own markup: citInsertBib 7877-7878 and citInsertQuote 7897.
+  const BIB = '<p><br></p><p class="ref-head" style="text-align:center;margin:14px 0 8px"><b>References</b></p>' +
+    '<p class="ref-item" style="padding-left:2em;text-indent:-2em;margin:0 0 6px">Miller, G. A. (1956). The magical number seven. <i>Psychological Review</i>, <i>63</i>(2), 81–97.</p>';
+  const QUOTE = '<p>Text <span class="translated-quote" title="He said &quot;less is more&quot; &amp; left.">“कम ही अधिक” (अनुवादित)</span> after.</p>';
+  it("keeps the reference list's classes, centred heading and hanging indent, through the sanitiser too", () => {
+    for (const out of [roundTrip(BIB), roundTrip(sanitizeHtml(BIB))]) {
+      const body = new JSDOM(out).window.document.body;
+      const [blank, head, item] = Array.from(body.children) as HTMLElement[];
+      expect(blank!.outerHTML).toBe("<p><br></p>");
+      expect(head!.className).toBe("ref-head");
+      expect([head!.style.textAlign, head!.style.marginTop, head!.style.marginRight, head!.style.marginBottom, head!.style.marginLeft]).toEqual(["center", "14px", "0px", "8px", "0px"]);
+      expect(head!.innerHTML).toBe("<strong>References</strong>");
+      expect(item!.className).toBe("ref-item");
+      expect([item!.style.paddingLeft, item!.style.textIndent, item!.style.marginTop, item!.style.marginBottom]).toEqual(["2em", "-2em", "0px", "6px"]);
+      expect(item!.innerHTML).toBe("Miller, G. A. (1956). The magical number seven. <em>Psychological Review</em>, <em>63</em>(2), 81–97.");
+      expect(roundTrip(sanitizeHtml(out))).toBe(out);
+    }
+  });
+  it("keeps a translated quote's class and its title (the original, shown on hover)", () => {
+    const out = roundTrip(sanitizeHtml(QUOTE));
+    expect(out).toContain('<span class="translated-quote" title="He said &quot;less is more&quot; &amp; left.">“कम ही अधिक” (अनुवादित)</span>');
+    expect(roundTrip(sanitizeHtml(out))).toBe(out);
+  });
+  it("keeps no class or padding on other paragraphs, and no title on spans that had none", () => {
+    const out = roundTrip(sanitizeHtml('<p class="other" style="padding-left:2em">x</p><p><span class="ai-ins" data-h="h1">y</span></p>'));
+    expect(out).toBe('<p>x</p><p><span class="ai-ins" data-h="h1">y</span></p>');
+  });
+});
+
+describe("editor schema keeps caption paragraphs and picture edits (wave D, Task 2)", () => {
+  // v1's own markup: capBlocksHTML 4501, capNoteHTML 4505, and the picture editor's data-edits (ieApply 4517-4537).
+  const CAP = '<p data-cap="figure"><strong>Figure 1</strong></p>';
+  const TABLE_CAP = '<p data-cap="table"><strong>Table 2</strong></p>';
+  const TITLE = '<p data-cap-title="1"><em>T</em></p>';
+  const NOTE = '<p data-cap-note="1"><em>Note.</em> n</p>';
+  const IMG = '<p><img src="data:image/png;base64,AAAA" data-edits="cropped, bar"></p>';
+  const ALL = CAP + TITLE + IMG + NOTE + TABLE_CAP;
+
+  it("keeps each caption paragraph attribute through the sanitiser and the schema, unchanged", () => {
+    for (const html of [CAP, TABLE_CAP, TITLE, NOTE]) {
+      expect(roundTrip(sanitizeHtml(html))).toBe(html);
+      expect(sanitizeHtml(html)).toBe(html);
+    }
+  });
+  it("keeps a picture's data-edits", () => {
+    expect(sanitizeHtml(IMG)).toBe(IMG);
+    expect(roundTrip(sanitizeHtml(IMG))).toBe(IMG);
+  });
+  it("keeps a picture's edits next to its width", () => {
+    const out = roundTrip(sanitizeHtml('<p><img src="data:image/png;base64,AAAA" style="width: 640px" data-edits="turned"></p>'));
+    expect(out).toMatch(/<img [^>]*style="width: 640px;?"/);
+    expect(out).toMatch(/<img [^>]*data-edits="turned"/);
+  });
+  it("is stable: a second round trip changes nothing", () => {
+    const out = roundTrip(sanitizeHtml(ALL));
+    expect(out).toBe(ALL);
+    expect(roundTrip(sanitizeHtml(out))).toBe(out);
+  });
+  it("gives a caption paragraph no attribute when it had none, and ignores an unknown cap value", () => {
+    expect(roundTrip(sanitizeHtml('<p data-cap="chart"><strong>Figure 1</strong></p><p><strong>Figure 2</strong></p>'))).toBe('<p><strong>Figure 1</strong></p><p><strong>Figure 2</strong></p>');
+  });
+  it("a v1-imported document keeps its caption marks and edits after the editor loads it and saves it back", () => {
+    const e = new Editor({ extensions: editorExtensions, content: sanitizeHtml(ALL) });
+    try {
+      expect(e.getHTML()).toBe(ALL);
+      const caps: unknown[] = [];
+      e.state.doc.descendants((n) => { if (n.type.name === "paragraph") caps.push([n.attrs.cap, n.attrs.capTitle, n.attrs.capNote]); });
+      expect(caps[0]).toEqual(["figure", false, false]);
+      expect(caps[1]).toEqual([null, true, false]);
+      expect(caps[3]).toEqual([null, false, true]);
+    } finally { e.destroy(); }
+  });
+});
+
+describe("Enter never makes a second caption (wave D, Task 2 review)", () => {
+  const CAP = '<p data-cap="figure"><strong>Figure 1</strong></p>';
+  // A real keydown, as the student presses it: the keymaps run in priority order.
+  function enterAt(html: string, pos: number): string {
+    const e = new Editor({ extensions: editorExtensions, content: html });
+    try {
+      e.commands.setTextSelection(pos);
+      e.view.dom.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+      return e.getHTML();
+    } finally { e.destroy(); }
+  }
+  it("at the end of a caption, title or note the new line is a plain paragraph", () => {
+    expect(enterAt(CAP, 9)).toBe(CAP + "<p></p>");
+    expect(enterAt('<p data-cap-title="1"><em>T</em></p>', 2)).toBe('<p data-cap-title="1"><em>T</em></p><p></p>');
+    expect(enterAt('<p data-cap-note="1"><em>Note.</em> n</p>', 9)).toBe('<p data-cap-note="1"><em>Note.</em> n</p><p></p>');
+  });
+  it("at the start of a caption the empty line above is plain and the caption keeps its mark", () => {
+    expect(enterAt(CAP, 1)).toBe("<p></p>" + CAP);
+  });
+  it("in the middle of a caption only the first half stays a caption", () => {
+    expect(enterAt(CAP, 4)).toBe('<p data-cap="figure"><strong>Fig</strong></p><p><strong>ure 1</strong></p>');
+  });
+  it("a plain paragraph and a caption's alignment split as before", () => {
+    expect(enterAt("<p>ab</p>", 2)).toBe("<p>a</p><p>b</p>");
+    expect(enterAt('<p style="text-align: center" data-cap="table"><strong>Table 1</strong></p>', 8)).toBe('<p data-cap="table" style="text-align: center;"><strong>Table 1</strong></p><p style="text-align: center;"></p>');
   });
 });
