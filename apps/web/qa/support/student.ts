@@ -510,6 +510,13 @@ export async function typeInDoc(page: Page, text: string, o: { at?: "end" | "cur
   } else {
     await doc.focus();
     await doc.evaluate((el) => {
+      // The editor's own caret goes to the end (tiptap's focus("end") sets it at once), not only the page's: a key the editor handles itself, such as Enter, acts at
+      // its own caret, and a selection the page makes reaches the editor a moment later (CI, S0-01: the first Enter split the document's first line).
+      const ed = (el as unknown as { editor?: { commands: { focus(at: "end"): boolean } } }).editor;
+      if (ed) {
+        ed.commands.focus("end");
+        return;
+      }
       const range = document.createRange();
       range.selectNodeContents(el.lastElementChild ?? el);
       range.collapse(false);

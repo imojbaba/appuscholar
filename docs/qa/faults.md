@@ -27,7 +27,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q1: The language button is announced differently from what it shows
 
-- Case: S10-01 (the axe scan at "the second tab, locked, with its sentence kept" and at "the locked document"), and S6-01 to S6-05 (the axe scan at every checkpoint of the Coding tab and its document); it will show at every desktop screen with no window open, and it does in S5-01, S5-02, S5-04, S5-05, S5-06 and S5-08 (the axe scan of each of their checkpoints), and in S7-01 (six screens of the Writing place and the AI-use statement), S7-02, S7-03 and S7-07, and in S8-01, S8-02, S8-05 and S8-07 (the same scan on Review's Closeness, Viva and Make PPT), and in the checkpoints of S2-01, S2-02, S2-03, S2-05 and S2-07 (Find, the Reading list, Compare, Citations, Writing)
+- Case: S10-01 (the axe scan at "the second tab, locked, with its sentence kept" and at "the locked document"), and S6-01 to S6-05 (the axe scan at every checkpoint of the Coding tab and its document); it will show at every desktop screen with no window open, and it does in S5-01, S5-02, S5-04, S5-05, S5-06 and S5-08 (the axe scan of each of their checkpoints), and in S7-01 (six screens of the Writing place and the AI-use statement), S7-02, S7-03 and S7-07, and in S8-01, S8-02, S8-05 and S8-07 (the same scan on Review's Closeness, Viva and Make PPT), and in the checkpoints of S2-01, S2-02, S2-03, S2-05 and S2-07 (Find, the Reading list, Compare, Citations, Writing); and S0-01, S0-03 and S0-04 (the axe scan at each of their checkpoints, twelve a case)
 - Date: 2026-10-24
 - Commit: c0769fcff141aefb4937328b9b77acf06f3e5edd
 - Kind: UI (accessibility)
@@ -127,7 +127,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q10: The project export window has no accessible name
 
-- Case: S3-01 (the project's export place, row 12 of the Design and ethics sheet); it shows wherever the export place opens: in S9-01 (the project's export window), S9-02 (locked, after Cancel), S9-03 (after it failed offline) and S9-05 (on a phone, in Hindi)
+- Case: S3-01 (the project's export place, row 12 of the Design and ethics sheet); it shows wherever the export place opens: in S9-01 (the project's export window), S9-02 (locked, after Cancel), S9-03 (after it failed offline) and S9-05 (on a phone, in Hindi); and S0-01 to S0-04 (the export window's axe scan, at the end of the journey)
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI (accessibility)
@@ -171,18 +171,18 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q14: Amounts typed while the network was off are not sent when it returns
 
-- Case: S3-06
+- Case: S3-06; and S0-04 (the Coding tab's codes, added while the network was off for 10 s: on c500d37 the server held no code list ten seconds after the network returned, and the home's Collection row was empty; on 6b5c15a the codes reach the server and the checks pass)
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: Unexpected (data)
 - Expected: budget amounts typed with the network off are saved once it is back, with no further action, and are still there after a reload (source: task brief S3-06, "go online, wait for the save, reload"; `tools-a.md` row 7, Budget keeps its amounts)
-- Happened: offline, the total follows what is typed and the page says "Your last save did not go through. What you entered is kept here and is sent with your next change." After the network returns, nothing is sent for 10 s (no PUT of the budget blob), the line stays, and the server has no budget (GET answers 404). A reload then asks "Leave site?" (the page holds the amounts); leaving loses them (the amounts read empty after the reload). Cause: the browser's `online` event drains only what a panel that went away left behind (`lib/blobs/held.ts`); a panel that is still open keeps its unsent value and sends it with its next change (`useProjectBlob.ts`). Budget shows no "Saved" word; the case waits for the save the word stands for.
+- Happened: offline, the total follows what is typed and the page says "Your last save did not go through. What you entered is kept here and is sent with your next change." After the network returns, nothing is sent for 10 s (no PUT of the budget blob), the line stays, and the server has no budget (GET answers 404). A reload then asks "Leave site?" (the page holds the amounts); leaving loses them (the amounts read empty after the reload). Cause: the browser's `online` event drains only what a panel that went away left behind (`lib/blobs/held.ts`); a panel that is still open keeps its unsent value and sends it with its next change (`useProjectBlob.ts`). Budget shows no "Saved" word; the case waits for the save the word stands for. On c500d37 the Coding tab did the same with its code list (`useProjectBlob("qual_codes")`, `lib/tools/qual/useCodes.ts` line 20): codes added with the network off stay in the open tab, S0-04's check "once the network is back the server holds the code list" waits 10 s and finds no `qual_codes` blob in the work list, and the home opened then has an empty Collection row; the list goes to the server when the student next changes it or leaves the tab (the project export flushes it too, `heldBlobs.saveAll`, which is why the zip at the end of S0-04 holds the codes).
 - Evidence: the qa-report artifact of the run of 2026-10-24 on 6ca5839: case S3-06, the failed checks "once the network is back the amounts are saved ...", "once they are saved, the line that says the last save did not go through is gone", "the server holds the amounts" and "after a reload the amounts are kept ...". Re-run: `pnpm --filter @appuscholar/web qa:local -g "S3-06"`.
 - Status: known
 
 ### Q15: On a phone, the project name in a place's top line is 20 px tall and the "Your question" strip's summary 32 px
 
-- Case: S3-08 (the Design place, Pathway, Budget and AI-use statement, on a phone, in Hindi), S6-06 (the Coding tab, its passages view, its name field and its delete question), S5-07 (the Data and Charts tabs), S7-06 (the Writing place's four screens), S8-06 (Review's Closeness, Viva and Make PPT) and S2-08 (every Literature checkpoint); it shows at the top of every place
+- Case: S3-08 (the Design place, Pathway, Budget and AI-use statement, on a phone, in Hindi), S6-06 (the Coding tab, its passages view, its name field and its delete question), S5-07 (the Data and Charts tabs), S7-06 (the Writing place's four screens), S8-06 (Review's Closeness, Viva and Make PPT) and S2-08 (every Literature checkpoint); it shows at the top of every place; and S0-02 (the top line at each of its checkpoints on a phone)
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI
@@ -193,7 +193,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q16: On a phone, the Design and ethics tabs' own controls are under 44 px
 
-- Case: S3-08 (Overview, Pathway, Budget and AI-use statement, on a phone, in Hindi); Ethics and consent, Registration and Investigator measured the same by a throwaway probe of the same screens
+- Case: S3-08 (Overview, Pathway, Budget and AI-use statement, on a phone, in Hindi); Ethics and consent, Registration and Investigator measured the same by a throwaway probe of the same screens; and S0-02 (Pathway on a phone, in Hindi)
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI
@@ -204,7 +204,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q17: On a phone, the document toolbar's Undo, Bold, Italic, Underline, bulleted list and numbered list buttons are 32 to 35.5 px wide
 
-- Case: S3-08 (the document full screen, on a phone, in Hindi), S6-06 (the interview full screen, before and after the tap that tags a passage), S5-07 (the document after a figure is inserted, the same screen, where Undo shows too), S2-08 (the same screen; it also measured Undo) and S7-06 (the Writing place's document tab, My style and Words: all four of its screens carry the toolbar)
+- Case: S3-08 (the document full screen, on a phone, in Hindi), S6-06 (the interview full screen, before and after the tap that tags a passage), S5-07 (the document after a figure is inserted, the same screen, where Undo shows too), S2-08 (the same screen; it also measured Undo) and S7-06 (the Writing place's document tab, My style and Words: all four of its screens carry the toolbar); and S0-02 (the document full screen, on a phone, in Hindi)
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI
@@ -215,7 +215,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q18: On a Hindi page, the document toolbar's more-formatting button shows Hindi but is named in English
 
-- Case: S3-08 (the document full screen, on a phone, in Hindi), S6-06 (the interview full screen, in Hindi), S5-07 (the same screen after a figure is inserted), S7-06 (the Writing place) and S2-08 (the same screen)
+- Case: S3-08 (the document full screen, on a phone, in Hindi), S6-06 (the interview full screen, in Hindi), S5-07 (the same screen after a figure is inserted), S7-06 (the Writing place) and S2-08 (the same screen); and S0-02 and S0-03 (the document's toolbar, in Hindi)
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI (accessibility)
@@ -226,7 +226,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q19: On a Hindi page, the document bar and toolbar are in English
 
-- Case: S3-08 (the document full screen, on a phone, in Hindi), S6-06 (the interview full screen, in Hindi), S5-07 (the same screen after a figure is inserted) and S7-06 (the Writing place: the document tab, My style and Words each carry the toolbar and the document bar; its own check of the toolbar's words names Q19), and S2-08 (the same screen)
+- Case: S3-08 (the document full screen, on a phone, in Hindi), S6-06 (the interview full screen, in Hindi), S5-07 (the same screen after a figure is inserted) and S7-06 (the Writing place: the document tab, My style and Words each carry the toolbar and the document bar; its own check of the toolbar's words names Q19), and S2-08 (the same screen); and S0-02 and S0-03 (the document bar and toolbar, in Hindi)
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI (Hindi)
@@ -259,7 +259,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q22: On a phone, the tick rows of the Data tab's practice mode and of Chart Studio's options are under 44 px
 
-- Case: S5-07 (the Data tab with a result, and the Charts tab with a figure, on a phone, in Hindi)
+- Case: S5-07 (the Data tab with a result, and the Charts tab with a figure, on a phone, in Hindi); and S0-02 (the Data tab's practice tick rows, on a phone, in Hindi)
 - Date: 2026-10-24
 - Commit: aa23121acb939df540ea10f828065bb49c396ef5
 - Kind: UI
@@ -292,7 +292,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q30: On a phone, the Coding tab's own controls are under 44 px
 
-- Case: S6-06 (the Coding tab, its passages view, its name field and its delete question, on a phone, in Hindi: the case's own check "every control of a code row is at least 44 px each way", and the touch-target rule at each checkpoint)
+- Case: S6-06 (the Coding tab, its passages view, its name field and its delete question, on a phone, in Hindi: the case's own check "every control of a code row is at least 44 px each way", and the touch-target rule at each checkpoint); and S0-02 (the Coding tab with two codes, on a phone, in Hindi)
 - Date: 2026-10-24
 - Commit: aa23121acb939df540ea10f828065bb49c396ef5
 - Kind: UI
@@ -313,7 +313,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Likely wider (read, not run): the same for the first blob of every stage 3 to 6 tool (Design, Collection, Review), since they all save through `useProjectBlob`, and for the project list, which reads the same list once (`components/frame/ProjectList.tsx` line 47).
 - Fix, either way: the home waits for `heldBlobs` to settle before its `GET /projects?include=work` (as the export does), or it asks again once the held saves have settled.
 - Evidence: the run of 2026-10-24 on 66d8ec3: case S6-01, the failed check "going home straight after the last code, the home's Collection and analysis row says \"3 codes\" and the stage is not Not started, without a reload". Re-run: `pnpm --filter @appuscholar/web qa:local -g "S6-01"`. The check is NOT CHECKED when the press came after the save was let go (a stalled runner), so a later FIXED? means the page was fixed, not that the timing changed.
-- Status: known
+- Status: fixed on phase-3a-vault (2026-10-27, c43ccbd "The home reads the study's work after the last saves have landed": `useProjectWork` waits for the saves still running, `heldBlobs.settled`, before it asks); S6-01 and the developers' Coding e2e pass again
 
 ### Q32: On a phone the passage to be tagged is not on the screen when the code is tapped
 
@@ -339,7 +339,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q41: On a phone, Closeness's source ticks and its "Your text with matches marked" fold are 20 px tall
 
-- Case: S8-06 (Closeness on a phone, in Hindi, with one other document listed and a result shown)
+- Case: S8-06 (Closeness on a phone, in Hindi, with one other document listed and a result shown); and S0-02 (Closeness on a phone, in Hindi)
 - Date: 2026-10-24
 - Commit: aa23121acb939df540ea10f828065bb49c396ef5
 - Kind: UI
@@ -383,7 +383,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q52: On a phone, Words' similar-word links, word-bank summary and Ignore buttons are under 44 px
 
-- Case: S7-06 (Words, with an entry and cards, on a phone, in Hindi)
+- Case: S7-06 (Words, with an entry and cards, on a phone, in Hindi); and S0-02 (Words on a phone, in Hindi)
 - Date: 2026-10-24
 - Commit: aa23121acb939df540ea10f828065bb49c396ef5
 - Kind: UI
@@ -461,7 +461,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q65: On a phone, the Literature tabs' own controls are under 44 px
 
-- Case: S2-08 (Find with and without results, the Reading list, the reader, Analyse a paper with its walk-through, Compare, Citations; on a phone, in Hindi)
+- Case: S2-08 (Find with and without results, the Reading list, the reader, Analyse a paper with its walk-through, Compare, Citations; on a phone, in Hindi); and S0-02 (the Literature screens on a phone, in Hindi)
 - Date: 2026-10-24
 - Commit: 70e65ef
 - Kind: UI
@@ -472,7 +472,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q66: On a Hindi page the Citation Manager's form shows English placeholders
 
-- Case: S2-08 (Citations, on a phone, in Hindi)
+- Case: S2-08 (Citations, on a phone, in Hindi); and S0-02 and S0-03 (the Citation Manager's form, in Hindi)
 - Date: 2026-10-24
 - Commit: 70e65ef
 - Kind: UI (Hindi)
@@ -561,7 +561,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q81: The tick box beside each search result has no label
 
-- Case: S11-01 (the checkpoint "B's Find tab", which shows A's search while Q80 stands; the Find results are S2's too); S2-01, S2-03, S2-05, S2-07 (Find with results) and S2-08 (the same on a phone, in Hindi)
+- Case: S11-01 (the checkpoint "B's Find tab", which shows A's search while Q80 stands; the Find results are S2's too); S2-01, S2-03, S2-05, S2-07 (Find with results) and S2-08 (the same on a phone, in Hindi); and S0-01 to S0-03 (Find's results at each journey's search)
 - Date: 2026-10-24
 - Commit: 74806ed
 - Kind: UI (accessibility)
@@ -572,7 +572,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q83: "Not used in any document" under a source on Citations is too pale to read
 
-- Case: S11-01 (the checkpoint "project A's Citations, after B"; any source not used in a document, so S2's Citations too); S2-01, S2-03 (twice: Citations after the Crossref check, and the window of its own) and S2-08 (Citations on a phone, in Hindi)
+- Case: S11-01 (the checkpoint "project A's Citations, after B"; any source not used in a document, so S2's Citations too); S2-01, S2-03 (twice: Citations after the Crossref check, and the window of its own) and S2-08 (Citations on a phone, in Hindi); and S0-01 to S0-03 (Citations at each journey's reference list)
 - Date: 2026-10-24
 - Commit: 74806ed
 - Kind: UI (accessibility)
@@ -591,6 +591,18 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Happened: the Hindi dictionary (the v1 text, merged with the newer main line, which translated the `rs2_`, `ap2_` and `sh2_` keys) writes Hindi sentences around English words: `sh2_intro` ("text layer"), `ap2_give_appuscholer_a_research` ("gap, design, sample, statistics"), `ap2_consent` ("peer review"), the chips `ap2_what_was_the_research` ("Research gap") and `ap2_which_statistical_test_was` ("statistical test"), the walk-through's "चरण N of 12: Research gap और उद्देश्य", the topic box's example `rs2_topic_placeholder` (an English phrase), and Help's install hint `wc_install_menu` (the browser menu's "Install app" and "Add to Home Screen"). The register kept these keys whole in English until Dr. Sharma gave Hindi, and the QA layer reads the dictionaries, so a key that now has Hindi stops being an exception; the English words that are left in it are found. Whether those words stay English (as they are in the Hindi a student reads) is Dr. Sharma's to say, so the fault is recorded as awaiting her, with the match of the boxes that hold them.
 - Evidence: the qa-report artifact of the run of 2026-10-27: cases S2-08 and S9-05, the failed checks "no English on a Hindi screen". Re-run: `pnpm --filter @appuscholar/web qa:local --project=phone -g "S2-08"`.
 - Status: awaiting
+
+### Q85: The home's "Draft of N words" counts a punctuation mark after formatted text as a word
+
+- Case: S0-01 (also S0-02, S0-03 and S0-04), the check "the Writing row counts the words of my documents as the document's own count shows them"
+- Date: 2026-10-24
+- Commit: c500d37449b5dcf99eb97b6459eedcdd21cd1501
+- Kind: Unexpected (data)
+- Expected: the home's Writing row says "Draft of N words" where N is the number of words of the project's documents, as the count under each document shows them (source: `stage-2.md` row 1, "Draft of 0 words" on the Writing row, and the document's own count line; spec section 4, cross-tool outcomes)
+- Happened: after the journey the document's count line reads 444 words (the main document) and 329 (the interview), 773 in all; the home says "Draft of 777 words". The server holds 446 and 331 for the same two documents. Each of them is two words more: the main document has two references whose italic journal title and volume are followed by a comma (APA writes "<i>Procedia - Social and Behavioral Sciences, 15</i>, 3774–3778"), the interview has two tagged passages followed by a comma ("<span class="qual-tag">...every exam</span>,"). The count that is saved turns every tag into a space, so the comma after a tag is a word of its own; the count under the document reads the editor's text, where "exam," is one word. Any formatted word followed by punctuation (a bold word, a citation, a coded passage) adds one. The saved count is also what the writing record is made from.
+- Cause: `packages/core/src/sanitize.ts` lines 22 to 25 (`wordCount`: `html.replace(/<[^>]+>/g, " ")`, then split at white space), saved by `apps/web/lib/useAutosave.ts` line 212 and summed for the home by `apps/api/src/store/drizzle.ts` lines 126 and 135; the line under the document is `apps/web/components/editor/Editor.tsx` lines 10 and 84 (`words(editor.getText())`).
+- Evidence: the run of 2026-10-24 on c500d37: case S0-01, the check named above (its message shows "Draft of 777 words" against the expected 773). Re-run: `pnpm --filter @appuscholar/web qa:local -g "S0-01"`.
+- Status: known
 
 ### Q96: While the vault is locked, an amount typed into Budget is dropped
 
