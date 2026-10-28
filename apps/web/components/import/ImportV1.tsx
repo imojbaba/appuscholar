@@ -41,7 +41,7 @@ export function ImportV1({ onDone, onBusyChange }: { onDone: (projectId: string)
       return;
     }
     const { documents, projects, exported } = parsed.backup;
-    if (!confirm(`Import ${documents.length} document(s) saved ${exported.slice(0, 10) || "?"} into a new project?`)) { setMsg(""); return; }
+    if (!confirm(`Import ${documents.length} document(s) saved ${exported.slice(0, 10) || "?"} into a new study?`)) { setMsg(""); return; }
     const first = projects[0];
     const authorLabel = exported ? "v1 backup " + exported.slice(0, 10) : "v1 backup";
     const projectTitle = first ? `${first.title} (imported from v1)` : "Imported from v1";
@@ -123,7 +123,7 @@ export function ImportV1({ onDone, onBusyChange }: { onDone: (projectId: string)
         <ol className="grid gap-2 text-sm">
           <li>1. In Appuscholar v1 open Backup and download the file.</li>
           <li>2. Choose that file here.</li>
-          <li>3. Documents land in a new project; the original file is not changed.</li>
+          <li>3. Documents land in a new study; the original file is not changed.</li>
         </ol>
         <p className="text-sm text-muted-foreground">Your AI keys and access code were never in the backup. Locked backups ask for their passphrase; it stays in this browser.</p>
         {vault.status !== "off" && vault.status !== "loading" ? <p className="text-sm text-muted-foreground" data-testid="import-vault-note">{t("import_v1_vault")}</p> : null}

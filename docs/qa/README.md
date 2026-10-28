@@ -23,7 +23,7 @@ Good to know:
 
 - It uses its own ports (web 3010, API 8798, database 5443), so it never touches a server another checkout is running. If one of those ports is taken, the run **refuses to start** and says which, because a server left over from another run would answer in place of the new build and the run would test old code. Stop what holds the port (`lsof -nP -iTCP:<port> -sTCP:LISTEN`), or choose other ports with `QA_API_PORT`, `QA_WEB_PORT` and `QA_PG_PORT`.
 - The first run on a machine needs the browser: `pnpm --filter @appuscholar/web exec playwright install chromium`.
-- `QA_WORKERS` sets how many cases run at once (default 2).
+- `QA_WORKERS` sets how many cases run at once: 1 under `qa:local`, 2 on CI. The throwaway database on a Mac (pglite) mixes up two connections' statements when cases run side by side, and the api then answers an ordinary request with a 500 or a 401 (its log says "bind message supplies 4 parameters, but prepared statement requires 2"). That is the harness, not the product: CI's Postgres has no such limit. If you raise `QA_WORKERS` locally and a case fails that way, re-run it with one worker before you call it a fault.
 - The header of the report says what ran. Anything that narrows the run (`-g`, `--project`, a file name, `--last-failed`, `--grep-invert`) makes it "part of the grid, selected with ...", never "full grid".
 - A selftest of the fixture that must fail on purpose, or pin a mark, and so cannot set `qa.selfTest`, carries the tag `@mechanics`; the report leaves it out of the marks.
 - Only test values are used: generated passphrases, `@qa.test` addresses, keys that look like `gsk_qa_<mode>_<random>`. The AI provider is faked behind our own API; nothing leaves the machine except what a case announces.

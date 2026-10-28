@@ -4,6 +4,7 @@ import { CLOSE_SCHEMAS, type CloseShapes } from "./kinds/close";
 import { DESIGN_SCHEMAS, type DesignShapes } from "./kinds/design";
 import { PARTICIPANTS_SCHEMAS, type ParticipantsShapes } from "./kinds/participants";
 import { QUAL_SCHEMAS, type QualShapes } from "./kinds/qual";
+import { SAMPLES_SCHEMAS, type SamplesShapes } from "./kinds/samples";
 import { STATS_SCHEMAS, type StatsShapes } from "./kinds/stats";
 import { STYLE_SCHEMAS, type StyleShapes } from "./kinds/style";
 import { VIVA_SCHEMAS, type VivaShapes } from "./kinds/viva";
@@ -19,7 +20,8 @@ export const BLOB_KINDS = [
   "idea_intake", "citations", "retraction_cache", "refcheck_cache", "shelf_index", "ap_notes", "ap_cols", "rs_prefs", "shelf_cols",
   "design_reg", "design_proto", "design_ec", "design_ctri", "design_pi", "design_budget", "stats_sets", "stats_runs", "stats_prefs", "qual_codes", "qual_prefs",
   "style_profile", "style_samples", "style_meta", "words_bank", "words_prefs", "close_prefs", "viva_log",
-  "participants"
+  "participants",
+  "writing_samples"
 ] as const;
 export type FixedBlobKind = (typeof BLOB_KINDS)[number];
 /** One shelf paper's extracted text: `shelf_paper:<id>`, the id 1 to 64 characters of [A-Za-z0-9_-]. */
@@ -129,7 +131,7 @@ type FixedShapes = {
   ap_cols: ApCols;
   rs_prefs: RsPrefs;
   shelf_cols: ShelfCols;
-} & DesignShapes & StatsShapes & QualShapes & StyleShapes & WordsShapes & CloseShapes & VivaShapes & ParticipantsShapes;
+} & DesignShapes & StatsShapes & QualShapes & StyleShapes & WordsShapes & CloseShapes & VivaShapes & ParticipantsShapes & SamplesShapes;
 /** What a blob of kind K holds. */
 export type BlobShape<K extends BlobKind> = K extends FixedBlobKind ? FixedShapes[K] : ShelfPaper;
 
@@ -143,7 +145,7 @@ const SCHEMAS: Record<FixedBlobKind, z.ZodType> = {
   ap_cols: ApColsSchema,
   rs_prefs: RsPrefsSchema,
   shelf_cols: ShelfColsSchema,
-  ...DESIGN_SCHEMAS, ...STATS_SCHEMAS, ...QUAL_SCHEMAS, ...STYLE_SCHEMAS, ...WORDS_SCHEMAS, ...CLOSE_SCHEMAS, ...VIVA_SCHEMAS, ...PARTICIPANTS_SCHEMAS
+  ...DESIGN_SCHEMAS, ...STATS_SCHEMAS, ...QUAL_SCHEMAS, ...STYLE_SCHEMAS, ...WORDS_SCHEMAS, ...CLOSE_SCHEMAS, ...VIVA_SCHEMAS, ...PARTICIPANTS_SCHEMAS, ...SAMPLES_SCHEMAS
 };
 const schemaOf = (kind: BlobKind): z.ZodType | null =>
   (BLOB_KINDS as readonly string[]).includes(kind) ? SCHEMAS[kind as FixedBlobKind] : SHELF_PAPER_KIND.test(kind) ? ShelfPaperSchema : null;

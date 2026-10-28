@@ -151,10 +151,11 @@ describe("a participant list that is locked", () => {
 });
 
 describe("the sentences", () => {
-  it("says it finds names on the list and common first names, but not every name, when both ran; the line about the AI provider stays as it was", async () => {
+  it("says it finds names on the list and common first names, but not every name, when both ran; the line about the AI provider says the text goes through Appuscholar's server first (O14)", async () => {
     await open(scan({ listed: 0, maybe: [], locked: false }, EMAIL, { list: true, firstNames: true }));
     const body = text("pd-dialog")!;
-    expect(body).toContain("This text goes straight to your AI provider.");
+    expect(body).toContain(en.pp_ai_goes);
+    expect(body).not.toMatch(/straight to your AI provider/i);
     expect(body).toContain(en.pp_ai_checks);
     expect(en.pp_ai_checks).toMatch(/names on your participant list/);
     expect(en.pp_ai_checks).toMatch(/common first names/);

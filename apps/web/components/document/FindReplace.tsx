@@ -58,7 +58,7 @@ export function FindReplace({ editor, seed, onClose }: { editor: Editor; seed: s
   }
 
   return (
-    <div className="fmtbar findbar" role="search" aria-label="Find and replace" data-testid="find-bar"
+    <div className="fmtbar findbar" role="search" aria-label={t("fb_find")} data-testid="find-bar"
       onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); onClose(); } }}>
       <Input ref={findRef} className="findbar-input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("tab_name_find")} aria-label={t("tab_name_find")} data-testid="find-input"
         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); go(e.shiftKey ? current - 1 : current + 1); } }} />

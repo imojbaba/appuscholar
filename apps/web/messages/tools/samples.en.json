@@ -1,0 +1,9 @@
+{
+  "wsamp_desc": "Appuscholar keeps a private copy of the words you typed yourself in each of your documents. It leaves out anything inserted from an AI suggestion, any document you marked as a source, and any document with fewer than 30 typed words. The copy is stored on the Appuscholar server with your study, not on this computer. With a vault it is locked with your passphrase, as your documents are; without one it is stored the way your documents are. No tool uses it yet. It is included when you export all your work, and a document's copy is removed when you delete that document or mark it as a source. Turn this off any time and clear what is saved; your documents are never affected either way.",
+  "wsamp_scope": "The count is for the study that is open. Clearing removes the saved copies from all your studies.",
+  "wsamp_on_toast": "Writing-style capture turned on",
+  "wsamp_off_toast": "Writing-style capture turned off",
+  "wsamp_clear_yes": "Yes, clear them",
+  "wsamp_clear_fail": "Could not clear the saved writing samples. Check your connection and try again.",
+  "wsamp_full": "This study's saved copy is full, so newer writing is not being added. Clear it to make room."
+}

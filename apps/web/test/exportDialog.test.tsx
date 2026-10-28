@@ -128,14 +128,18 @@ describe("ExportDialog", () => {
     await render();
     await click(tid("open-all"));
     expect(tid("export-dialog")).not.toBeNull();
-    expect($("#exp-h")!.textContent).toBe("Export: Sleep and exam anxiety");
+    expect($(".exp-h")!.textContent).toBe("Export: Sleep and exam anxiety");
+    // The window is named by its title (Q10): aria-labelledby points at the id the title really has.
+    const named = tid("export-dialog")!.getAttribute("aria-labelledby");
+    expect(named).toBeTruthy();
+    expect(document.getElementById(named!)).toBe($(".exp-h"));
     const text = tid("export-dialog")!.textContent!;
     for (const s of [
       "Unlocked in your browser and saved to your computer. The files are readable, so keep them somewhere safe.",
       "What to include",
       "Documents", "My first document, and every other document in this study", "Word and HTML",
       "Your question and feasibility read", "The study card and the last AI read",
-      "Citations", "2 sources, with the reference list in your chosen style", "Library file and reference list (text)",
+      "Citations", "2 sources, with the reference list in your chosen style", "RIS, BibTeX, text",
       "Search lists", "Papers you searched and kept, with quick reads",
       "Reading notes", "Highlights, your own summaries and AI summaries, marked as such",
       "Comparison table and paper cards", "Your words, paper by paper",
@@ -144,8 +148,6 @@ describe("ExportDialog", () => {
       "Cancel", "Download zip",
       "To take every study at once, or to leave Appuscholar, use Account, Export all my work."
     ]) expect(text).toContain(s);
-    // Until RIS and BibTeX exist (Task 38), the citations line does not offer them.
-    expect(text).not.toContain("RIS");
     expect(ticked()).toEqual(DEFAULT_EXPORT_PARTS);
     expect(text).not.toMatch(/[—]/);
   });
@@ -238,7 +240,7 @@ describe("ExportDialog", () => {
     const b = h.download.mock.calls[0]![1] as Blob;
     const bytes = await new Promise<ArrayBuffer>((done) => { const r = new FileReader(); r.onload = () => done(r.result as ArrayBuffer); r.readAsArrayBuffer(b); });
     const zip = await JSZip.loadAsync(bytes);
-    expect(Object.keys(zip.files).filter((n) => !zip.files[n]!.dir).sort()).toEqual(["citations/library.json", "citations/references.txt"]);
+    expect(Object.keys(zip.files).filter((n) => !zip.files[n]!.dir).sort()).toEqual(["citations/library.bib", "citations/library.json", "citations/library.ris", "citations/references.txt"]);
     const refs = await zip.file("citations/references.txt")!.async("string");
     // Vancouver keeps the library's order.
     expect(refs.indexOf("Walker")).toBeLessThan(refs.indexOf("Alvarez"));

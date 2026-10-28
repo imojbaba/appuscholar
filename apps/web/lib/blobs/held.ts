@@ -77,6 +77,10 @@ export const heldBlobs = {
     heldBlobs.track(id, p);
     return p;
   },
+  /** Settles once every save tracked so far, for any blob, has settled (a read of the project's work then sees what was just saved). */
+  async settled() {
+    await Promise.allSettled([...busy.values()]);
+  },
   /** Settles once no last save or drain runs for the blob. */
   async idle(id: string) {
     for (let p = busy.get(id); p; p = busy.get(id)) await p;

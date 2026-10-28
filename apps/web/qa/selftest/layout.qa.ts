@@ -348,8 +348,8 @@ test("layout: an exempt box is read when the app is speaking in it, and a part o
 
 test("layout: the register's kept English is not a finding, and the same page's other English is", TAGS, async ({ page, qa }) => {
   measuring(qa, "SELF-LAYOUT-M10");
-  const research = T("rs2_already_in_your_library");
-  const analyse = T("ap2_checking_dois_with_openalex", { doisCount: 12, done: 3 });
+  const research = T("rs2_clear_a_filter_to");
+  const analyse = T("ap2_reading_2", { reading: "the methods section" });
   const toast = "Citation inserted ✓";
   expect(research.split(/\s+/).length).toBeGreaterThan(2);
   expect(HINDI_EXCEPTIONS).toContain(research);

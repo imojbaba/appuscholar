@@ -1,0 +1,15 @@
+{
+  "ps_nodoc": "The document this picture came from is not open, so nothing was placed. Use Save a copy, open the document again, then open the photo studio from it.",
+  "ps_rect_legend": "Or type the box in pixels",
+  "ps_rect_x": "Left",
+  "ps_rect_y": "Top",
+  "ps_rect_w": "Width",
+  "ps_rect_h": "Height",
+  "ps_rect_apply": "Apply box",
+  "ps_rect_small": "Make the box at least {n} pixels wide and tall.",
+  "ps_text_legend": "Or type where the text goes, in pixels",
+  "ps_text_place": "Place text",
+  "ps_zoom_out": "Zoom out",
+  "ps_zoom_in": "Zoom in",
+  "ps_canvas": "The picture you are editing"
+}

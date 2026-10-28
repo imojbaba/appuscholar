@@ -13,6 +13,7 @@ import { IMPORT_ACCEPT } from "@/lib/import/parse";
 import { newDocumentBody } from "@/lib/useAutosave";
 import { useVault } from "@/lib/vault/useVault";
 import { openTitle, sealTitle, useTitle } from "@/lib/vault/titles";
+import { forgetSample, resumeSample } from "@/lib/writingSamples/useWritingSampleCapture";
 import { useProject, type DocumentSummary, type DocumentWithBody, type Project } from "@/components/frame/ProjectContext";
 
 const UNDO_MS = 10_000;
@@ -41,7 +42,7 @@ export function DocBar() {
     try {
       // With a vault the new document's empty body is encrypted from the start (the vault is opened first).
       // Its title is sealed with it, under the same first key.
-      const body = await newDocumentBody(vault, name.trim() || "Untitled");
+      const body = await newDocumentBody(vault, name.trim() || t("doc_untitled"));
       // The unlock was cancelled: nothing is created and the name dialog stays open.
       if (!body) return;
       const made = await apiFetch<DocumentWithBody>(`/projects/${projectId}/documents`, { method: "POST", body: JSON.stringify(body) });
@@ -60,7 +61,7 @@ export function DocBar() {
     try {
       // Sealed under the document's own key; a locked vault asks for the passphrase first, and a cancelled ask renames nothing.
       if ((await vault.known()) !== "off" && !(await vault.ensureUnlocked())) return;
-      const title = await sealTitle(vault, currentDoc.id, currentDoc.deks, name.trim() || "Untitled");
+      const title = await sealTitle(vault, currentDoc.id, currentDoc.deks, name.trim() || t("doc_untitled"));
       const d = await apiFetch<DocumentSummary>(`/documents/${currentDoc.id}`, { method: "PATCH", body: JSON.stringify(title) });
       patchDoc(d.id, { title: d.title, titleKeyVersion: d.titleKeyVersion });
       setDialog(null);
@@ -93,13 +94,15 @@ export function DocBar() {
       // What was typed last is stored first, so Undo brings back the newest text.
       await flushOpen(); // a failed save still lets the student delete
       await apiFetch<void>(`/documents/${gone.id}`, { method: "DELETE" });
+      // Its writing sample (if the student keeps one) goes with it; an Undo within ten seconds brings the document back and it is captured again.
+      void forgetSample(gone.projectId, gone.id, () => vault).catch(() => undefined);
       registerFlush(null);
       setDialog(null);
       // The open document is gone from the list, so reloading shows the first remaining one.
       await reloadDocs();
       toast("Deleted — ", {
         ms: UNDO_MS,
-        action: { label: "Undo", testId: "undo-delete", onClick: () => { void undo(gone.id, gone.projectId); } }
+        action: { label: t("fb_undo"), testId: "undo-delete", onClick: () => { void undo(gone.id, gone.projectId); } }
       });
     } catch (e) {
       setDialog(null);
@@ -110,7 +113,10 @@ export function DocBar() {
   async function undo(id: string, docProjectId: string) {
     try {
       // The workspace restores into whichever project is open by now, so a late Undo never mixes projects.
-      if (await restoreDocument(id, docProjectId)) toast("Restored ✓");
+      const shown = await restoreDocument(id, docProjectId);
+      // The document is back even when the student declined the switch to it, so its writing is captured again (not when the restore failed).
+      resumeSample(docProjectId, id);
+      if (shown) toast("Restored ✓");
     } catch { toast("Could not bring the document back."); }
   }
 
@@ -135,6 +141,9 @@ export function DocBar() {
       // Stored first, so the switch that follows never asks about a document that has already left this project.
       if (!(await flushOpen())) { toast(t("doc_move_unsaved")); return; }
       await apiFetch(`/documents/${moving.id}/move`, { method: "POST", body: JSON.stringify({ projectId: target }) });
+      // The copy of its writing stays with the project it was written for no longer: it goes from the old one, and is captured in the new one.
+      void forgetSample(moving.projectId, moving.id, () => vault).catch(() => undefined);
+      resumeSample(target, moving.id);
       setDialog(null);
       await openProject(target, { docId: moving.id });
     } catch { toast(t("doc_move_fail")); }
@@ -147,6 +156,9 @@ export function DocBar() {
     try {
       const d = await apiFetch<DocumentSummary>(`/documents/${currentDoc.id}`, { method: "PATCH", body: JSON.stringify({ kind }) });
       patchDoc(d.id, { kind: d.kind });
+      // v1 3172: a source paper is not the student's writing, so its sample goes.
+      if (kind === "source") void forgetSample(currentDoc.projectId, currentDoc.id, () => vault).catch(() => undefined);
+      else resumeSample(currentDoc.projectId, currentDoc.id);
       toast(t(kind === "source" ? "org_toast_src" : "org_toast_own"));
     } catch { toast("Could not change the document. Try again."); }
   }
@@ -158,8 +170,8 @@ export function DocBar() {
         {documents.map((d) => <DocOption key={d.id} doc={d} />)}
       </select>
       {isSource && <Badge variant="chip" title={t("org_badge_title")} data-testid="doc-source-badge">{t("org_badge_src")}</Badge>}
-      <Button variant="ghost" size="sm" title={t("doc_new_title")} data-testid="doc-new" onClick={() => { setName("Untitled " + (documents.length + 1)); setDialog("new"); }}>{t("doc_new_btn")}</Button>
-      <button type="button" className="icon" aria-label="Rename this document" title="Rename this document" data-testid="doc-rename" disabled={!currentDoc} onClick={() => { void askRename(); }}>✎</button>
+      <Button variant="ghost" size="sm" title={t("doc_new_title")} data-testid="doc-new" onClick={() => { setName(t("doc_untitled_n", { n: documents.length + 1 })); setDialog("new"); }}>{t("doc_new_btn")}</Button>
+      <button type="button" className="icon" aria-label={t("doc_rename_title")} title={t("doc_rename_title")} data-testid="doc-rename" disabled={!currentDoc} onClick={() => { void askRename(); }}>✎</button>
       <button type="button" className="icon del" aria-label={t("doc_delete_title")} title={t("doc_delete_title")} data-testid="doc-delete" disabled={!currentDoc} onClick={askDelete}>🗑</button>
       <Button variant="ghost" size="sm" title={t("doc_import_title")} data-testid="doc-import" onClick={() => fileRef.current?.click()}>{t("doc_import_btn")}</Button>
       <input ref={fileRef} type="file" accept={IMPORT_ACCEPT} multiple hidden data-testid="doc-import-input" aria-label="Choose files to import"
@@ -170,8 +182,8 @@ export function DocBar() {
       <Dialog open={dialog === "new" || dialog === "rename"} onOpenChange={(o) => { if (!o) close(); }}>
         <DialogContent className="max-w-sm" data-testid="doc-name-dialog">
           <form onSubmit={(e) => { e.preventDefault(); void (dialog === "new" ? create() : rename()); }}>
-            <DialogHeader><DialogTitle>{dialog === "new" ? "Name for the new document:" : "Rename this document:"}</DialogTitle></DialogHeader>
-            <Input className="my-4" value={name} onChange={(e) => setName(e.target.value)} maxLength={200} autoFocus aria-label={dialog === "new" ? "Name for the new document" : "Rename this document"} data-testid="doc-name-input" />
+            <DialogHeader><DialogTitle>{dialog === "new" ? t("doc_name_new_h") : t("doc_rename_h")}</DialogTitle></DialogHeader>
+            <Input className="my-4" value={name} onChange={(e) => setName(e.target.value)} maxLength={200} autoFocus aria-label={dialog === "new" ? t("doc_name_new") : t("doc_rename_title")} data-testid="doc-name-input" />
             <DialogFooter>
               <Button type="button" variant="ghost" size="md" onClick={close}>{t("sap_cancel_btn")}</Button>
               <Button type="submit" variant="primary" size="md" disabled={busy} data-testid="doc-name-ok">OK</Button>

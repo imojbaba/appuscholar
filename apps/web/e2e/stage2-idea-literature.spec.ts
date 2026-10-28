@@ -1161,7 +1161,7 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await page.getByTestId("home-export").click();
     const dlg = page.getByTestId("export-dialog");
     await expect(dlg).toBeVisible();
-    await expect(dlg.locator("#exp-h")).toHaveText(T("exp_title", { title: PROJECT }));
+    await expect(dlg.locator(".exp-h")).toHaveText(T("exp_title", { title: PROJECT }));
     for (const part of ["documents", "question", "citations", "search", "notes", "compare", "record", "aiuse"]) await expect(page.getByTestId("exp-part-" + part)).toBeChecked();
     await expect(page.getByTestId("exp-part-readingBackup")).not.toBeChecked();
     const [download] = await Promise.all([page.waitForEvent("download"), page.getByTestId("exp-download").click()]);

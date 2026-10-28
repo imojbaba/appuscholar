@@ -42,12 +42,13 @@ const STAGE2_DIRS = [
  * names of the project list's spoken summary ("idea", "writing", "review") are also the stage ids (StageKey); the closeness check's source kind
  * "pasted" (close_kind_pasted) is also the result kind of the style live check (components/tools/style/StyleChecks.tsx); the Participants tab's plan line joins the
  * plain words for what is recorded ("name", "consent") into one sentence (pp_who_name, pp_who_consent); the same two words are plain tokens, not copy, in
- * components/frame/StageRows.tsx and components/tools/design/Ethics.tsx; Find names in the Participants tab labels its buttons "Replace" and "Replace all" (pp_find_replace_one,
+ * components/frame/StageRows.tsx and components/tools/design/Ethics.tsx; the toolbar's Highlight (fb_highlight) is also the name of the browser's Highlight API that
+ * components/tools/participants/DocumentLayer.tsx reads off globalThis; Find names in the Participants tab labels its buttons "Replace" and "Replace all" (pp_find_replace_one,
  * pp_find_replace, pp_find_replace_all), the same two words as the document editor's own Find and Replace buttons (components/document/FindReplace.tsx), which write them as literals.
  */
 const NOT_COPY = new Set([
   "erase_confirm_word", "state_sum_idea", "state_sum_writing", "state_sum_review", "close_kind_pasted", "pp_who_name", "pp_who_consent",
-  "pp_find_replace_one", "pp_find_replace", "pp_find_replace_all"
+  "pp_find_replace_one", "pp_find_replace", "pp_find_replace_all", "fb_highlight"
 ]);
 
 /**
@@ -135,7 +136,7 @@ describe("i18n coverage", () => {
     const offenders = [...files.flatMap(f => findOffenders(f, readFileSync(f, "utf8"))).map(h => h.replace(/:\d+ /, " "))].sort();
     expect(offenders).toEqual([...STAGE2_TS_KNOWN].sort());
   });
-  it("every rs2_, ap2_ and sh2_ key in English is in Hindi too (English text until Dr. Sharma gives Hindi), so none counts as an untranslated literal", () => {
+  it("every rs2_, ap2_ and sh2_ key in English is in Hindi too (English text where Dr. Sharma has not given Hindi yet), so none counts as an untranslated literal", () => {
     const keys = Object.keys(en).filter(k => /^(rs2|ap2|sh2)_/.test(k));
     expect(keys.length).toBeGreaterThan(0);
     const hindi = hi as Record<string, string>;

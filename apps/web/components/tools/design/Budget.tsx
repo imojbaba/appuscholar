@@ -33,6 +33,10 @@ export function Budget({ projectId, now = () => new Date() }: { projectId: strin
   const remove = (i: number) => change((r) => { r.splice(i, 1); return r; }, false);
   // An export made while the saved rows are not known would hand over the defaults in place of the student's work.
   const waiting = budget.unread || budget.broken;
+  // The saved rows are not known, so a key typed now cannot be kept (save() refuses it, nothing typed may replace work that is not read: unread is not empty). While they open
+  // the boxes show and refuse typing (readOnly), so no key is taken and given back empty; while locked or unreadable they are not shown at all, since seven empty boxes and
+  // "Total: ₹0" would say nothing was entered. The note above says why, and they come back when the work is read.
+  const hidden = budget.unread && !budget.loading;
   const exportBudget = () => {
     setMsg("");
     if (waiting) return;
@@ -44,27 +48,29 @@ export function Budget({ projectId, now = () => new Date() }: { projectId: strin
       <p className="desc">{t("design_budget_intro")}</p>
       <Notes {...notesOf(budget)} />
       <div className="stack" style={{ maxWidth: "62ch" }}>
-        <section className="flex flex-col gap-2" aria-label={t("design_budget_rows")} data-testid="budget-rows">
+        {!hidden && <section className="flex flex-col gap-2" aria-label={t("design_budget_rows")} data-testid="budget-rows">
           {rows.map((r, i) => (
             <div key={i} className="flex items-center gap-2">
               <input
                 type="text" className="input min-w-0 flex-[2]" data-testid={"budget-label-" + i} aria-label={t("design_budget_label", { n: i + 1 })}
-                value={r.label} onChange={(e) => edit(i, "label", e.target.value)}
+                value={r.label} readOnly={budget.unread} onChange={(e) => edit(i, "label", e.target.value)}
               />
               <input
                 type="number" className="input min-w-0 flex-1" data-testid={"budget-amount-" + i} aria-label={t("design_budget_amount", { n: i + 1 })}
-                placeholder={t("design_budget_amount_ph")} value={r.amount} onChange={(e) => edit(i, "amount", e.target.value)}
+                placeholder={t("design_budget_amount_ph")} value={r.amount} readOnly={budget.unread} onChange={(e) => edit(i, "amount", e.target.value)}
               />
-              <Button variant="ghost" size="icon-sm" data-testid={"budget-remove-" + i} aria-label={t("design_budget_remove", { n: i + 1 })} onClick={() => remove(i)}>
+              <Button variant="ghost" size="icon-sm" className="budget-remove" data-testid={"budget-remove-" + i} aria-label={t("design_budget_remove", { n: i + 1 })} disabled={budget.unread} onClick={() => remove(i)}>
                 <X aria-hidden="true" />
               </Button>
             </div>
           ))}
-        </section>
-        <div className="place-row" style={{ marginBottom: 0 }}>
-          <Button variant="ghost" data-testid="budget-add" onClick={add}><Plus aria-hidden="true" />{t("design_budget_add")}</Button>
-        </div>
-        <p className="m-0 text-[15px] font-bold text-ink" data-testid="budget-total">{budgetTotalText(rows)}</p>
+        </section>}
+        {!hidden && (
+          <div className="place-row" style={{ marginBottom: 0 }}>
+            <Button variant="ghost" data-testid="budget-add" disabled={budget.unread} onClick={add}><Plus aria-hidden="true" />{t("design_budget_add")}</Button>
+          </div>
+        )}
+        {!budget.unread && <p className="m-0 text-[15px] font-bold text-ink" data-testid="budget-total">{budgetTotalText(rows)}</p>}
         <div className="place-row" style={{ marginBottom: 0 }}>
           <Button variant="gold" data-testid="budget-export" disabled={waiting} onClick={exportBudget}>
             <DownloadSimple aria-hidden="true" />{t("design_budget_export")}

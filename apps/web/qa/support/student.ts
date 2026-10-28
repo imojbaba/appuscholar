@@ -98,7 +98,7 @@ export async function openConnectAI(page: Page): Promise<void> {
 }
 
 /**
- * Connect AI, open at its question (4a), walked as a student does: Yes, I have a key; Groq, through "Using a different AI company?" (Gemini is the default and the fake
+ * Connect AI, open at its question (4a) or, with a key connected already, at AI connection (a key changed), walked as a student does: Yes, I have a key; Groq, through "Using a different AI company?" (Gemini is the default and the fake
  * provider refuses it); the key; Connect (the api tests it with the fake provider); then how it is kept. "pass" chooses and confirms the passphrase in the window and reads,
  * ticks and closes the recovery sheet, whose code is returned; "vault" is a student whose vault exists already (4d is skipped and the key is locked under it).
  */
@@ -110,9 +110,15 @@ export async function connectKey(page: Page, o: { key: string; keep: "plain" | "
     ? route.fulfill({ status: 204, headers: { "access-control-allow-origin": QA_WEB_ORIGIN, "access-control-allow-headers": "authorization, content-type", "access-control-allow-methods": "POST, OPTIONS" } })
     : route.fulfill({ status: 200, contentType: "application/json", headers: { "access-control-allow-origin": QA_WEB_ORIGIN }, body: JSON.stringify({ ok: true, reply: "OK" }) });
   if (o.answerTest) await page.route(QA_API_ORIGIN + "/ai/test", answer);
-  await expect(dialog).toHaveAttribute("data-screen", "ask");
-  await page.getByTestId("connect-yes").click();
-  await page.getByTestId("connect-other").click();
+  // A window opened with a key already connected is at "AI connection" (manage): Change key goes to the same key screen as Yes, I have a key, with the company the key is for chosen already.
+  if ((await dialog.getAttribute("data-screen")) === "manage") {
+    await page.getByTestId("connect-change").click();
+  } else {
+    await expect(dialog).toHaveAttribute("data-screen", "ask");
+    await page.getByTestId("connect-yes").click();
+  }
+  const other = page.getByTestId("connect-other");
+  if (await other.isVisible()) await other.click();
   await page.getByTestId("connect-provider").selectOption("groq");
   await expect(page.getByTestId("connect-provider"), "the key must be saved as Groq: the fake AI provider refuses the default, Gemini").toHaveValue("groq");
   await page.getByTestId("connect-key").fill(o.key);

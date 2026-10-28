@@ -110,9 +110,16 @@ describe("known.json", () => {
   });
 
   it("holds the faults fixed in #25 as fixed, and the open ones as known or awaiting a decision (spec section 9)", () => {
-    for (const id of ["F2", "F3", "F4", "F5"]) expect(byId(id)?.status, id).toBe("fixed");
-    for (const id of ["F1", "O1", "O2", "O7", "O12", "O15", "O21"]) expect(byId(id)?.status, id).toBe("known");
-    for (const id of ["O4", "O5", "O8", "O11", "O14", "O20"]) expect(byId(id)?.status, id).toBe("awaiting");
+    for (const id of ["F1", "F2", "F3", "F4", "F5", "O1", "O2", "O4", "O5", "O7", "O14", "Q12", "Q13", "Q14", "Q74", "Q96"]) expect(byId(id)?.status, id).toBe("fixed");
+    for (const id of ["O10", "O12", "O15", "O21", "O24"]) expect(byId(id)?.status, id).toBe("known");
+    for (const id of ["O8", "O11", "O20"]) expect(byId(id)?.status, id).toBe("awaiting");
+  });
+
+  it("holds the accessibility, phone-size and Hindi faults Q10, Q11 and Q15 to Q19 as fixed", () => {
+    for (const id of ["Q10", "Q11", "Q15", "Q16", "Q17", "Q18", "Q19"]) {
+      expect(byId(id)?.status, id).toBe("fixed");
+      expect(byId(id)?.title, id).toMatch(/ \(fixed\)$/);
+    }
   });
 
   it("has no entry for a fault on the first-run path: such a fault is a blocker, fixed before merge, never a known fault (all fixed on first-run-fix)", () => {
@@ -120,7 +127,7 @@ describe("known.json", () => {
   });
 
   it("has no entry for a budget row or O23 until a run shows it failing", () => {
-    for (const id of ["O10", "O19", "O23", "O24"]) expect(byId(id), id).toBeUndefined();
+    for (const id of ["O19", "O23"]) expect(byId(id), id).toBeUndefined();
   });
 
   it("names OJ as the owner of the decisions that are his", () => {

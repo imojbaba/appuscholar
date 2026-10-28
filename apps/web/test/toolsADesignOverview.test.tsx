@@ -186,6 +186,33 @@ describe("Overview: no count while the saved work is not known (final review A1)
   });
 });
 
+describe("Overview: no 'Not ready yet' for a piece whose saved work is not known (O2, Q12)", () => {
+  const unmount = async () => { for (const r of roots.splice(0)) await act(async () => { r.unmount(); }); document.body.innerHTML = ""; };
+  const marks = () => KEYS.map((k) => $('[data-testid="design-row-' + k + '"] .sr-only')?.textContent ?? null);
+  it("opening, locked or unreadable: the six rows carry no mark and no word, though saved work exists; the notes say why", async () => {
+    for (const mode of ["loading", "locked", "error"] as const) {
+      h.loading = mode === "loading"; h.locked = mode === "locked"; h.error = mode === "error";
+      await render(<Overview projectId="p1" />);
+      expect(marks(), mode).toEqual([null, null, null, null, null, null]);
+      expect($('[data-testid="design-rows"]')!.textContent, mode).not.toContain(E.design_mark_not_ready);
+      expect($$('[data-testid="design-rows"] a'), mode).toHaveLength(7);
+      await unmount();
+    }
+  });
+  it("a piece that is read keeps its mark while another is not known (a held value in a locked vault is known)", async () => {
+    h.locked = true;
+    done("reg");
+    await render(<Overview projectId="p1" />);
+    expect(marks()).toEqual([E.design_mark_ready, null, null, null, null, null]);
+    expect($('[data-testid="design-count"]')).toBeNull();
+    await unmount();
+    // Read and not done is still said in words.
+    h.locked = false; h.store.clear();
+    await render(<Overview projectId="p1" />);
+    expect(marks()).toEqual(KEYS.map(() => E.design_mark_not_ready));
+  });
+});
+
 describe("the insert-failed line (final review A2)", () => {
   it("says only that nothing was inserted (the frame opens the document itself), in English and in the Hindi draft", () => {
     expect(E.design_insert_failed).toBe("Nothing was inserted.");

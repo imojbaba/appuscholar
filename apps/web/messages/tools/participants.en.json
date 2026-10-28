@@ -203,6 +203,7 @@
   "pp_ai_mask_note": "Mask turns names on your list into their codes and other names into [name], so the AI's answer still makes sense.",
   "pp_ai_locked": "Your participant list is locked, so names on it were not checked.",
   "pp_ai_unlock": "Unlock",
+  "pp_ai_goes": "This text goes to Appuscholar's server first, which does not keep it, and then to your AI provider.",
   "pp_ai_checks": "The check finds email addresses, phone numbers, ID numbers, names on your participant list and common first names. It cannot find every name, so read the text once yourself.",
   "pp_ai_checks_list": "The check finds email addresses, phone numbers, ID numbers and names on your participant list. It cannot find every name, so read the text once yourself.",
   "pp_ai_checks_first": "The check finds email addresses, phone numbers, ID numbers and common first names. It cannot find every name, so read the text once yourself.",

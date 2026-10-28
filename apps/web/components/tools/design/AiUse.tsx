@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { ClipboardText, DownloadSimple, FilePlus } from "@phosphor-icons/react";
+import { ClipboardText, DownloadSimple, FilePlus, Trash } from "@phosphor-icons/react";
 import { PROVIDERS, aiuBuildV2, aiuInRange, type AiuEntry, type AiuStyle, type AiuTicks } from "@appuscholar/core";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
@@ -9,12 +9,13 @@ import { downloadBlob } from "@/lib/export/download";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import { useInsertAtEnd } from "@/lib/tools/design/insertEnd";
 import { notesOf, unread } from "@/lib/tools/design/useDesign";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 
 /** The file the statement downloads as (v1 aiuDownload 5560). */
 const FILE = "ai-use-statement.txt";
-/** v1's dialog started with only "I planned the argument and the structure myself" ticked (aiuOwn is `checked`, the other four are not; 1897-1901). */
-const TICKS_AT_START: AiuTicks = { own: true, reword: false, cite: false, facts: false, noData: false };
+/** None of the five is ticked when the tab opens: the student claims each one (D-S2-127; v1 started with "I planned the argument and the structure myself" ticked, 1897-1901). */
+const TICKS_AT_START: AiuTicks = { own: false, reword: false, cite: false, facts: false, noData: false };
 /** The five truth ticks, in v1's order, with the key of their words. */
 const TICK_ROWS: ReadonlyArray<{ key: keyof AiuTicks; label: string }> = [
   { key: "own", label: "design_aiu_own" }, { key: "reword", label: "design_aiu_reword" }, { key: "cite", label: "design_aiu_cite" },
@@ -33,10 +34,14 @@ const isEntry = (x: unknown): x is AiuEntry => {
  * The AI-use statement (v1 aiuOpen, aiuRender, aiuToggle, aiuBuild, aiuCopy, aiuInsert, aiuDownload 5411-5568 and the dialog 1888-1910), as a tab.
  * It reads this project's AI log (GET /ai/log?projectId=, entries {d,p,m,k,g}; what first run's idea check logged before the project existed is claimed
  * into it when first run saves). The dates, the row for each kind of help in range (all ticked, as v1), the other tools, the five truth ticks and the
- * format go to core's aiuBuildV2 (aiuBuild with the two sentences that said where the log is kept made true, D-S2-58) with the style declaration (the style blobs, absent until My writing style is used) and the providers table; the text it
+ * format go to core's aiuBuildV2 (aiuBuild with the phrases that said where the log is kept and who sends the requests made true, D-S2-58 and D-S2-125) with the style declaration (the style blobs, absent until My writing style is used) and the providers table; the text it
  * returns, or its refusal, is shown as it is. The panel never offers a "no AI" statement of its own: with rows in range and nothing ticked and no other
  * tools, core refuses (rule 3). "Keep the log" is the existing setting `aiLogOff`, inverted. The statement is an editable box with Copy, Insert (plain
- * text, at the end of the open document) and Download.
+ * text, at the end of the open document) and Download. "Erase the log" (v1 aiuClear 5995-5999, the button at 1988) sits in the log section. DELETE /ai/log
+ * wipes the whole account's log, every project's and the rows of AI used with no project open, so the confirm says so (v1 said "on this computer"); the tab
+ * then shows the empty log and the statement already built stays in its box. v1 said "The log is already empty" and asked nothing: this project's rows being
+ * empty does not make the account's log empty, so the whole log is read first and only an empty one gets that line. A failure is a line below the button
+ * (C10, D-C-90 to D-C-94; C10 amends D-S2-56, which left Erase off this tab).
  */
 export function AiUse({ projectId }: { projectId: string }) {
   const t = useT();
@@ -57,6 +62,10 @@ export function AiUse({ projectId }: { projectId: string }) {
     );
     return () => { live = false; };
   }, [id, reqKey]);
+  const [eraseOpen, setEraseOpen] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [erasing, setErasing] = useState(false);
+  const [eraseMsg, setEraseMsg] = useState("");
   const answer = res !== null && res.key === reqKey ? res : null;
   const log: Log = id === null || (answer !== null && answer.rows === null) ? { state: "error" } : answer === null ? { state: "loading" } : { state: "ready", rows: answer.rows! };
   const rowsOfLog = log.state === "ready" ? log.rows : null;
@@ -128,11 +137,48 @@ export function AiUse({ projectId }: { projectId: string }) {
     setMsg(t("design_exported", { name: FILE }));
   };
 
+  /** The button: v1 aiuClear said an empty log was empty and asked nothing; a project with no rows may sit in an account that has some, so read the whole log first. */
+  const press = async () => {
+    if (checking || erasing) return;
+    setEraseMsg("");
+    if (log.state === "ready" && all.length === 0) {
+      setChecking(true);
+      let whole: unknown = null;
+      try {
+        whole = await apiFetch<unknown>("/ai/log");
+      } catch {
+        // Not knowing is not "empty": ask, so a log that cannot be read can still be erased.
+      }
+      setChecking(false);
+      if (Array.isArray(whole) && whole.length === 0) { setEraseMsg(t("wc_aiu_erase_empty")); return; }
+    }
+    setEraseOpen(true);
+  };
+  const erase = async () => {
+    if (erasing) return;
+    setErasing(true);
+    setEraseMsg("");
+    try {
+      await apiFetch<unknown>("/ai/log", { method: "DELETE" });
+    } catch {
+      setErasing(false);
+      setEraseOpen(false);
+      setEraseMsg(t("wc_aiu_erase_failed"));
+      return;
+    }
+    // The whole account's log is gone: draw this project's empty log (and the dates and kinds from it), leave the statement box as it is.
+    if (reqKey !== null) setRes({ key: reqKey, rows: [] });
+    dates(null, null);
+    setErasing(false);
+    setEraseOpen(false);
+    setEraseMsg(t("wc_aiu_erased"));
+  };
+
   const ready = log.state === "ready" && !styleWait;
   const logOff = settings.aiLogOff === true;
   const field = "flex flex-col gap-1 text-[13.5px] text-ink";
   const tick = (checked: boolean, on: (v: boolean) => void, label: string, testid: string) => (
-    <label key={testid} className="flex cursor-pointer items-center gap-2 text-[13.5px] text-ink">
+    <label key={testid} className="tick-row flex cursor-pointer items-center gap-2 text-[13.5px] text-ink">
       <input type="checkbox" className="size-[17px] accent-purple-600" data-testid={testid} checked={checked} onChange={(e) => { setRefuse(""); on(e.target.checked); }} />
       {label}
     </label>
@@ -144,7 +190,7 @@ export function AiUse({ projectId }: { projectId: string }) {
       <div className="stack" style={{ maxWidth: "62ch" }}>
         <section className="flex flex-col gap-1.5" aria-labelledby="aiu-log-h" data-testid="aiu-log">
           <h4 id="aiu-log-h" className="m-0 text-[15px] font-semibold text-ink">{t("design_aiu_log_h")}</h4>
-          <label className="flex cursor-pointer items-center gap-2 text-[13.5px] text-ink">
+          <label className="tick-row flex cursor-pointer items-center gap-2 text-[13.5px] text-ink">
             <input type="checkbox" className="size-[17px] accent-purple-600" data-testid="aiu-keep" checked={!logOff} onChange={(e) => { void update({ aiLogOff: !e.target.checked }); }} />
             {t("design_aiu_keep")}
           </label>
@@ -165,6 +211,24 @@ export function AiUse({ projectId }: { projectId: string }) {
             </p>
           )}
           {log.state === "ready" && all.length > 0 && logOff && <p className="desc" style={{ margin: 0 }} data-testid="aiu-off">{t("design_aiu_off")}</p>}
+          <div className="place-row" style={{ marginBottom: 0 }}>
+            <Button variant="ghost" data-testid="aiu-erase" disabled={log.state === "loading" || checking || erasing} onClick={() => { void press(); }}><Trash aria-hidden="true" />{t("wc_aiu_erase")}</Button>
+          </div>
+          <div role="status" data-testid="aiu-erase-msg" className={eraseMsg ? "text-[13px] leading-[18px] text-ink" : ""}>{eraseMsg}</div>
+          <AlertDialog open={eraseOpen} onOpenChange={(o) => { if (!erasing) setEraseOpen(o); }}>
+            <AlertDialogContent data-testid="aiu-erase-confirm">
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t("wc_aiu_erase_title")}</AlertDialogTitle>
+                <AlertDialogDescription>{t("wc_aiu_erase_desc")}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={erasing} data-testid="aiu-erase-cancel">{t("sap_cancel_btn")}</AlertDialogCancel>
+                <AlertDialogAction variant="destructive" disabled={erasing} data-testid="aiu-erase-yes" onClick={(ev) => { ev.preventDefault(); void erase(); }}>
+                  {erasing ? t("wc_aiu_erase_working") : t("wc_aiu_erase_yes")}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </section>
 
         <section className="mt-3 flex flex-col gap-2" aria-labelledby="aiu-dates-h" data-testid="aiu-dates">
@@ -176,12 +240,12 @@ export function AiUse({ projectId }: { projectId: string }) {
           <p className="desc" style={{ margin: 0 }}>{t("design_aiu_dates_desc")}</p>
           <div className="flex flex-col gap-1.5" role="group" aria-label={t("design_aiu_rows")} data-testid="aiu-rows">
             {kinds.map(([k, n], i) => (
-              <label key={k} className="flex cursor-pointer items-center gap-2 text-[13.5px] text-ink">
+              <label key={k} className="tick-row flex cursor-pointer items-center gap-2 text-[13.5px] text-ink">
                 <input
                   type="checkbox" className="size-[17px] accent-purple-600" data-testid={"aiu-row-" + i} data-k={k} checked={!off.has(k)}
                   onChange={(e) => { setRefuse(""); setOff((p) => { const q = new Set(p); if (e.target.checked) q.delete(k); else q.add(k); return q; }); }}
                 />
-                <span>{k.charAt(0).toUpperCase() + k.slice(1)} <span className="text-muted">({n})</span></span>
+                <span>{k.charAt(0).toUpperCase() + k.slice(1)} <span className="text-muted-foreground">({n})</span></span>
               </label>
             ))}
             {log.state === "ready" && kinds.length === 0 && <p className="desc" style={{ margin: 0 }} data-testid="aiu-none">{t("design_aiu_none")}</p>}

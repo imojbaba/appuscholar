@@ -12,10 +12,10 @@ import { BLOB_KINDS, blobId, parseBlob, type BlobKind, type BlobShape } from "./
 
 /**
  * The kinds whose panel never asks (R16) before it sets over a blob that does not open: the idea intake, and the preferences (the Research
- * panel's rank, and the stage 3 to 6 tools' `*_prefs`, fix round 1 of Task G3), where a toggle should not ask. A value set over an unreadable
+ * panel's rank, and the stage 3 to 6 tools' `*_prefs`, fix round 1 of Task G3), where a toggle should not ask, and wave D's `writing_samples` (a copy of the typed words that is rebuilt from the documents). A value set over an unreadable
  * one stays held and is never saved over it unasked. Every other kind, each tool's work among them, is guarded.
  */
-const UNGUARDED: ReadonlySet<BlobKind> = new Set<BlobKind>(["idea_intake", "rs_prefs", "stats_prefs", "qual_prefs", "words_prefs", "close_prefs"]);
+const UNGUARDED: ReadonlySet<BlobKind> = new Set<BlobKind>(["idea_intake", "rs_prefs", "stats_prefs", "qual_prefs", "words_prefs", "close_prefs", "writing_samples"]);
 
 /**
  * The kinds that hold names and are only ever stored sealed (R17; the api refuses them in plaintext, SEALED_ONLY_KINDS in apps/api/src/routes/blobWrite.ts). With the vault off a save of one
@@ -455,6 +455,14 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
       if (!known || pending) void flush();
     },
     /**
+     * The browser is back online: a read or save that failed (`error`: offline, a dropped connection, a gateway error) is made again now, so a value kept after
+     * a failed save is sent without waiting for the next change. Nothing is made again that did not fail; the debounce, a lock held (no prompt) and a broken blob are as they were.
+     */
+    retry() {
+      if (!active || o.headless || !error) return;
+      void flush();
+    },
+    /**
      * Another project or kind, or unmount: what is pending, or a save still in flight, is seen through now, without a prompt (the panel
      * is gone), and tracked so a new mount of this blob waits for it. What still cannot go is kept in the held-blobs registry for this
      * blob id, and nothing here touches the panel's state any more.
@@ -546,6 +554,13 @@ export function useProjectBlob<K extends BlobKind>(kind: K, projectId: string | 
     const stop = syncedKind(kind) ? onBlobAnnounced(blobId(projectId, kind), () => c.refresh()) : () => {};
     return () => { stop(); if (client.current === c) client.current = null; c.dispose(); };
   }, [kind, projectId, key, readOnly]);
+
+  // Back online: held-blobs sends only what a panel that went away left behind; this panel's own failed read or save is tried again here (like the vault's own retry).
+  useEffect(() => {
+    const back = () => client.current?.retry();
+    window.addEventListener("online", back);
+    return () => window.removeEventListener("online", back);
+  }, []);
 
   const open = vault.status === "unlocked" || vault.status === "migrating";
   useEffect(() => { if (open) client.current?.resume(); }, [open, key]);

@@ -255,6 +255,9 @@
 .app-acct { padding: 0; border-radius: 999px; background: var(--purple-100); color: var(--purple-800); }
 .app-ai-pill { display: inline-flex; align-items: center; height: 34px; padding: 0 12px; border: 1px solid var(--gold); border-radius: 999px; background: var(--card); color: #7a5412; font-size: 13px; font-weight: 600; white-space: nowrap; }
 .app-ai-pill:hover { background: var(--gold-wash); }
+/* The AI pill and its caret (the quick provider switch, wave D Task 10): two controls side by side, so the pill keeps its text and its click. */
+.app-ai { display: inline-flex; align-items: center; gap: 4px; }
+.app-ai-caret { justify-content: center; width: 34px; padding: 0; }
 .app-word:focus-visible, .app-switch:focus-visible, .app-hbtn:focus-visible, .app-ai-pill:focus-visible, .place-hdr a:focus-visible, .place-q summary:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
 
 .frame { padding-bottom: var(--s7); }
@@ -308,7 +311,11 @@
 .doc-resize:hover { background: var(--purple-100); }
 .doc-resize:focus-visible { background: var(--purple-100); outline: 2px solid var(--purple-800); outline-offset: 2px; }
 .doc-with-aside { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s4); align-items: start; }
-.doc-with-aside.has-aside:not(.beside) { grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); }
+/* Task 13: the AI pane is `--aside-w` wide (`dockW`, 320 to 760, set by DocumentCard), with a handle centred in the gap before it. */
+.doc-with-aside.has-aside:not(.beside) { position: relative; grid-template-columns: minmax(0, 1fr) var(--aside-w, 420px); }
+.aside-resize { position: absolute; top: var(--s2); bottom: var(--s2); right: calc(var(--aside-w, 420px) + var(--s4) / 2 - 5px); width: 10px; border-radius: 5px; cursor: col-resize; touch-action: none; z-index: 1; }
+.aside-resize:hover { background: var(--purple-100); }
+.aside-resize:focus-visible { background: var(--purple-100); outline: 2px solid var(--purple-800); outline-offset: 2px; }
 .doc-aside { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); }
 .home-interim, .start-interim { max-width: 860px; margin: 0 auto; padding: var(--s7); }
 .home-interim h1, .start-interim h1 { margin: 0 0 var(--s4); font-size: 26px; line-height: 1.25; }
@@ -442,7 +449,7 @@
   .doc-with-aside.has-aside:not(.beside) { grid-template-columns: minmax(0, 1fr); }
   .frame-body.beside { display: block; }
   .frame-doc.beside { position: static; max-height: none; overflow: visible; padding: var(--s6) var(--s7) 0; }
-  .doc-resize { display: none; }
+  .doc-resize, .aside-resize { display: none; }
 }
 
 /* Phone, up to 700px: 16px gutters, nothing wider than the screen, controls grow to 44px. */
@@ -496,6 +503,18 @@
   [role="dialog"] button, [role="alertdialog"] button, [role="menuitem"], .toast button { min-height: 44px; }
   /* Dialogs render outside the frame: their close X gets a 44px hit area by padding, the icon stays 16px. */
   [data-slot="dialog-close"] { top: 4px; right: 4px; min-width: 44px; padding: 14px; display: inline-flex; align-items: center; justify-content: center; }
+  /* Links and summaries are not buttons, so the rule above misses them: the study name in the top line, the "Your question" strip, Overview's lines. */
+  .place-crumbs { padding: 0; }
+  .place-crumbs a { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
+  .place-q summary { min-height: 44px; }
+  .design-link { min-height: 44px; }
+  /* A tick is pressed through its whole row; a remove button is as wide as it is tall; the toolbar scrolls sideways, so its buttons keep 44px. */
+  .tick-row { min-height: 44px; align-items: center; }
+  .budget-remove { min-width: 44px; }
+  .fmt { min-width: 44px; }
+  /* Analyse a paper's rows: a button as wide as it is tall at least, and a long label (Hindi's "check this paper's reference list") wraps inside the screen instead of pushing the page sideways. */
+  .help-faq summary { min-height: 44px; }
+  .ap-row button { min-width: 44px; max-width: 100%; height: auto; white-space: normal; text-align: start; }
 }
 /* Task 8b: a translated quote (v1 250), the quote box, the one-click capture's <details> (v1 921-928) and the library's last buttons (v1 940-946). */
 .editor .ProseMirror .translated-quote { border-bottom: 2px dotted #7c3aed; cursor: help; }
@@ -763,4 +782,101 @@
   .rs-line > label { flex: 1 1 100%; min-width: 0; }
   .rs-line .rs-select { display: block; width: 100%; max-width: 100%; min-height: 44px; margin-top: 4px; }
   .doc-back:focus-visible, .home-project:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
+}
+
+/* ---- Dark theme (Task C9; v1 :root[data-theme="dark"], index.html 26). Light stays the default: the inline script in layout.tsx sets data-theme from
+   this device's choice (appu_theme) and says "light" unless dark was chosen, whatever the device itself prefers. The tokens above are redefined, so
+   every component that reads one follows (v1's own dark values where it had them). Where one token plays two roles (a purple that is text on a card
+   and a fill under white text, the primary colour as text, a red that is a note's ink and a button's fill) the element that needs the other role
+   re-declares the token for itself: a rule on a Tailwind class sets no property, so that class's hover, focus and pressed variants still win. The
+   editor's paper stays the light page. All of it is `@media not print`, so a page printed from the dark theme prints light. test/wc9Contrast.test.ts
+   reads this block and holds every text pair to 4.5:1. --fill and --fill-active are dark-only: the primary button's own purples. ---- */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+@media not print {
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --purple-900: #ede9fe; --purple-800: #d8ccff; --purple-700: #a78bfa; --purple-600: #7c3aed; --purple-100: #3a2d5e;
+    --gold-wash: #3a2d12;
+    --bg: #1a1628; --card: #241e38; --soft: #2a2340; --chip: #332b4a; --line: #38304f; --line-strong: #4a3f66; --dashed: #7a68ab;
+    --ink: #eae6f3; --muted: #b0a9c4; --accent-ink: #c4b5fd;
+    --flag-ink: #fde68a; --flag-bg: #3d2f0b; --ok-ink: #86efac; --ok-bg: #0f3321; --danger-ink: #fca5a5; --danger-bg: #44181a;
+    --shadow-float: 0 6px 18px rgba(0, 0, 0, 0.55); --shadow-dialog: 0 12px 32px rgba(0, 0, 0, 0.6);
+    --fill: #6d28d9; --fill-active: #5b21b6;
+    --primary: var(--fill);
+    /* Settings' key line is Tailwind's green, red and amber 700, and the personal-details dialog's words are amber 50 and 900, which are dark inks and a pale fill on a dark
+       page; here they are the notes' inks and fill. */
+    --color-green-700: var(--ok-ink); --color-red-700: var(--danger-ink); --color-amber-700: var(--flag-ink); --color-amber-900: var(--flag-ink); --color-amber-50: var(--flag-bg);
+  }
+  /* The editor's paper stays a white page in this theme (D-C-85): pasted and picked text colours, and the colours the Highlight tool writes into the
+     text, were chosen for white. Every colour the theme changes goes back to its light value inside the paper. */
+  :root[data-theme="dark"] .editor {
+    color-scheme: light; background: var(--card); color: var(--ink);
+    --purple-900: #3b0764; --purple-800: #4c1d95; --purple-700: #5b21b6; --purple-600: #6d28d9; --purple-100: #ede9fe;
+    --gold-wash: #fdf4e3;
+    --bg: #fbfaf9; --card: #ffffff; --soft: #f8f6fc; --chip: #f4f3f6; --line: #ece8f2; --line-strong: #ddd9e4; --dashed: #cdbdf0;
+    --ink: #2a2438; --muted: #6b6579; --accent-ink: #5b21b6;
+    --flag-ink: #92400e; --flag-bg: #fef3c7; --ok-ink: #166534; --ok-bg: #dcfce7; --danger-ink: #b91c1c; --danger-bg: #fee2e2;
+  }
+  /* Role switches: the element takes the other role's colour for itself. */
+  :root[data-theme="dark"] .bg-purple-800.text-white { --purple-800: var(--fill); --purple-900: var(--fill-active); }
+  :root[data-theme="dark"] .bg-purple-900.text-white { --purple-900: var(--fill); }
+  :root[data-theme="dark"] .text-primary { --primary: var(--purple-800); }
+  :root[data-theme="dark"] .bg-destructive { --destructive: #b91c1c; }
+  :root[data-theme="dark"] .bg-gold { --ink: #2a2438; }
+  :root[data-theme="dark"] .toast { --gold-bright: #7a5412; }
+  :root[data-theme="dark"] .home-next { --purple-800: var(--fill); --purple-100: #ede9fe; }
+  /* A marked passage keeps the page's ink (the browser's own mark is black text). */
+  :root[data-theme="dark"] mark { color: inherit; }
+  /* Colours the light theme writes as a literal. */
+  :root[data-theme="dark"] .select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23b0a9c4' stroke-width='1.5'/%3E%3C/svg%3E"); }
+  :root[data-theme="dark"] .cit-item.cit-active { background: var(--purple-100); }
+  :root[data-theme="dark"] .cit-item .rc-ok { color: var(--ok-ink); }
+  :root[data-theme="dark"] .cit-item .rc-nf, :root[data-theme="dark"] .cit-item .rc-diff, :root[data-theme="dark"] .rs-quick .ap-warn { color: var(--flag-ink); }
+  :root[data-theme="dark"] .app-ai-pill, :root[data-theme="dark"] .ai-read-label { color: var(--gold-bright); }
+  /* The simulator's powered bars are the darker ones (its sentence says so); the purple the light page uses is too close to this card. */
+  :root[data-theme="dark"] .power-sim svg rect[fill="#6d28d9"] { fill: #8b5cf6; }
+}
+/* Wave D Task 8: the photo studio window (/photo-studio; v1 177-195): the whole window, a bar, the tool column, the canvas pane and the side panel. Under 760px the body stacks, the tools in a row above. */
+.ps { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); font-size: 14px; }
+.ps-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 12px; background: var(--card); border-bottom: 1px solid var(--line); }
+.ps-title { margin: 0 8px 0 0; font-size: 17px; line-height: 24px; font-weight: 600; color: var(--purple-800); }
+.ps-status { font-size: 12px; color: var(--muted); }
+.ps-spacer { flex: 1; }
+.ps-zoom { display: inline-flex; align-items: center; gap: 4px; }
+.ps-zoom-label { min-width: 42px; text-align: center; font-size: 13px; }
+.ps-body { flex: 1; display: flex; min-height: 0; }
+.ps-tools { display: flex; flex-direction: column; gap: 6px; flex: 0 0 auto; width: 136px; padding: 8px; overflow: auto; border-right: 1px solid var(--line); background: var(--card); }
+.ps-tool { flex: none; justify-content: flex-start; text-align: left; }
+.ps-tool[aria-pressed="true"] { outline: 3px solid var(--purple-600); }
+.ps-stage { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.ps-opts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 44px; padding: 6px 10px; background: var(--card); border-bottom: 1px solid var(--line); }
+.ps-opts label, .ps-box label, .ps-side label { font-size: 12px; font-weight: 600; }
+.ps-hint { flex: 1; min-width: 220px; }
+.ps-size { width: 90px; }
+.ps-text { width: auto; min-width: 180px; }
+.ps-box { min-width: 0; margin: 0; padding: 4px 10px 8px; border: 0; border-bottom: 1px solid var(--line); background: var(--card); }
+.ps-box legend { padding: 0; font-size: 12px; color: var(--muted); }
+.ps-box-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+.ps-box label { display: flex; flex-direction: column; gap: 2px; }
+.ps-box .input { width: 84px; min-height: var(--ctl-s); padding: 4px 8px; }
+.ps-canvaswrap { flex: 1; overflow: auto; padding: 12px; background: #d9d9d9; }
+.ps canvas { display: block; margin: 0 auto; background: #fff; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); touch-action: none; }
+.ps-side { flex: 0 0 auto; width: 260px; overflow: auto; padding: 8px 12px; background: var(--card); border-left: 1px solid var(--line); }
+.ps-side h2 { margin: 14px 0 4px; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--purple-800); }
+.ps-side h2:first-child { margin-top: 4px; }
+.ps-side label { display: block; margin-top: 8px; }
+.ps-side input[type="range"] { width: 100%; }
+.ps-side .ps-check { display: flex; align-items: center; gap: 6px; margin-top: 16px; }
+.ps-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.ps-row { display: flex; align-items: center; gap: 6px; }
+.ps-row .input { flex: 1; min-width: 0; }
+.ps-note { margin: 6px 0 0; font-size: 13px; line-height: 18px; color: var(--muted); }
+@media (max-width: 760px) {
+  .ps-body { flex-direction: column; }
+  .ps-tools { flex-direction: row; width: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+  .ps-side { width: auto; max-height: none; border-left: 0; border-top: 1px solid var(--line); }
+  /* One column that scrolls as a page, the picture's pane a fixed share of the screen: a pane that took its height from its content would be measured anew with each draw. */
+  .ps { overflow-y: auto; }
+  .ps-body, .ps-stage { flex: none; }
+  .ps-canvaswrap { flex: none; height: 60vh; }
 }

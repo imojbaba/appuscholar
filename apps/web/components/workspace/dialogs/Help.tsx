@@ -13,6 +13,7 @@ import { blobId, type BlobKind } from "@/lib/blobs/kinds";
 import { hasParticipantsBlob, listProjectBlobs, type BlobListing } from "@/lib/blobs/listing";
 import type { BlobWire } from "@/lib/blobs/useProjectBlob";
 import { downloadBlob } from "@/lib/export/download";
+import { stampBackup } from "@/lib/help/backup/stamp";
 import { buildAllRecordText, openRecordTitles, type WritingRecord } from "@/lib/writingRecord";
 import { openTitle, projectKeyId, titleText, UNTITLED } from "@/lib/vault/titles";
 import { APP_VERSION } from "@/lib/version";
@@ -22,10 +23,11 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toast";
 import { useProject } from "@/components/frame/ProjectContext";
+import { HelpButtons } from "@/components/help/HelpButtons";
 import { ChangePassphrase } from "./ChangePassphrase";
 import { EraseAccount } from "./EraseAccount";
 
-const FAQ = ["lost", "hindi", "key"];
+const FAQ = ["lost", "hindi", "key", "broken"];
 // The app never sends mail (rule 12): the button opens the student's own mail app.
 const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL;
 /**
@@ -117,6 +119,7 @@ export function useAccount() {
       });
       await apiFetch<void>("/me/export-audit", { method: "POST" });
       downloadBlob(exportFileName(), blob);
+      stampBackup(me?.id);
       toast(t("export_done"));
     } catch {
       toast(t("export_fail"));
@@ -175,7 +178,7 @@ export function Help() {
           <Badge className="self-start" data-testid="app-version">Version {APP_VERSION}</Badge>
           <DialogDescription>{t("help_intro")}</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-2" data-testid="help-faq">
+        <div className="help-faq grid gap-2" data-testid="help-faq">
           {FAQ.map((k) => (
             <details key={k} className="rounded-lg border border-line px-3 py-2 text-sm" data-testid={"faq-" + k}>
               <summary className="cursor-pointer font-medium">{t("faq_q_" + k)}</summary>
@@ -191,6 +194,7 @@ export function Help() {
             <p className="m-0 text-muted-foreground" data-testid="help-contact-unset">{t("help_contact_unset")}</p>
           )}
         </div>
+        <HelpButtons />
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="ghost" data-testid="help-terms" onClick={openTerms}>{t("terms_reopen_btn")}</Button>
           <Button variant="ghost" data-testid="help-import-v1" onClick={openImportV1}>Import a v1 backup</Button>

@@ -33,7 +33,7 @@ export function exportPartsFor(preselect?: ExportPartId): ExportPartId[] {
 /** A listed part's id: a built-in part is its own. */
 const partId = (p: ExportPart | ExportPartDef): ExportPartId => (typeof p === "string" ? p : p.part);
 
-/** Each part's format, as the canvas names it (the citations line says what this build writes until Task 38 adds RIS and BibTeX). */
+/** Each part's format, as the canvas names it (Task 38: the citations line is "RIS, BibTeX, text"). */
 const FORMAT: Record<ExportPart, string> = {
   documents: "exp_format_documents", question: "exp_format_text", citations: "exp_format_citations", search: "exp_format_csv", notes: "exp_format_text",
   compare: "exp_format_csv", record: "exp_format_text", aiuse: "exp_format_text", readingBackup: "exp_format_json"
@@ -139,7 +139,7 @@ function ExportBody({ initial, onClose }: { initial: ExportPartId[]; onClose(): 
       onEscapeKeyDown={(e) => { if (busy.current) e.preventDefault(); }} onInteractOutside={(e) => { if (busy.current) e.preventDefault(); }}>
       <div className="exp-head">
         <div>
-          <DialogTitle id="exp-h" className="exp-h">{t("exp_title", { title: name })}</DialogTitle>
+          <DialogTitle className="exp-h">{t("exp_title", { title: name })}</DialogTitle>
           <DialogDescription className="exp-sub">{t("exp_sub")}</DialogDescription>
         </div>
         <DialogClose asChild>

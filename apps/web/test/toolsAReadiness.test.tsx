@@ -202,8 +202,32 @@ describe("Registration: CTRI readiness (Task A3)", () => {
     h.locked = true;
     await render("ctri");
     expect($(T("design-locked"))).not.toBeNull();
+    expect($(T("ctri-field-0"))).toBeNull();
+    expect(h.sets).toHaveLength(0);
+  });
+
+  it("the ticks are off while the saved ticks open, not offered while locked or unreadable, and back when they are read (O7 for ticks)", async () => {
+    h.loading = true;
+    await render("ctri");
+    for (let i = 0; i < 13; i++) expect(($(T("ctri-field-" + i)) as HTMLInputElement).disabled, "field " + i).toBe(true);
     await click("ctri-field-0");
     expect(h.sets).toHaveLength(0);
+    for (const mode of ["locked", "error"] as const) {
+      for (const r of roots.splice(0)) await act(async () => { r.unmount(); });
+      document.body.innerHTML = "";
+      h.loading = false; h.locked = mode === "locked"; h.error = mode === "error";
+      await render("ctri");
+      expect($(T("ctri-fields")), mode).toBeNull();
+      expect($(T("ctri-field-0")), mode).toBeNull();
+      expect($(T("ctri-export")), mode).not.toBeNull();
+    }
+    for (const r of roots.splice(0)) await act(async () => { r.unmount(); });
+    document.body.innerHTML = "";
+    h.locked = false; h.error = false;
+    await render("ctri");
+    expect(($(T("ctri-field-0")) as HTMLInputElement).disabled).toBe(false);
+    await click("ctri-field-0");
+    expect(h.sets).toHaveLength(1);
   });
 
   it("the Panel draws it for the registration tab", async () => {
@@ -309,8 +333,32 @@ describe("Investigator: PI eligibility and training (Task A3)", () => {
     h.locked = true;
     await render("pi");
     expect($(T("design-locked"))).not.toBeNull();
+    expect($(T("pi-item-0"))).toBeNull();
+    expect(h.sets).toHaveLength(0);
+  });
+
+  it("the ticks are off while the saved ticks open, not offered while locked or unreadable, and back when they are read (O7 for ticks)", async () => {
+    h.loading = true;
+    await render("pi");
+    for (let i = 0; i < 6; i++) expect(($(T("pi-item-" + i)) as HTMLInputElement).disabled, "item " + i).toBe(true);
     await click("pi-item-0");
     expect(h.sets).toHaveLength(0);
+    for (const mode of ["locked", "error"] as const) {
+      for (const r of roots.splice(0)) await act(async () => { r.unmount(); });
+      document.body.innerHTML = "";
+      h.loading = false; h.locked = mode === "locked"; h.error = mode === "error";
+      await render("pi");
+      expect($(T("pi-items")), mode).toBeNull();
+      expect($(T("pi-item-0")), mode).toBeNull();
+      expect($(T("pi-cv")), mode).not.toBeNull();
+    }
+    for (const r of roots.splice(0)) await act(async () => { r.unmount(); });
+    document.body.innerHTML = "";
+    h.locked = false; h.error = false;
+    await render("pi");
+    expect(($(T("pi-item-0")) as HTMLInputElement).disabled).toBe(false);
+    await click("pi-item-0");
+    expect(h.sets).toHaveLength(1);
   });
 });
 

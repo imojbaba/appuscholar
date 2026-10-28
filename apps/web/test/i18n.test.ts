@@ -8,6 +8,7 @@ import en from "../messages/en.json";
 import hi from "../messages/hi.json";
 import { DICTS, mergeToolMessages, tFormat } from "../lib/i18n";
 import { TOOL_MESSAGE_FILES } from "../messages/tools";
+import { applyLaterSteps } from "../scripts/extract-v1-i18n.mjs";
 import { PANEL_FIXES, applyPanelFixes, withPanelFixes } from "../scripts/i18n-overrides.mjs";
 
 describe("v1 chrome strings", () => {
@@ -55,7 +56,8 @@ describe("stage-2 panel copy extracted from v1 (rs2_ / ap2_ / sh2_)", () => {
     expect(E.ap2_consent).toMatch(/^I am allowed to read this paper/);
     expect(E.sh2_intro).toMatch(/^Add PDFs you have the right to read/);
     expect(E.ap2_stage_gap_ask).toBe("In your own words: what was missing in earlier work, and what did this study set out to answer?");
-    expect(H.rs2_terms_btn).toBe(E.rs2_terms_btn);
+    expect(H.rs2_terms_btn).toBe("💡 मिलते-जुलते शब्द सुझाएँ");   // Dr. Sharma's Hindi from v1 build 2026.10.24a (the remap, Task 39)
+    expect(H.rs2_batch).toBe(E.rs2_batch);   // no Hindi in v1 for this one: the English until she gives it
     const m = JSON.parse(readFileSync("messages/v1-panels.manifest.json", "utf8"));
     expect(m.rs2_terms_btn.sha256).toMatch(/^[0-9a-f]{64}$/);
   });
@@ -81,14 +83,17 @@ describe("stage-2 panel copy extracted from v1 (rs2_ / ap2_ / sh2_)", () => {
       expect(E[`ap2_stage_${k}_name`], k).toBeTruthy();
     }
   });
-  it("every manifest key is in both dictionaries, Hindi equals English, and the manifest is sorted", () => {
+  it("every manifest key is in both dictionaries, Hindi equals English unless the v1 Hindi remap has it, and the manifest is sorted", () => {
+    const remapped = (JSON.parse(readFileSync("scripts/fixtures/v1-hindi-remap.json", "utf8")) as { keys: Record<string, { en: string; hi: string }> }).keys;
+    // The remap file holds each pair as it stands at the re-map step; the dictionaries hold it after the steps that follow the re-map (none yet).
+    const after = applyLaterSteps(Object.fromEntries(Object.entries(remapped).map(([k, e]) => [k, e.en])), Object.fromEntries(Object.entries(remapped).map(([k, e]) => [k, e.hi])));
     const keys = Object.keys(manifest);
     expect(keys.length).toBeGreaterThan(100);
     expect(keys).toEqual([...keys].sort());
     for (const k of keys) {
       expect(k, k).toMatch(/^(rs2|ap2|sh2)_/);
       expect(E[k], k).toBeTruthy();
-      expect(H[k], k).toBe(E[k]);
+      expect(H[k], k).toBe(k in remapped ? after.hi[k] : E[k]);
       expect(manifest[k]!.lines, k).toMatch(/^\d+-\d+$/);
       expect(manifest[k]!.sha256, k).toMatch(/^[0-9a-f]{64}$/);
     }
@@ -135,7 +140,7 @@ describe("per-tool message files (Task G4, rulings R13 and R14)", () => {
   const E = en as Record<string, string>;
   const H = hi as Record<string, string>;
   const DIR = join(__dirname, "../messages/tools");
-  const TOOLS = ["design", "participants", "stats", "qual", "style", "words", "close", "slides", "viva"];
+  const TOOLS = ["design", "participants", "stats", "qual", "style", "words", "close", "slides", "viva", "help-guide", "help-report", "help-recap", "help-backup", "help-install", "help-theme", "dictation", "aipill", "samples", "pictures", "captions", "studio", "dock"];
 
   it("a tool message file merges into t(); a duplicate key throws", () => {
     const files = {

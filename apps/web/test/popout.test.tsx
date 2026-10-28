@@ -252,7 +252,7 @@ describe("a place in its own window (register row D-S2-43)", () => {
     await act(async () => { tid("cite-export")!.click(); });
     await until(() => !!tid("export-dialog"));
     expect(EXPORT_PARTS.filter((p) => (tid("exp-part-" + p) as HTMLInputElement | null)?.checked)).toEqual(["citations"]);
-    expect(document.querySelector("#exp-h")!.textContent).toBe("Export: Sleep and memory");
+    expect(document.querySelector(".exp-h")!.textContent).toBe("Export: Sleep and memory");
     await act(async () => { tid("exp-download")!.click(); });
     await until(() => h.download.mock.calls.length === 1);
     expect(h.download.mock.calls[0]![0]).toMatch(/^appuscholar-Sleep and memory-\d{4}-\d{2}-\d{2}\.zip$/);

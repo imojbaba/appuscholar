@@ -1,6 +1,6 @@
 import JSZip from "jszip";
 import { describe, expect, it, vi } from "vitest";
-import { AIU_V1_BRACKET, AIU_V2_BRACKET, aiuBuildV2, apAcrossCsv, bibliography, exportLibrary, PROVIDERS, rsCsvText, SHELF_DEFAULT_COLS, shMatrixCsv, type AiuEntry, type CitationEntry, type RsPaper } from "@appuscholar/core";
+import { AIU_V1_BRACKET, AIU_V2_BRACKET, aiuBuildV2, apAcrossCsv, bibliography, citToBibtex, citToRis, exportLibrary, PROVIDERS, rsCsvText, SHELF_DEFAULT_COLS, shMatrixCsv, type AiuEntry, type CitationEntry, type RsPaper } from "@appuscholar/core";
 import { acrossData } from "../lib/analyse/cards";
 import { DEFAULT_EXPORT_PARTS, EXPORT_PARTS, exportProject, keptPapers, projectExportFileName, saveProjectExport, type ExportPart, type ProjectExportDeps } from "../lib/export/projectExport";
 import { VaultError } from "../lib/vault/crypto";
@@ -94,6 +94,20 @@ const text = (z: JSZip, n: string) => z.file(n)!.async("string");
 const opts = (o: Partial<Parameters<typeof exportProject>[2]> = {}) => ({ style: "apa" as const, now: NOW, lastSearch: SEARCH, ...o });
 
 describe("exportProject", () => {
+  it("the citations part holds the library as RIS and BibTeX beside the JSON and the reference list (Task 38)", async () => {
+    const z = await unzip(await exportProject(deps(), ["citations"], opts()));
+    expect(files(z)).toEqual(["citations/library.bib", "citations/library.json", "citations/library.ris", "citations/references.txt"]);
+    const ris = await text(z, "citations/library.ris");
+    expect(ris).toBe(
+      "TY  - BOOK\r\nAU  - Walker, Matthew\r\nPY  - 2017\r\nTI  - Why we sleep\r\nPB  - Scribner\r\nER  - \r\n\r\n" +
+      "TY  - JOUR\r\nAU  - Alvarez, Ana\r\nPY  - 2020\r\nTI  - Sleep and exam anxiety\r\nT2  - Journal of Sleep\r\nVL  - 4\r\nIS  - 2\r\nSP  - 10\r\nEP  - 20\r\nDO  - 10.1/abc\r\nER  - \r\n"
+    );
+    expect(await text(z, "citations/library.bib")).toBe(
+      "@book{walker2017why,\n  author = {Walker, Matthew},\n  title = {Why we sleep},\n  publisher = {Scribner},\n  year = {2017}\n}\n\n" +
+      "@article{alvarez2020sleep,\n  author = {Alvarez, Ana},\n  title = {Sleep and exam anxiety},\n  journal = {Journal of Sleep},\n  year = {2020},\n  volume = {4},\n  number = {2},\n  pages = {10--20},\n  doi = {10.1/abc}\n}\n"
+    );
+  });
+
   it("every part is ticked by default except the reading list backup", () => {
     expect(DEFAULT_EXPORT_PARTS).toEqual(EXPORT_PARTS.filter((p) => p !== "readingBackup"));
   });
@@ -102,7 +116,7 @@ describe("exportProject", () => {
     const z = await unzip(await exportProject(deps(), [...EXPORT_PARTS], opts()));
     expect(files(z)).toEqual([
       "ai-use-statement.txt",
-      "citations/library.json", "citations/references.txt",
+      "citations/library.bib", "citations/library.json", "citations/library.ris", "citations/references.txt",
       "compare/paper-cards.csv", "compare/table.csv",
       "documents/Draft.doc", "documents/Draft.html", "documents/sources/Source paper.doc", "documents/sources/Source paper.html",
       "notes/Sleep and exam anxiety.txt",
@@ -114,6 +128,8 @@ describe("exportProject", () => {
     expect(await text(z, "documents/Draft.html")).toContain("The text of d1.");
     expect(await text(z, "documents/Draft.doc")).toContain("The text of d1.");
     expect(await text(z, "citations/library.json")).toBe(exportLibrary(LIB));
+    expect(await text(z, "citations/library.ris")).toBe(citToRis(LIB));
+    expect(await text(z, "citations/library.bib")).toBe(citToBibtex(LIB));
     expect(await text(z, "search/kept-papers.csv")).toBe("﻿" + rsCsvText(keptPapers(LIB)));
     expect(await text(z, "search/last-search.csv")).toBe("﻿" + rsCsvText(SEARCH));
     expect(await text(z, "compare/table.csv")).toBe("﻿" + shMatrixCsv("sh2_paper", [...SHELF_DEFAULT_COLS], [{ title: SHELF_INDEX[0]!.title, cells: SHELF_PAPER.cells }]));

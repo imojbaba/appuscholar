@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { IBM_Plex_Sans, IBM_Plex_Sans_Devanagari, Fraunces } from "next/font/google";
 import { getServerLang } from "@/lib/serverLang";
+import { THEME_SCRIPT } from "@/lib/help/theme";
 import { ClientErrorListener } from "@/components/ClientErrorListener";
 import "./globals.css";
 
@@ -17,8 +18,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const nonce = (await headers()).get("x-nonce") ?? undefined;
   const lang = await getServerLang();
   return (
-    <html lang={lang} className={`${plex.variable} ${plexDev.variable} ${fraunces.variable}`}>
-      <head>{nonce ? <meta property="csp-nonce" content={nonce} /> : null}</head>
+    <html lang={lang} className={`${plex.variable} ${plexDev.variable} ${fraunces.variable}`} suppressHydrationWarning>
+      <head>
+        {nonce ? <meta property="csp-nonce" content={nonce} /> : null}
+        {/* Task C9: sets data-theme from this device's choice before the first paint (light unless dark was chosen); the nonce lets the CSP run it. */}
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="min-h-dvh"><ClientErrorListener />{children}</body>
     </html>
   );

@@ -152,7 +152,7 @@ export function Ethics({ projectId }: { projectId: string }) {
     const whyId = "ec-rec-why-" + f.id;
     return (
       <div key={f.id} className="flex flex-col" data-testid={"ec-rec-row-" + f.id}>
-        <label className="flex cursor-pointer items-start gap-2 text-[13.5px] text-ink">
+        <label className="tick-row flex cursor-pointer items-start gap-2 text-[13.5px] text-ink">
           <input
             type="checkbox" className="mt-0.5 size-[17px] shrink-0 accent-purple-600" data-testid={"ec-rec-" + f.id} aria-describedby={why !== "" ? whyId : undefined}
             checked={record.includes(f.id)} onChange={(e) => tick(f.id, e.target.checked)}
@@ -175,20 +175,23 @@ export function Ethics({ projectId }: { projectId: string }) {
   );
   const note = ecMinorsNoteV2(now.minors);
   const checks = (stored?.checklist ?? {}) as Record<string, boolean>;
+  // The saved ticks are not known, so a tick clicked now cannot be kept (save() refuses it). While they open the ticks show but are off (disabled); while locked or unreadable the list is
+  // not shown, since eight empty ticks would say nothing was done. The note above says why, and the list returns when the work is read.
+  const hidden = ec.unread && !ec.loading;
   return (
     <div className="panel" data-testid="panel-design-ethics">
       <h3>{t("tab_name_ethics")}</h3>
       <p className="desc">{t("design_ec_intro")}</p>
       <Notes {...notesOf(ec)} />
       <div className="stack" style={{ maxWidth: "62ch" }}>
-        <section className="flex flex-col gap-1.5" aria-label={t("design_ec_docs")} data-testid="ec-docs">
+        {!hidden && <section className="flex flex-col gap-1.5" aria-label={t("design_ec_docs")} data-testid="ec-docs">
           {EC_DOCS.map((d, i) => (
-            <label key={i} className="flex cursor-pointer items-center gap-2 text-[13.5px] text-ink">
-              <input type="checkbox" className="size-[17px] accent-purple-600" data-testid={"ec-doc-" + i} checked={!!checks[String(i)]} onChange={(e) => toggle(i, e.target.checked)} />
+            <label key={i} className="tick-row flex cursor-pointer items-center gap-2 text-[13.5px] text-ink">
+              <input type="checkbox" className="size-[17px] accent-purple-600" data-testid={"ec-doc-" + i} checked={!!checks[String(i)]} disabled={ec.unread} onChange={(e) => toggle(i, e.target.checked)} />
               {d}
             </label>
           ))}
-        </section>
+        </section>}
 
         <section className="mt-3 flex flex-col gap-2" aria-labelledby="ec-record-h" data-testid="ec-record">
           <h4 id="ec-record-h" className="m-0 text-[15px] font-semibold text-ink">{t("design_ec_record")}</h4>

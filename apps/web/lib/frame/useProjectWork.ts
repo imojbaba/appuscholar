@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { heldBlobs } from "@/lib/blobs/held";
 import type { WrappedDek } from "@/lib/vault/useVault";
 import type { StageKey } from "@/lib/tools";
 import type { StudyType } from "./studyTypes";
@@ -12,6 +13,12 @@ export type ProjectWork = {
   blobs: Array<{ kind: string; updatedAt: string; version: number }>; draftWords: number; draftEditedAt: string | null;
 };
 
+/** The list, once the saves still running have settled: a panel just left sends its last edit as it goes, and a list read meanwhile would miss it. */
+async function readWork(): Promise<ProjectWork[]> {
+  await heldBlobs.settled();
+  return apiFetch<ProjectWork[]>("/projects?include=work");
+}
+
 /**
  * Every project with its work, from one request (the home and the list read their stage states from it; no blob is read). Null until it answers;
  * `error` once it failed (signed out or the API down), until reload() answers.
@@ -19,10 +26,10 @@ export type ProjectWork = {
 export function useProjectWork(): { work: ProjectWork[] | null; error: boolean; reload(): Promise<void> } {
   const [work, setWork] = useState<ProjectWork[] | null>(null);
   const [error, setError] = useState(false);
-  const reload = useCallback(async () => { setWork(await apiFetch<ProjectWork[]>("/projects?include=work")); setError(false); }, []);
+  const reload = useCallback(async () => { setWork(await readWork()); setError(false); }, []);
   useEffect(() => {
     let live = true;
-    apiFetch<ProjectWork[]>("/projects?include=work").then((w) => { if (live) setWork(w); }, () => { if (live) setError(true); });
+    readWork().then((w) => { if (live) setWork(w); }, () => { if (live) setError(true); });
     return () => { live = false; };
   }, []);
   return { work, error, reload };
