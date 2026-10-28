@@ -1,9 +1,9 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import type { Page, Response } from "@playwright/test";
+import type { Page, Request, Response } from "@playwright/test";
 import { JSDOM } from "jsdom";
 import {
-  PROVIDERS, aiuBuildV2, clCompare, clGather, consentMarkdown, ctriMarkdown, docInnerText, docToSlideModelV2, gramLocal, pptPreviewBullets, pptxDeckSpec, pptxFileName, regPathway,
+  PROVIDERS, aiuBuildV2, clCompare, clGather, consentMarkdownV2, ctriMarkdown, docInnerText, docToSlideModelV2, gramLocal, pptPreviewBullets, pptxDeckSpec, pptxFileName, regPathway,
   QUAL_PALETTE, qualBuildMarkdown, runStats, statsParseText, type AiuEntry, type ClResult, type ClSource, type PptSlide, type QualCode
 } from "@appuscholar/core";
 import { MARK } from "../fixtures/common";
@@ -143,6 +143,8 @@ const textReply = (start: string): string => {
   if (typeof r !== "string") throw new Error(`QA S0: the reply that starts "${start}" is not a text.`);
   return r;
 };
+/** The six parts of Shape your study, in the order question.txt lists them (lib/frame/shapeStudy.ts SECTIONS). */
+const PLAN_PARTS = ["question", "who", "how", "time", "have", "ethics"] as const;
 const IDEA_REPLY = textReply("You are an experienced research-methods advisor");
 const VERDICT = IDEA_REPLY.split("\n").find((l) => l.startsWith("Verdict:"))!.slice("Verdict: ".length);
 const VERDICTS = /^(Proceed as planned|Proceed with these modifications|Reconsider this topic)/;
@@ -520,24 +522,22 @@ const codeOf = (id: string, name: string, parentId: string | null, nth: number):
  * document 1.5 s after. A save that failed (the network was off) ends too: what the server holds is read afterwards.
  */
 function trackSaves(page: Page) {
-  let inFlight = 0;
+  // The saves sent since tracking began: a save already on its way when it began (Shape your study's last one, as the home opens) is not counted when it lands.
+  const inFlight = new Set<Request>();
   let last = 0;
-  const mine = (method: string, url: string) => method === "PUT" && /\/(blobs\/[A-Za-z0-9_.%-]+|documents\/[0-9a-f-]+)$/.test(new URL(url).pathname);
+  const mine = (r: Request) => r.method() === "PUT" && /\/(blobs\/[A-Za-z0-9_.%-]+|documents\/[0-9a-f-]+)$/.test(new URL(r.url()).pathname);
   page.on("request", (r) => {
-    if (mine(r.method(), r.url())) inFlight++;
+    if (mine(r)) inFlight.add(r);
   });
-  const done = (r: { method(): string; url(): string }) => {
-    if (mine(r.method(), r.url())) {
-      inFlight--;
-      last = Date.now();
-    }
+  const done = (r: Request) => {
+    if (inFlight.delete(r)) last = Date.now();
   };
   page.on("response", (r: Response) => done(r.request()));
   page.on("requestfailed", (r) => done(r));
   return {
     async settled(): Promise<void> {
       await page.waitForTimeout(1_800);
-      await expect.poll(() => inFlight === 0 && Date.now() - last > 300, { timeout: 30_000, message: "the page's saves did not settle" }).toBe(true);
+      await expect.poll(() => inFlight.size === 0 && Date.now() - last > 300, { timeout: 30_000, message: "the page's saves did not settle" }).toBe(true);
     }
   };
 }
@@ -621,10 +621,29 @@ async function journey(page: Page, context: Parameters<typeof goOffline>[0], qa:
   // ---- Idea ---------------------------------------------------------------------------------------------------------------------------------------------
   await qa.step(S_IDEA, async () => {
     s = await newStudent(page, qa, { key: "ok", vault: "on", project: false, ...(L === "hi" ? { lang: "hi" as const } : {}) });
-    await page.locator("#ideaTopic").fill(N.idea.topic);
-    await page.locator("#ideaRes").fill(N.idea.resources);
-    await page.locator("#ideaTime").fill(N.idea.timeframe);
-    await page.locator("#ideaCons").fill(N.idea.constraints);
+    // Start a new study (its name and type), then Shape your study: the question, the time, what I have and the ethics (who and how skipped), and on its summary the
+    // optional "Check if it is doable" (the four boxes of wave-b1.md row 2 are four of the six parts).
+    await page.getByTestId("new-project").click();
+    await expect(page.getByTestId("new-study")).toBeVisible();
+    await page.getByTestId("new-name").fill(N.project);
+    await page.getByTestId("new-type-masters").check();
+    await page.getByTestId("new-create").click();
+    const part = page.getByTestId("shape-part");
+    await expect(part).toHaveAttribute("data-part", "question", { timeout: 90_000 });
+    const answer = async (text: string): Promise<void> => {
+      await savedBy(page, isBlobPut("idea_intake"), () => page.getByTestId("shape-answer").fill(text));
+      await page.getByTestId("shape-next").click();
+    };
+    await answer(N.idea.topic);
+    for (const skipped of ["who", "how"]) {
+      await expect(part).toHaveAttribute("data-part", skipped);
+      await page.getByTestId("shape-skip").click();
+    }
+    for (const [key, text] of [["time", N.idea.timeframe], ["have", N.idea.resources], ["ethics", N.idea.constraints]] as const) {
+      await expect(part).toHaveAttribute("data-part", key);
+      await answer(text);
+    }
+    await expect(page.getByTestId("shape-summary")).toBeVisible();
     await page.getByTestId("idea-check").click();
     const read = page.getByTestId("idea-read");
     await expect(read).toBeVisible({ timeout: 30_000 });
@@ -634,9 +653,7 @@ async function journey(page: Page, context: Parameters<typeof goOffline>[0], qa:
       await expect(read.getByTestId("idea-read-verdict")).toHaveText(VERDICT);
       expect(VERDICT).toMatch(VERDICTS);
     }, { source: `${B1} row 2 ("a panel ... five rated lines ... then the verdict (\\"Proceed as planned\\", \\"Proceed with these modifications\\" or \\"Reconsider this topic\\")")` });
-    await page.getByTestId("idea-save-title").fill(N.project);
-    await page.getByTestId("idea-save").click();
-    // The save took 21 s on the QA stack with no sign of progress (O3, S1-03): the journey waits for it.
+    await page.getByTestId("shape-go-study").click();
     await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 90_000 });
     id = /^\/p\/([^/?#]+)/.exec(new URL(page.url()).pathname)?.[1] ?? "";
     expect(id, "the project's id in the address").not.toBe("");
@@ -747,15 +764,16 @@ async function journey(page: Page, context: Parameters<typeof goOffline>[0], qa:
     await page.getByTestId("ec-pi").fill(EC.pi);
     await savedBy(page, isBlobPut("design_ec"), () => page.getByTestId("ec-save").click());
     await page.getByTestId("consent-generate").click();
-    const form = consentMarkdown({ title: EC.title, pi: EC.pi, what: "", risks: "", benefits: "", contact: "" });
+    // With minors "yes" the form carries the parent's permission and the young person's agreement before Consent (O1, fixed); no way of identifying people is chosen.
+    const form = consentMarkdownV2({ title: EC.title, pi: EC.pi, what: "", risks: "", benefits: "", contact: "", minors: EC.minors }, {});
     if (typeof form !== "string") throw new Error("core refused a consent form with a title and an investigator: " + form.error);
     await showDoc(page);
-    await qa.check("data", "the document ends with the consent form core builds for my title and investigator, once, and it never says I am exempt", async () => {
+    await qa.check("data", "the document ends with the consent form core builds for my title, investigator and under-18 participants, once, and it never says I am exempt", async () => {
       await expect.poll(async () => flat(await docText(page)).endsWith(flat(form)), { message: "the consent form is at the end of the document" }).toBe(true);
       const text = await docText(page);
       expect(text.split("# Informed Consent Form").length - 1, "consent forms in the document").toBe(1);
       expect(text).not.toMatch(/exempt/i);
-    }, { source: "tools-a.md rows 4b and 10 (the consent form is in the document once, ending with its signature lines; nothing says exempt)" });
+    }, { source: "tools-a.md rows 4b and 10 (the consent form is in the document once, ending with its signature lines; nothing says exempt); O1 (with minors, the parent's permission and the young person's agreement)" });
     // A student in Hindi gives her document a Hindi name (the seeded one is English: Q19).
     if (N.main) await renameDoc(page, N.main);
     await backToPlace(page);
@@ -1134,11 +1152,11 @@ async function journey(page: Page, context: Parameters<typeof goOffline>[0], qa:
       expect(files.size, "entries in the zip").toBeGreaterThan(0);
       const expected = [
         ...docTitles.flatMap((d) => [`documents/${zipName(d)}.doc`, `documents/${zipName(d)}.html`]),
-        "question.txt", "citations/library.json", "citations/references.txt", "search/kept-papers.csv", "search/last-search.csv", `notes/${zipName(N.paper)}.txt`,
+        "question.txt", "citations/library.json", "citations/library.ris", "citations/library.bib", "citations/references.txt", "search/kept-papers.csv", "search/last-search.csv", `notes/${zipName(N.paper)}.txt`,
         "compare/table.csv", "writing-record.txt", "ai-use-statement.txt", "reading-list-backup.json", "design/ctri-readiness.md", `qual/appuscholar-coded-passages-${today()}.md`
       ].sort();
       expect([...files.keys()].sort()).toEqual(expected);
-    }, { source: `${B1} row 12 (the zip holds the parts that have something in them: documents/<title>.doc and .html, question.txt, citations/, search/, notes/<paper>.txt, compare/table.csv, writing-record.txt, ai-use-statement.txt; the tools' own: design/, qual/)` });
+    }, { source: `${B1} row 12 (the zip holds the parts that have something in them: documents/<title>.doc and .html, question.txt, citations/ (with the RIS and BibTeX files of the library, wave-b-side), search/, notes/<paper>.txt, compare/table.csv, writing-record.txt, ai-use-statement.txt; the tools' own: design/, qual/)` });
     const text = (name: string): string => {
       const f = files.get(name);
       if (!f) throw new Error(`the zip has no ${name} (it has: ${[...files.keys()].join(", ")})`);
@@ -1154,8 +1172,9 @@ async function journey(page: Page, context: Parameters<typeof goOffline>[0], qa:
       const interview = flat(plainOf(text(`documents/${zipName(N.interview)}.html`)));
       for (const mine of [PHRASE.anxiety, PHRASE.sleep, MEMO]) expect(interview, mine).toContain(mine);
     }, { source: `${B1} row 12 (documents/<title>.doc and .html, readable); spec section 4 (the outcome of each stage reaches the zip)` });
-    await qa.check("data", "question.txt holds my idea in its four boxes and the AI's read after \"AI read:\", with the verdict", async () => {
+    await qa.check("data", "question.txt holds my study's plan under the titles of its six parts (my four answers in them) and the AI's read after \"AI read:\", with the verdict", async () => {
       const q = text("question.txt");
+      for (const part of PLAN_PARTS) expect(q, part).toContain(t(`shape_${part}_title`));
       for (const words of Object.values(N.idea)) expect(q).toContain(words);
       expect(q).toContain(t("exp_ai_read"));
       expect(q.slice(q.indexOf(t("exp_ai_read")))).toContain(VERDICT);
