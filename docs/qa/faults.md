@@ -171,7 +171,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q14: Amounts typed while the network was off are not sent when it returns
 
-- Case: S3-06; and S0-04 (the Coding tab's codes, added while the network was off for 10 s: the server holds no code list ten seconds after the network returned, and the home's Collection row is empty)
+- Case: S3-06; and S0-04 (the Coding tab's codes, added while the network was off for 10 s: on c500d37 the server held no code list ten seconds after the network returned, and the home's Collection row was empty; on 6b5c15a the codes reach the server and the checks pass)
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: Unexpected (data)
