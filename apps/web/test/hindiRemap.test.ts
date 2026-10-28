@@ -56,7 +56,7 @@ describe("the Hindi re-map sheet (wave B)", () => {
 
   it("lists every tool-file string of the head snapshot", () => {
     const text = sheet().split("\n## ").find(s => s.startsWith("Tool message files"))!;
-    const rows = text.split("\n").filter(l => /^\| \w+ \| `/.test(l)).length;
+    const rows = text.split("\n").filter(l => /^\| [\w-]+ \| `/.test(l)).length;
     expect(rows).toBe(Object.values(head.tools).reduce((n, f) => n + Object.keys(f).length, 0));
   });
 
@@ -99,14 +99,17 @@ describe("the Hindi re-map sheet (wave B)", () => {
     expect(text).toContain("- English copies before the v1 remap, main dictionary: 369");
     expect(text).toContain(`- Remapped from v1 build ${remap.v1.build} (commit \`${remap.v1.commit}\`): ${remapped}`);
     expect(text).toContain(`- Still English after the remap, main dictionary: ${still}`);
-    expect(remapped + still).toBe(369);   // the head snapshot is the dictionaries with the remap applied
+    // The head snapshot is the dictionaries with the remap applied, plus the English copies of keys added by hand after the re-map step (the remap file does not list them).
+    const listed = new Set([...Object.keys(remap.keys), ...Object.keys(remap.ambiguous), ...Object.keys(remap.rejected), ...remap.keepEnglish, ...remap.noV1Hindi]);
+    const late = Object.keys(head.keys).filter(k => head.keys[k]![1] === head.keys[k]![0] && !listed.has(k)).length;
+    expect(remapped + still - late).toBe(369);
   });
 
   it("the header gives the remap by kind and by where v1 keeps the Hindi", () => {
     const text = sheet();
-    expect(text).toContain("- Remapped from v1 build 2026.10.24a (commit `f5336be`): 159 (exact English 147, same words 7, placeholders renamed 5)");
+    expect(text).toContain("- Remapped from v1 build 2026.10.27d (commit `6b70c3e`): 159 (exact English 147, same words 7, placeholders renamed 5)");
     expect(text).toContain("- Remapped, by where v1 keeps the Hindi: I18N dictionary 114, stage table AP_STAGES_HI 23, toast table TOAST_HI 20, dialog table STATIC_HI 2");
-    expect(text).toContain("- Still English after the remap, main dictionary: 210 (no Hindi in v1 190, ambiguous in v1 1, v1 Hindi not used 8, a name or format 11, added after the remap 0)");
+    expect(text).toContain("- Still English after the remap, main dictionary: 213 (no Hindi in v1 190, ambiguous in v1 1, v1 Hindi not used 8, a name or format 11, added after the remap 3)");
     const bySource = (src: string) => Object.values(remap.keys).filter(e => sourceOf(e.v1Key) === src).length;
     expect(SOURCES.map(bySource)).toEqual([114, 23, 20, 2]);
   });

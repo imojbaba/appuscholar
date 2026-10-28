@@ -1,5 +1,5 @@
 {
-"v1": {"commit":"f5336be","build":"2026.10.24a","sha256":"5454be8e26a3c32bda4f7f1517449f0c2922ea07ee72ba48097426b0e35534bc"},
+"v1": {"commit":"6b70c3e","build":"2026.10.27d","sha256":"491f236816db6e49855f9251997a770fe40c61674a22ea75f2f0ee9391686cb8"},
 "keys": {
 "ap2_abstract_only_shallow_an": {"en":"Abstract only, shallow. An abstract is a summary of about 150 to 300 words. Most questions about method, sample, measures and limits cannot be answered from it, so expect many answers to say that the paper text does not report this. For a real analysis, get the full paper (the free PDF button on the search result, where one exists), download it and load it here.","hi":"केवल सार (abstract), इसलिए उथला। सार लगभग 150 से 300 शब्दों का सारांश होता है। method, sample, measures और सीमाओं के ज़्यादातर सवालों का जवाब इससे नहीं मिलता, इसलिए कई जवाब कहेंगे कि पाठ में यह नहीं बताया गया। असली विश्लेषण के लिए पूरा शोधपत्र लें (खोज परिणाम पर मुफ़्त PDF बटन, जहाँ हो), उसे डाउनलोड करें और यहाँ डालें।","v1Key":"ap_abs","kind":"exact"},
 "ap2_ask": {"en":"Ask","hi":"पूछें","v1Key":"ap_ask","kind":"exact"},
